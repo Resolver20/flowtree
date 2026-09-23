@@ -164,6 +164,8 @@ Authoring rules:
 
 Google sign-in is the entry point for every user. The app asks the user to sign in with their own Google account, creates or uses an app-owned private `gpt` folder, restores `flowtree-plan.json` when it exists, and saves later plan changes automatically. No Google credentials are stored in Flowtree data or committed to the repository.
 
+The public [privacy policy](./public/privacy.html) and [terms](./public/terms.html) describe the limited Google Drive access used by the app.
+
 To enable the feature for a deployed site, create a Google OAuth web client, add the deployed site origin to its authorised JavaScript origins, then add its client ID in the GitHub repository variable `GOOGLE_OAUTH_CLIENT_ID`. The deploy workflow passes that public OAuth client ID to Vite as `VITE_GOOGLE_CLIENT_ID`. See [Google Drive sync setup](./docs/GOOGLE_DRIVE_SYNC.md).
 
 ## Deployment
