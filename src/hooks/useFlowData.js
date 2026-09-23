@@ -55,6 +55,18 @@ function readInitialData() {
   })
 }
 
+// Drive is the account-level source of truth. Start a newly connected Drive
+// account from an empty plan rather than copying data left in this browser by
+// a different account.
+export function createBlankFlowData() {
+  return normalizeData({
+    profile: { name: 'You', visible: true },
+    incomeSources: [],
+    buffer: 0,
+    tree: createTreeFromBuckets([]),
+  })
+}
+
 export function useFlowData() {
   const [data, setData] = useState(readInitialData)
   const [storageError, setStorageError] = useState('')

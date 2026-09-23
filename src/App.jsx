@@ -4,7 +4,7 @@ import { findNode, pathToNode } from './domain/flowTree'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import GoogleDriveLogin from './features/flowtree/GoogleDriveLogin'
 import PlanDialog from './features/flowtree/PlanDialog'
-import { useFlowData } from './hooks/useFlowData'
+import { createBlankFlowData, useFlowData } from './hooks/useFlowData'
 import { connectGoogleDrive, downloadFlowtreeBackup, findFlowtreeBackup, findOrCreateFolder, getDriveUser, revokeGoogleDriveAccess, uploadFlowtreeBackup } from './lib/googleDriveSync'
 
 const DRIVE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -34,6 +34,8 @@ function App() {
         notify('Your plan was restored from Google Drive.')
       } else {
         driveFileId.current = ''
+        replaceData(createBlankFlowData())
+        notify('A new private Flowtree plan was created in Google Drive.')
       }
       setDrive({ status: 'connected', token, folderId: folder.id, user, error: '' })
     } catch (error) {
