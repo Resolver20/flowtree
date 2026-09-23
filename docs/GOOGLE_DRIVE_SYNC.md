@@ -7,8 +7,8 @@ Flowtree can use Google Drive as an optional JSON backup location. The browser c
 1. In Google Cloud Console, create or select a project and enable **Google Drive API**.
 2. Create an OAuth **Web application** client ID.
 3. Add the Flowtree origin to the client’s authorised JavaScript origins (for example `http://127.0.0.1:5178`).
-4. Set `VITE_GOOGLE_CLIENT_ID` in `.env.local` (see `.env.example`).
-5. Use **Options → Connect Google Drive** in Flowtree. The app signs the user in, restores `flowtree-plan.json` if present, and saves later changes automatically.
+4. For local development, set `VITE_GOOGLE_CLIENT_ID` in `.env.local` (see `.env.example`). For GitHub Pages, add the same value to repository variable `GOOGLE_OAUTH_CLIENT_ID`; the deploy workflow supplies it at build time.
+5. Open Flowtree. Google sign-in is the first screen. The app signs the user in, restores `flowtree-plan.json` if present, and saves later changes automatically.
 
 The `drive.file` scope limits access to files the app creates or files the user explicitly opens with the app. The token is held in memory only; Flowtree does not store Google credentials in local storage.
 

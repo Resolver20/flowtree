@@ -51,8 +51,8 @@ npm run build
 - Options contains only plan-level controls such as income, buffer, top-level categories, expansion, and sample mode.
 - The footer explains the next unfunded target or the amount left after targets and buffer.
 - Options allow income and buffer editing, destination creation, full-tree expansion, and a temporary sample flow.
-- Data is saved in the current browser through `localStorage`.
-- Options can connect a user’s Google account and automatically restore/save that user’s plan in a private `gpt` folder in Google Drive.
+- The first screen is Google sign-in. Each user’s Drive plan is restored before the planning view opens, then saved automatically after every change.
+- Browser `localStorage` is used only as a resilient local cache; the signed-in user’s Google Drive backup is the source restored at the start of each session.
 - Options can export a portable JSON backup and import a validated JSON plan after a replacement preview.
 - A destination picker provides direct keyboard/touch access to every nested item, with unscaled Edit and Add child actions.
 - Forms preview monthly branch totals, support decimals and icon selection, and trap keyboard focus until closed (Escape cancels).
@@ -162,9 +162,9 @@ Authoring rules:
 
 ## Google Drive sync
 
-Any user can opt into personal Google Drive backup through **Options → Connect Google Drive**. The app asks the user to sign in with their own Google account, creates or uses their private `gpt` folder, restores `flowtree-plan.json` when it exists, and saves later plan changes automatically. No Google credentials are stored in Flowtree data or committed to the repository.
+Google sign-in is the entry point for every user. The app asks the user to sign in with their own Google account, creates or uses an app-owned private `gpt` folder, restores `flowtree-plan.json` when it exists, and saves later plan changes automatically. No Google credentials are stored in Flowtree data or committed to the repository.
 
-To enable the feature for a deployed site, create a Google OAuth web client, add the deployed site origin to its authorised JavaScript origins, then set `VITE_GOOGLE_CLIENT_ID` in the deployment environment. See [Google Drive sync setup](./docs/GOOGLE_DRIVE_SYNC.md).
+To enable the feature for a deployed site, create a Google OAuth web client, add the deployed site origin to its authorised JavaScript origins, then add its client ID in the GitHub repository variable `GOOGLE_OAUTH_CLIENT_ID`. The deploy workflow passes that public OAuth client ID to Vite as `VITE_GOOGLE_CLIENT_ID`. See [Google Drive sync setup](./docs/GOOGLE_DRIVE_SYNC.md).
 
 ## Deployment
 

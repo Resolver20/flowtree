@@ -30,6 +30,7 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE_PATH: /flowtree/
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MAX_IMPORT_BYTES, parseFlowImport, serializeFlowData, summarizeFlowData } from './domain/flowDataTransfer'
 import { findNode, pathToNode } from './domain/flowTree'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
+import GoogleDriveLogin from './features/flowtree/GoogleDriveLogin'
 import PlanDialog from './features/flowtree/PlanDialog'
 import { useFlowData } from './hooks/useFlowData'
 import { connectGoogleDrive, downloadFlowtreeBackup, findFlowtreeBackup, findOrCreateFolder, getDriveUser, revokeGoogleDriveAccess, uploadFlowtreeBackup } from './lib/googleDriveSync'
@@ -35,7 +36,6 @@ function App() {
         driveFileId.current = ''
       }
       setDrive({ status: 'connected', token, folderId: folder.id, user, error: '' })
-      setDialog({ type: 'driveSync' })
     } catch (error) {
       setDrive(previous => ({ ...previous, status: 'error', error: error.message || 'Google Drive connection failed.' }))
     }
@@ -147,6 +147,8 @@ function App() {
   }
 
   const monthlyIncome = incomeSources.reduce((sum, source) => sum + Math.max(0, Number(source.amount) || 0), 0)
+
+  if (!driveReady) return <GoogleDriveLogin status={drive.status} error={drive.error} configured={Boolean(DRIVE_CLIENT_ID)} onConnect={connectDrive} />
 
   return <div className="app-shell energy-mode">
     <EnergyExplorer
