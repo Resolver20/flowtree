@@ -1,4 +1,5 @@
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
+const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3'
 const GIS_SCRIPT = 'https://accounts.google.com/gsi/client'
 export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
 
@@ -19,8 +20,8 @@ function loadIdentityScript() {
   return identityScript
 }
 
-async function driveRequest(path, accessToken, options = {}) {
-  const response = await fetch(`${DRIVE_API}${path}`, {
+async function driveRequest(path, accessToken, { baseUrl = DRIVE_API, ...options } = {}) {
+  const response = await fetch(`${baseUrl}${path}`, {
     ...options,
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -95,7 +96,12 @@ export async function uploadFlowtreeBackup({ accessToken, folderId, contents, fi
   const metadata = { name: fileName, mimeType: 'application/json', ...(fileId ? {} : { parents: [folderId] }) }
   const multipart = multipartBody(metadata, contents)
   const endpoint = fileId ? `/files/${encodeURIComponent(fileId)}?uploadType=multipart&fields=id,name,modifiedTime,mimeType` : '/files?uploadType=multipart&fields=id,name,modifiedTime,mimeType'
-  return driveRequest(endpoint, accessToken, { method: fileId ? 'PATCH' : 'POST', headers: { 'Content-Type': multipart.contentType }, body: multipart.body })
+  return driveRequest(endpoint, accessToken, {
+    baseUrl: DRIVE_UPLOAD_API,
+    method: fileId ? 'PATCH' : 'POST',
+    headers: { 'Content-Type': multipart.contentType },
+    body: multipart.body,
+  })
 }
 
 export async function downloadFlowtreeBackup({ accessToken, fileId } = {}) {
