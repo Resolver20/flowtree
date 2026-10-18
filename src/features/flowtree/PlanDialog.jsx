@@ -336,10 +336,10 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   </DialogShell>
 }
 
-export default function PlanDialog({ dialog, profile, incomeSources, buffer, tree, driveStatus, driveUser, driveError, driveConfigured, onClose, onSaveProfile, onDeleteProfile, onSaveIncomeSource, onDeleteIncomeSource, onSaveAnnualTargets, onSaveBuffer, onSaveNode, onDeleteNode, onImportData, onApplyJson, onRequestEdit, onRequestAdd, onRequestEditIncomeSource, onRequestEditProfile, onRequestAddIncomeSource, onRequestSinkingFunds, onConnectDrive, onAddDriveAccount }) {
+export default function PlanDialog({ dialog, profile, incomeSources, generalLedgers, buffer, tree, driveStatus, driveUser, driveError, driveConfigured, onClose, onSaveProfile, onDeleteProfile, onSaveIncomeSource, onDeleteIncomeSource, onSaveAnnualTargets, onSaveBuffer, onSaveNode, onDeleteNode, onImportData, onApplyJson, onRequestEdit, onRequestAdd, onRequestEditIncomeSource, onRequestEditProfile, onRequestAddIncomeSource, onRequestSinkingFunds, onConnectDrive, onAddDriveAccount }) {
   if (!dialog) return null
   if (dialog.type === 'driveSync') return <DriveSyncDialog status={driveStatus} user={driveUser} error={driveError} configured={driveConfigured} onClose={onClose} onConnect={onConnectDrive} onAddAccount={onAddDriveAccount} onEditJson={() => onApplyJson()} />
-  if (dialog.type === 'editJson') return <JsonEditorDialog data={{ profile, incomeSources, buffer: Number(buffer) || 0, tree }} onClose={onClose} onSave={onApplyJson} />
+  if (dialog.type === 'editJson') return <JsonEditorDialog data={{ profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree }} onClose={onClose} onSave={onApplyJson} />
   if (dialog.type === 'manageProfile') return <ProfileManageDialog profile={profile} onClose={onClose} onDelete={onDeleteProfile} onRequestEdit={onRequestEditProfile} onRequestAddIncome={onRequestAddIncomeSource} onRequestSinkingFunds={() => onRequestSinkingFunds()} />
   if (dialog.type === 'profile') return <ProfileDialog profile={profile} onClose={onClose} onSave={onSaveProfile} />
   if (dialog.type === 'manageIncomeSource') return <IncomeSourceManageDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onDelete={onDeleteIncomeSource} onRequestEdit={onRequestEditIncomeSource} />

@@ -25,6 +25,7 @@ function normalizeData(data) {
     incomeSources: Array.isArray(data?.incomeSources)
       ? data.incomeSources.map(normalizeIncomeSource)
       : [normalizeIncomeSource({ id: 'salary', name: 'Salary', amount: legacyIncome, icon: 'payments' })],
+    generalLedgers: Array.isArray(data?.generalLedgers) ? data.generalLedgers : [],
     tree: organizeSubscriptions(Array.isArray(data?.tree) ? data.tree : createTreeFromBuckets([])),
   }
 }
@@ -33,6 +34,7 @@ export function createBlankFlowData() {
   return normalizeData({
     profile: { name: 'You', visible: true },
     incomeSources: [],
+    generalLedgers: [],
     buffer: 0,
     tree: createTreeFromBuckets([]),
   })
@@ -73,6 +75,26 @@ export function useFlowData() {
     setData(previous => ({ ...previous, buffer }))
   }
 
+  function createGeneralLedger(ledger) {
+    setData(previous => ({ ...previous, generalLedgers: [...previous.generalLedgers, ledger] }))
+  }
+
+  function updateGeneralLedger(id, changes) {
+    setData(previous => ({ ...previous, generalLedgers: previous.generalLedgers.map(ledger => ledger.id === id ? { ...ledger, ...changes } : ledger) }))
+  }
+
+  function deleteGeneralLedger(id) {
+    setData(previous => ({ ...previous, generalLedgers: previous.generalLedgers.filter(ledger => ledger.id !== id) }))
+  }
+
+  function createLedgerEntry(ledgerId, entry) {
+    setData(previous => ({ ...previous, generalLedgers: previous.generalLedgers.map(ledger => ledger.id === ledgerId ? { ...ledger, entries: [...ledger.entries, entry] } : ledger) }))
+  }
+
+  function deleteLedgerEntry(ledgerId, entryId) {
+    setData(previous => ({ ...previous, generalLedgers: previous.generalLedgers.map(ledger => ledger.id === ledgerId ? { ...ledger, entries: ledger.entries.filter(entry => entry.id !== entryId) } : ledger) }))
+  }
+
   function changeNode(id, changes) {
     setData(previous => ({ ...previous, tree: updateNode(previous.tree, id, changes) }))
   }
@@ -100,5 +122,5 @@ export function useFlowData() {
     setData(normalizeData(nextData))
   }
 
-  return { ...data, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData }
+  return { ...data, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData }
 }

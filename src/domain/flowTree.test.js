@@ -69,6 +69,15 @@ test('yearly progress preserves savings already recorded ahead of schedule', () 
   assert.deepEqual(annualTargetProgress(node, today), { target: 12000, saved: 3000, ratio: 0.25 })
 })
 
+test('dated life goals pace progress across their whole start-to-end window', () => {
+  const goal = { amount: 120000, savedAmount: 10000, startDate: '2026-10-01', dueDate: '2028-10-01', period: 'year', status: 'active', children: [] }
+  const halfway = new Date(2027, 9, 18)
+
+  assert.deepEqual(annualTargetProgress(goal, halfway), { target: 120000, saved: 60000, ratio: 0.5 })
+  assert.equal(monthlyAllocation(goal, halfway), 5000)
+  assert.deepEqual(annualTargetProgress({ ...goal, savedAmount: 80000 }, halfway), { target: 120000, saved: 80000, ratio: 2 / 3 })
+})
+
 test('expected yearly savings totals annual targets across the full tree', () => {
   const today = new Date(2026, 8, 20)
   const nodes = [

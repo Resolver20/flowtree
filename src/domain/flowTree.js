@@ -17,8 +17,8 @@ export const FLOW_GROUPS = [
 export const SUBSCRIPTION_NAMES = new Set(['Google Drive', 'Apple One', 'GPT', 'Netflix'])
 export const NODE_STATUSES = ['dormant', 'seeded', 'active', 'funded']
 
-function makeNode({ id, name, amount = 0, savedAmount = 0, period = 'month', status = 'active', icon = 'savings', tone = 'blue', note = '', children = [] }) {
-  return { id, name, amount, savedAmount, period, status, icon, tone, note, children }
+function makeNode({ id, name, amount = 0, savedAmount = 0, startDate = '', period = 'month', status = 'active', icon = 'savings', tone = 'blue', note = '', children = [] }) {
+  return { id, name, amount, savedAmount, startDate, period, status, icon, tone, note, children }
 }
 
 function createGroupNodes() {
@@ -58,9 +58,24 @@ export function monthsUntilTarget(dueDate, today = new Date()) {
 export function expectedAnnualSavings(node, today = new Date()) {
   const target = Math.max(0, Number(node.amount) || 0)
   const savedAmount = Math.min(target, Math.max(0, Number(node.savedAmount) || 0))
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.dueDate || '')
-  if (!match) return savedAmount
-  const [, year, month] = match.map(Number)
+  const dueMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.dueDate || '')
+  if (!dueMatch) return savedAmount
+  const [, year, month] = dueMatch.map(Number)
+
+  // A dated life goal has a finite savings window, unlike an annual bill.
+  // Keep the existing rolling-12-month pacing for yearly expenses that do not
+  // have a start date, but pace a life goal over its full start-to-end window.
+  const startMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.startDate || '')
+  if (startMatch) {
+    const [, startYear, startMonth] = startMatch.map(Number)
+    const totalMonths = (year - startYear) * 12 + (month - startMonth)
+    if (totalMonths > 0) {
+      const elapsedMonths = (today.getFullYear() - startYear) * 12 + (today.getMonth() - (startMonth - 1))
+      const scheduledSavings = target * Math.min(1, Math.max(0, elapsedMonths / totalMonths))
+      return Math.min(target, Math.max(savedAmount, scheduledSavings))
+    }
+  }
+
   const monthsToDue = (year - today.getFullYear()) * 12 + (month - 1 - today.getMonth())
   const completedMonths = 12 - Math.min(12, Math.max(0, monthsToDue))
   const scheduledSavings = target * completedMonths / 12

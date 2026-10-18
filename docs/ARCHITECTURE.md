@@ -42,7 +42,7 @@ The financial model is a planning preview. It does not initiate payments, inspec
 2. Google Identity Services grants an in-memory access token using `drive.file` scope.
 3. The app reads the current Drive user, finds or creates the private `FlowTree` folder, and finds `flowtree-plan.json`.
 4. If that file exists, it is validated and loaded. Otherwise, a clean plan is created and uploaded.
-5. Subsequent changes are debounced and uploaded to the same Drive file.
+5. Subsequent changes are debounced and uploaded to the same Drive file. Uploads are serialized, so if an edit happens during an in-flight upload, the newer snapshot is sent next and becomes the final saved file.
 
 Only the Drive session reference is held in session storage. No Google credential or financial-plan copy is written to browser local storage.
 
@@ -55,9 +55,10 @@ Only the Drive session reference is held in session storage. No Google credentia
 `EnergyExplorer` selects one focused view at a time:
 
 - **Home**: interactive left-to-right hierarchy;
-- **Sinking funds**: yearly targets in the same tree shape;
-- **Loans**: payoff detail and schedule for Debt Commitments;
-- **Life goals**: goal authoring with Home-plan reflection;
+- **Sinking funds**: yearly targets in the same tree shape, with its own focused and fully expanded state;
+- **Loans**: payoff detail, editable draft payoff sketch, and schedule for Debt Commitments. Saving derives the monthly payment from the same loan projection used by Home;
+- **Life goals**: goal authoring with end-date progress, accumulated savings, and Home-plan reflection;
+- **General ledger**: named, icon-selectable expense ledgers kept separate from the planning tree;
 - **Full tree overview**: expanded hierarchy layout.
 
 The Home root is deliberately non-interactive and always expanded. Only category and destination branches control progressive disclosure. The tree layout uses a measured viewport, fixed hierarchy columns, disjoint subtree bands, and SVG connectors. The layout is derived at render time and centered after scaling.

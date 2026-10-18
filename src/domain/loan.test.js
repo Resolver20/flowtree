@@ -13,3 +13,9 @@ test('extra monthly payments shorten the projected payoff', () => {
   assert.ok(accelerated.payoffMonths < standard.payoffMonths)
   assert.ok(accelerated.totalInterest < standard.totalInterest)
 })
+
+test('a 25-year tenure is projected as 300 months', () => {
+  const projection = loanProjection({ principal: 1000000, remainingPrincipal: 1000000, annualRate: 8, tenureMonths: 25 * 12 })
+  assert.equal(projection.tenureMonths, 300)
+  assert.equal(projection.payoffMonths, 300)
+})

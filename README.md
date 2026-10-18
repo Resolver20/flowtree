@@ -45,14 +45,16 @@ npm run build
 - The **Monthly plan** root is always visible and expanded. Only category and destination branches can be opened or collapsed.
 - Every sibling level is ordered by monthly total from highest to lowest, including children revealed when a node expands.
 - Selecting a parent opens its children without moving already visible columns.
-- **Expand everything** lays out the entire hierarchy in disjoint subtree bands and scales it to the viewport.
+- **Full tree overview** lays out the hierarchy in disjoint subtree bands and scales it to the viewport. In **Sinking funds**, the same control expands or collapses that view's yearly-target tree without taking you back Home.
 - Each node card shows a distinct Material Symbol, its name, and its monthly target.
-- Yearly entries support a target date. Flowtree automatically calculates expected savings-to-date from the 12-month cycle, then divides the expected remaining balance across the months left.
+- Yearly entries support a target date. Dated Life goals also record their start date and amount already accumulated, so Flowtree shows progress to the end date and divides the remaining target across the months left. Goals and general ledgers each support a user-selected Material Symbol icon.
 - Every destination has one subtle info button beside its icon. It uses the same semantic color as the item icon in the read-first management dialog, which offers **Add child**, **Edit details**, and **Delete**.
 - Options contains only plan-level controls such as income, buffer, top-level categories, expansion, and sample mode.
 - The footer explains the next unfunded target or the amount left after targets and buffer.
 - Options allow income and buffer editing, destination creation, full-tree expansion, and a temporary sample flow.
 - The profile menu contains Google Drive sign-in, JSON editing for connected accounts, account switching, and the light/dark appearance control. A connected user's Google profile photo also appears on the Home flow. A connected user’s Drive plan is restored and later changes are saved automatically.
+- Loans include a live **Draft payoff sketch** so a proposed rate, tenure, or extra principal amount can be reviewed before it is saved. Saving a loan updates its monthly payment in Home and queues the connected Drive plan for upload.
+- **General ledger** keeps named expense records such as Home GL separate from monthly planning. Creating a GL or adding an expense is included in the same Drive JSON sync.
 - Financial plan data is kept only in active React memory while the page is open. Old browser-local plan copies are removed.
 - Options can export a portable JSON backup and import a validated JSON plan after a replacement preview.
 - A destination picker provides direct keyboard/touch access to every nested item, with unscaled Edit and Add child actions.
@@ -66,7 +68,7 @@ npm run build
 
 1. Start on **Home** and add income sources plus a safety buffer.
 2. Add monthly destinations to the appropriate planning category.
-3. Use **Sinking funds** for dated yearly payments, **Loans** for payoff projections, and **Life goals** for goal targets that also appear in Home.
+3. Use **Sinking funds** for dated yearly payments, **Loans** for payoff projections, **Life goals** for end-dated goal targets, and **General ledger** for separate expense tracking.
 4. Use the profile menu to choose light or dark mode, then sign in with Google Drive when you want to restore or save your plan in your own Drive.
 
 Read the full [user guide](./docs/USER_GUIDE.md) or download the [PDF guide](./docs/FlowTree-User-Guide.pdf). For implementation details, see the [technical architecture](./docs/ARCHITECTURE.md).
@@ -81,7 +83,7 @@ The allocation preview is deterministic:
 4. Within a parent, reserve the parent's direct amount first and pass the rest to its children in order.
 5. Convert yearly targets to monthly equivalents by dividing by 12.
 
-For dated yearly targets, expected progress is recalculated from the rolling 12-month cycle. The preview reserves `(target - expected saved) / months remaining` from future monthly income. With no target date, it uses the saved value and a 12-month fallback. This remains planning information and never moves money automatically.
+For dated yearly targets, expected progress is recalculated from the rolling 12-month cycle. A Life goal with a start and end date instead uses the whole goal window: its progress is the higher of the recorded accumulated amount and the planned amount to date, and the preview reserves `(target - progress) / months remaining` from future monthly income. This remains planning information and never moves money automatically.
 
 The useful plan summary is:
 

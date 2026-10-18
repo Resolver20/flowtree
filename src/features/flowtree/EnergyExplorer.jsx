@@ -7,11 +7,34 @@ import TreeHeader from './TreeHeader'
 import TreeStatus from './TreeStatus'
 import LoansView from './LoansView'
 import GoalsView from './GoalsView'
+import GeneralLedgerView from './GeneralLedgerView'
 import { createTreeLayout } from './treeLayout'
 import { useElementSize } from './useElementSize'
 import './EnergyExplorer.css'
 
 const THEME_SESSION_KEY = 'flowtree-theme'
+
+function DriveSyncStatus({ status }) {
+  if (!['saving', 'saved', 'error'].includes(status)) return null
+  const content = status === 'saving'
+    ? ['sync', 'Saving to Google Drive…']
+    : status === 'saved'
+      ? ['cloud_done', 'Saved to Google Drive']
+      : ['cloud_off', 'Google Drive save needs attention']
+  return <div className={`drive-sync-status is-${status}`} role="status">
+    <span className="material-symbols-rounded" aria-hidden="true">{content[0]}</span>
+    <span>{content[1]}</span>
+  </div>
+}
+
+function EmptyTreeState({ sinking, onReturnHome }) {
+  return <div className="empty-tree-state">
+    <span className="material-symbols-rounded" aria-hidden="true">{sinking ? 'savings' : 'account_tree'}</span>
+    <strong>{sinking ? 'No sinking funds to preview' : 'No plan categories to preview'}</strong>
+    <p>{sinking ? 'Add a yearly target with a future date, then return here to see its monthly set-aside.' : 'Add a category to start building your monthly plan.'}</p>
+    <button type="button" onClick={onReturnHome}>Return to Home</button>
+  </div>
+}
 
 function readTheme() {
   try {
@@ -28,10 +51,10 @@ function annualTargetsOnly(nodes) {
   })
 }
 
-export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, salary, buffer, driveUser, driveStatus, driveConfigured, onManageIncomeSource, onConnectDrive, onEditJson, onManageNode, onSaveLoan, onSaveGoal }) {
+export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onEditJson, onManageNode, onSaveLoan, onSaveGoal, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const demo = false
   const [view, setView] = useState('home')
-  const [expandAll, setExpandAll] = useState(false)
+  const [expandedViews, setExpandedViews] = useState({ home: false, sinking: false })
   const [theme, setTheme] = useState(readTheme)
   const [showDriveSaved, setShowDriveSaved] = useState(false)
   const previousDriveStatus = useRef(driveStatus)
@@ -44,6 +67,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     return (debt?.children || []).filter(node => node.loan || /loan|emi|debt/i.test(node.name))
   }, [tree])
   const goals = useMemo(() => tree.find(node => node.id === 'goals')?.children || [], [tree])
+  const expandAll = view === 'home' || view === 'sinking' ? expandedViews[view] : false
   const visibleTreeExpanded = expandAll
   const showProfileMarker = view === 'home' && (profile.visible || Boolean(driveUser?.photoLink))
 
@@ -106,41 +130,48 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }, [viewport.width, viewportRef])
 
   function navigate(nextPath) {
+    if (expandAll) {
+      setExpandedViews(current => ({ ...current, [view]: false }))
+      setPath(nextPath)
+      return
+    }
     setPath(current => nextPath.join('/') === current.join('/') ? current.slice(0, -1) : nextPath)
   }
 
   function returnToRoot() {
     setView('home')
-    setExpandAll(false)
+    setExpandedViews(current => ({ ...current, home: false }))
     setPath([])
   }
 
   function toggleExpandAll() {
-    if (view === 'sinking') {
+    if (view !== 'home' && view !== 'sinking') {
       setView('home')
-      setExpandAll(true)
+      setExpandedViews(current => ({ ...current, home: true }))
       setPath([])
       return
     }
-    setExpandAll(value => !value)
+    setExpandedViews(current => ({ ...current, [view]: !current[view] }))
     setPath([])
   }
 
   function showSinkingFunds() {
     setView('sinking')
-    setExpandAll(false)
     setPath([])
   }
 
   function showLoans() {
     setView('loans')
-    setExpandAll(false)
     setPath([])
   }
 
   function showGoals() {
     setView('goals')
-    setExpandAll(false)
+    setPath([])
+  }
+
+  function showGeneralLedger() {
+    setView('ledger')
     setPath([])
   }
 
@@ -154,6 +185,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       onNavigate={setPath}
       driveUser={driveUser}
       driveStatus={driveStatus}
+      driveError={driveError}
       driveConfigured={driveConfigured}
       theme={theme}
       onConnectDrive={onConnectDrive}
@@ -162,21 +194,25 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       onShowSinkingFunds={showSinkingFunds}
       onShowLoans={showLoans}
       onShowGoals={showGoals}
+      onShowGeneralLedger={showGeneralLedger}
       onToggleExpandAll={toggleExpandAll}
     />
-    {view === 'loans' ? <LoansView loans={loans} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
-      <TreeCanvas
-        layout={layout}
-        path={path}
-        profile={showProfileMarker ? profile : { ...profile, visible: false }}
-        driveUser={driveUser}
-        driveSaved={showDriveSaved}
-        incomeSources={incomeSources}
-        tree={visibleTree}
-        onManageIncomeSource={onManageIncomeSource}
-        onNavigate={navigate}
-        onInspect={onManageNode}
-      />
+    <DriveSyncStatus status={driveStatus} />
+    {view === 'loans' ? <LoansView loans={loans} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
+      {visibleTree.length
+        ? <TreeCanvas
+            layout={layout}
+            path={path}
+            profile={showProfileMarker ? profile : { ...profile, visible: false }}
+            driveUser={driveUser}
+            driveSaved={showDriveSaved}
+            incomeSources={incomeSources}
+            tree={visibleTree}
+            onManageIncomeSource={onManageIncomeSource}
+            onNavigate={navigate}
+            onInspect={onManageNode}
+          />
+        : <EmptyTreeState sinking={view === 'sinking'} onReturnHome={returnToRoot} />}
     </div>
     <TreeStatus demo={demo} sinking={view === 'sinking'} flow={flow} available={layout.available} status={status} /></>}
   </main>

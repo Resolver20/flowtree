@@ -1,6 +1,7 @@
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3'
 const GIS_SCRIPT = 'https://accounts.google.com/gsi/client'
+const GIS_LOAD_TIMEOUT_MS = 12_000
 export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
 
 let identityScript
@@ -10,14 +11,26 @@ function loadIdentityScript() {
   if (identityScript) return identityScript
   identityScript = new Promise((resolve, reject) => {
     const script = document.createElement('script')
+    const timeout = window.setTimeout(() => reject(new Error('Google Identity Services did not load. Check that your browser allows Google sign-in, then try again.')), GIS_LOAD_TIMEOUT_MS)
     script.src = GIS_SCRIPT
     script.async = true
     script.defer = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Google Identity Services could not be loaded.'))
+    script.onload = () => {
+      window.clearTimeout(timeout)
+      resolve()
+    }
+    script.onerror = () => {
+      window.clearTimeout(timeout)
+      reject(new Error('Google Identity Services could not be loaded.'))
+    }
     document.head.append(script)
   })
-  return identityScript
+  return identityScript.catch(error => {
+    // Permit a retry after a blocked network request or a browser extension
+    // prevents Google's identity script from loading.
+    identityScript = undefined
+    throw error
+  })
 }
 
 async function driveRequest(path, accessToken, { baseUrl = DRIVE_API, ...options } = {}) {

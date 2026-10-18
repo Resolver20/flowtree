@@ -6,6 +6,8 @@ export const MAX_IMPORT_BYTES = 2_000_000
 
 const MAX_NODES = 2_000
 const MAX_DEPTH = 20
+const MAX_GENERAL_LEDGERS = 100
+const MAX_LEDGER_ENTRIES = 2_000
 
 function fail(message) {
   throw new Error(message)
@@ -63,6 +65,34 @@ function loanAt(value, path) {
   return { principal, remainingPrincipal, annualRate, tenureMonths, extraPayment: amountAt(loan.extraPayment, `${path}.extraPayment`, 0) }
 }
 
+function generalLedgersAt(value) {
+  if (value === undefined || value === null) return []
+  const ids = new Set()
+  return arrayAt(value, 'data.generalLedgers').map((ledger, ledgerIndex) => {
+    if (ledgerIndex >= MAX_GENERAL_LEDGERS) fail(`data.generalLedgers cannot contain more than ${MAX_GENERAL_LEDGERS} ledgers.`)
+    const source = objectAt(ledger, `data.generalLedgers[${ledgerIndex}]`)
+    const id = textAt(source.id, `data.generalLedgers[${ledgerIndex}].id`)
+    if (ids.has(id)) fail(`Duplicate general ledger id: ${id}.`)
+    ids.add(id)
+    const entries = arrayAt(source.entries ?? [], `data.generalLedgers[${ledgerIndex}].entries`)
+    if (entries.length > MAX_LEDGER_ENTRIES) fail(`data.generalLedgers[${ledgerIndex}].entries cannot contain more than ${MAX_LEDGER_ENTRIES} entries.`)
+    const entryIds = new Set()
+    return {
+      id,
+      name: textAt(source.name, `data.generalLedgers[${ledgerIndex}].name`),
+      note: optionalText(source.note, `data.generalLedgers[${ledgerIndex}].note`, '', 300),
+      symbol: optionalText(source.symbol, `data.generalLedgers[${ledgerIndex}].symbol`, 'receipt_long', 64),
+      entries: entries.map((entry, entryIndex) => {
+        const item = objectAt(entry, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}]`)
+        const entryId = textAt(item.id, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].id`)
+        if (entryIds.has(entryId)) fail(`Duplicate ledger entry id: ${entryId}.`)
+        entryIds.add(entryId)
+        return { id: entryId, date: dateAt(item.date, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].date`), description: textAt(item.description, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].description`), amount: amountAt(item.amount, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].amount`) }
+      }),
+    }
+  })
+}
+
 function normalizeNode(node, path, ids, counters, depth) {
   if (depth > MAX_DEPTH) fail(`The tree cannot be deeper than ${MAX_DEPTH} levels.`)
   if (++counters.nodes > MAX_NODES) fail(`The tree cannot contain more than ${MAX_NODES} items.`)
@@ -82,6 +112,7 @@ function normalizeNode(node, path, ids, counters, depth) {
     name: textAt(source.name, `${path}.name`),
     amount: amountAt(source.amount, `${path}.amount`, 0),
     savedAmount: amountAt(source.savedAmount, `${path}.savedAmount`, 0),
+    startDate: dateAt(source.startDate, `${path}.startDate`),
     dueDate: dateAt(source.dueDate, `${path}.dueDate`),
     period,
     status,
@@ -130,6 +161,7 @@ function normalizePlan(value) {
   return {
     profile,
     incomeSources,
+    generalLedgers: generalLedgersAt(source.generalLedgers),
     buffer: amountAt(source.buffer, 'data.buffer'),
     tree,
   }

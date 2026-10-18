@@ -9,8 +9,9 @@ export default function TreeNodeCard({ entry, isExpanded, isSelected, isCategory
   const action = isExpanded ? 'Collapse to' : 'Show'
   const annualProgress = annualTargetProgress(item)
   const color = colorForNode(item)
+  const isLifeGoal = path.includes('goals')
   const targetText = annualProgress
-    ? `${formatMoney(annualProgress.saved)} expected saved of ${formatMoney(annualProgress.target)} annual target`
+    ? `${formatMoney(annualProgress.saved)} ${isLifeGoal ? 'planned accumulated of' : 'expected saved of'} ${formatMoney(annualProgress.target)} ${isLifeGoal ? 'goal target' : 'annual target'}`
     : `${formatMoney(funding.allocated)} funded of ${formatMoney(funding.target)} monthly target`
 
   const cardContent = <>

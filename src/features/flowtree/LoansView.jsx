@@ -8,6 +8,42 @@ function formatDuration(months) {
   return [years ? `${years} yr` : '', remainder ? `${remainder} mo` : ''].filter(Boolean).join(' ') || '0 mo'
 }
 
+function LoanDraftSketch({ principal, remainingPrincipal, annualRate, tenureYears, extraPayment }) {
+  const draft = useMemo(() => {
+    // Reuse the persisted-loan calculation so a preview cannot disagree with Home after save.
+    const tenureMonths = Math.round((Number(tenureYears) || 0) * 12)
+    const openingBalance = Math.max(0, Number(remainingPrincipal) || 0)
+    const originalPrincipal = Math.max(0, Number(principal) || 0)
+    if (!originalPrincipal || !openingBalance || openingBalance > originalPrincipal || !tenureMonths) return null
+    return loanProjection({
+      principal: originalPrincipal,
+      remainingPrincipal: openingBalance,
+      annualRate: Math.max(0, Number(annualRate) || 0),
+      tenureMonths,
+      extraPayment: Math.max(0, Number(extraPayment) || 0),
+    })
+  }, [annualRate, extraPayment, principal, remainingPrincipal, tenureYears])
+
+  return <section className="loan-draft-sketch" aria-label="Draft payoff sketch">
+    <div><span className="eyebrow">WHAT-IF PLAN</span><h3>Draft payoff sketch</h3></div>
+    {!draft
+      ? <p>Enter the principal, balance, rate, and tenure to preview the monthly payment and payoff timeline before saving.</p>
+      : <>
+        <div className="loan-draft-metrics">
+          <div><span>Monthly payment</span><strong>{formatMoney(draft.scheduledPayment)}</strong></div>
+          <div><span>Draft payoff</span><strong>{formatDuration(draft.payoffMonths)}</strong></div>
+          <div><span>Interest remaining</span><strong>{formatMoney(draft.totalInterest)}</strong></div>
+        </div>
+        <div className="loan-draft-timeline" aria-label={`Draft payoff in ${formatDuration(draft.payoffMonths)} against a ${formatDuration(draft.tenureMonths)} tenure`}>
+          <span>Payoff timeline</span>
+          <div aria-hidden="true"><i style={{ width: `${Math.min(100, draft.payoffMonths / draft.tenureMonths * 100)}%` }} /></div>
+          <small>{draft.payoffMonths < draft.tenureMonths ? `${formatDuration(draft.tenureMonths - draft.payoffMonths)} faster with the draft extra payment.` : `Matches the ${formatDuration(draft.tenureMonths)} tenure.`}</small>
+        </div>
+        <p className="loan-draft-note">This is a preview only. Saving applies its monthly payment to Home and queues the connected Google Drive plan for saving.</p>
+      </>}
+  </section>
+}
+
 function LoanEditor({ loan, onSave, onCancel }) {
   const [name, setName] = useState(loan?.name || 'New loan')
   const [principal, setPrincipal] = useState(loan?.loan?.principal ?? '')
@@ -32,9 +68,10 @@ function LoanEditor({ loan, onSave, onCancel }) {
       <label>Original principal (₹)<input value={principal} onChange={event => setPrincipal(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Principal remaining (₹)<input value={remainingPrincipal} onChange={event => setRemainingPrincipal(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Interest rate (% p.a.)<input value={annualRate} onChange={event => setAnnualRate(event.target.value)} type="number" min="0" step="0.01" /></label>
-      <label>Remaining tenure (years)<input value={tenureYears} onChange={event => setTenureYears(event.target.value)} type="number" min="0.08" step="0.08" /></label>
+      <label>Remaining tenure (years)<input value={tenureYears} onChange={event => setTenureYears(event.target.value)} type="number" min="0.01" step="0.01" inputMode="decimal" /></label>
       <label>Extra principal / month (₹)<input value={extraPayment} onChange={event => setExtraPayment(event.target.value)} type="number" min="0" step="0.01" /></label>
     </div>
+    <LoanDraftSketch principal={principal} remainingPrincipal={remainingPrincipal} annualRate={annualRate} tenureYears={tenureYears} extraPayment={extraPayment} />
     {error && <span className="field-error" role="alert">{error}</span>}
     <div className="loan-editor-actions"><button className="loan-save" type="submit">Save loan details</button></div>
   </form>

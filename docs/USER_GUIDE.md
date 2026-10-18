@@ -18,7 +18,8 @@ Home is the visual money-flow view: `income -> planning categories -> destinatio
 - The **Monthly plan** root stays open so the starting point is always visible. You can open or close category and destination branches, but not the root itself.
 - Categories are funded in their displayed order. Within a category, direct amounts are reserved before its children.
 - **Available** is what remains after the safety buffer and plan targets. **Over-planned** means targets exceed the available monthly income.
-- Select a branch to reveal its children. Use **Full tree overview** to see every branch together.
+- Select a branch to reveal its children. Select the same branch again to return one level. Use **Full tree overview** to see every branch together; selecting a branch from that overview returns to its focused branch view.
+- In any full preview, choose **Exit full preview** above the canvas to return to the focused view. If Sinking funds has no yearly targets yet, FlowTree explains what to add instead of showing an empty canvas.
 - The small info control on a card uses the same color as the icon in that card's detail view, making it clear which item you are managing.
 
 ## Appearance and account menu
@@ -35,15 +36,23 @@ Select your profile at the bottom of the left sidebar to open the account menu. 
 
 Use **Sinking funds** for yearly costs such as insurance, property tax, or renewals. Give the target a future target date. FlowTree calculates the monthly amount needed for the balance of that target, based on the expected progress already made in the current 12-month cycle.
 
+Use **Expand sinking funds** in the sidebar to open the entire yearly-target tree. It expands and collapses within Sinking funds, so it does not take you back Home.
+
 ## Loans
 
 Use **Loans** for a clear payoff projection. Add the original principal, principal still outstanding, annual interest rate, remaining tenure, and any extra principal payment you intend to make each month.
 
 The view shows the estimated monthly payment, interest remaining, payoff timeline, and a month-by-month repayment table. These are estimates: confirm the actual outstanding balance, rate resets, charges, and part-payment treatment with the lender.
 
+While editing a loan, use **Draft payoff sketch** to test the payment, projected interest, and clearance timeline before saving. Saving uses that monthly payment in the **Debt Commitments** branch on Home. When Drive is connected, the change is then saved to the same private Drive plan file; the save indicator is available on every view.
+
 ## Life goals
 
-Use **Life goals** to create monthly goals or yearly targets such as travel, a purchase, or a milestone fund. The form shows the monthly amount that will be added to the **Life goals** branch on Home before you save it.
+Use **Life goals** to create monthly goals or targets such as travel, a purchase, or a milestone fund. Choose a relevant icon, then for a target enter its start date, end date, and any amount already accumulated. FlowTree shows the progress percentage, recalculates the monthly amount needed for the remaining time, and reflects it in the **Life goals** branch on Home.
+
+## General ledger
+
+Use **General ledger** to create separate GLs such as Home GL, Travel, or a project. Choose an icon while creating or editing a GL, then add an expense date, description, and amount and review the entries and total in that GL. Ledger expenses are records only: they do not change Home allocations, sinking funds, or life-goal progress.
 
 ## Google Drive and privacy
 
