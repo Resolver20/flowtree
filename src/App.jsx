@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from './domain/flowDataTransfer'
 import { findNode, organizeSubscriptions, pathToNode } from './domain/flowTree'
 import { loanProjection } from './domain/loan'
+import { canAutosaveDrive } from './domain/driveSyncState'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import PlanDialog from './features/flowtree/PlanDialog'
 import { createBlankFlowData, useFlowData } from './hooks/useFlowData'
@@ -44,6 +45,7 @@ function App() {
   const hasAttemptedDriveRestore = useRef(false)
   const driveSaveQueueRef = useRef({ inFlight: false, pending: null })
   const driveConnectionRef = useRef('')
+  const autosaveReady = canAutosaveDrive(drive)
 
   function notify(message) {
     setNotice({ message })
@@ -77,11 +79,9 @@ function App() {
         setPath([])
         notify(`Your plan was restored from Google Drive for ${user.emailAddress || 'your Google account'}.`)
       } else {
-        const blankPlan = createBlankFlowData()
-        replaceDataRef.current(blankPlan)
-        setPath([])
-        file = await uploadFlowtreeBackup({ accessToken, folderId: folder.id, fileName: DRIVE_FILE_NAME, contents: serializeFlowData(blankPlan) })
-        notify('A new private FlowTree plan was created in your Google Drive.')
+        setDrive({ status: 'needs-plan-choice', setupRequired: true, user, error: '', accessToken, folderId: folder.id, fileId: '' })
+        setDialog({ type: 'driveSync' })
+        return
       }
       writeDriveSession({ accessToken, folderId: folder.id, fileId: file.id })
       setDrive({ status: 'connected', user, error: '', accessToken, folderId: folder.id, fileId: file.id })
@@ -106,7 +106,7 @@ function App() {
         setDrive({ status: 'connected', user, error: '', ...session })
       } catch {
         clearDriveSession()
-        setDrive({ status: googleClientId ? 'idle' : 'unavailable', user: null, error: '', accessToken: '', folderId: '', fileId: '' })
+        setDrive({ status: 'error', user: null, error: 'Could not restore your Google Drive plan. Sign in again to retry; no data was uploaded.', accessToken: '', folderId: '', fileId: '' })
       }
     }
     restore()
@@ -131,8 +131,35 @@ function App() {
     notify('Signed out. This tab no longer holds your plan.')
   }
 
+  async function completeDriveSetup({ useCurrentPlan }) {
+    if (!drive.accessToken || !drive.folderId || drive.status !== 'needs-plan-choice') return
+    const plan = useCurrentPlan
+      ? { profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree }
+      : createBlankFlowData()
+    setDrive(previous => ({ ...previous, status: 'saving', error: '' }))
+    try {
+      const file = await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: drive.folderId, fileName: DRIVE_FILE_NAME, contents: serializeFlowData(plan) })
+      if (!useCurrentPlan) {
+        replaceData(plan)
+        setPath([])
+      }
+      writeDriveSession({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: file.id })
+      setDrive(previous => ({ ...previous, status: 'saved', setupRequired: false, error: '', fileId: file.id }))
+      setDialog(null)
+      notify(useCurrentPlan ? 'Your current plan was saved to Google Drive.' : 'A new private FlowTree plan was created in your Google Drive.')
+    } catch (error) {
+      setDrive(previous => ({ ...previous, status: 'needs-plan-choice', setupRequired: true, error: error.message || 'Could not create your Google Drive plan.' }))
+    }
+  }
+
+  function cancelDriveSetup() {
+    clearDriveSession()
+    setDrive({ status: googleClientId ? 'idle' : 'unavailable', setupRequired: false, user: null, error: '', accessToken: '', folderId: '', fileId: '' })
+    setDialog(null)
+  }
+
   useEffect(() => {
-    if (!drive.accessToken || !drive.folderId || !drive.fileId) return undefined
+    if (!autosaveReady) return undefined
     const connectionKey = [drive.accessToken, drive.folderId, drive.fileId].join(':')
     const snapshot = serializeFlowData({ profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree })
     // Every planner mutation changes one of these dependencies. Debouncing keeps
@@ -161,7 +188,7 @@ function App() {
       saveNextSnapshot()
     }, 700)
     return () => window.clearTimeout(timer)
-  }, [drive.accessToken, drive.folderId, drive.fileId, profile, incomeSources, generalLedgers, buffer, tree])
+  }, [autosaveReady, drive.accessToken, drive.folderId, drive.fileId, profile, incomeSources, generalLedgers, buffer, tree])
 
   function deleteItem(id) {
     const node = findNode(tree, id)
@@ -282,7 +309,7 @@ function App() {
   return <div className="app-shell energy-mode">
     <EnergyExplorer tree={tree} path={path} onPathChange={setPath} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} salary={monthlyIncome} buffer={Number(buffer) || 0} onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })} onConnectDrive={connectDrive} onEditJson={() => setDialog({ type: 'editJson' })} onManageNode={nodeId => setDialog({ type: 'manage', nodeId })} onSaveLoan={saveLoan} onSaveGoal={saveGoal} onSaveInvestment={saveInvestment} onSaveGeneralLedger={saveGeneralLedger} onDeleteGeneralLedger={deleteGeneralLedger} onSaveLedgerExpense={saveLedgerExpense} onDeleteLedgerEntry={deleteLedgerEntry} driveUser={driveUser} driveStatus={drive.status} driveError={drive.error} driveConfigured={Boolean(googleClientId)} />
     {notice && <div className="change-notice" role="status"><span>{notice.message}</span>{(notice.tree || notice.undo) && <button onClick={() => { if (notice.tree) { restoreTree(notice.tree); setPath(notice.path) } else { notice.undo() } notify('Deletion undone.') }}>Undo</button>}<button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
-    <PlanDialog key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'} dialog={dialog} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} buffer={buffer} tree={tree} driveStatus={drive.status} driveUser={driveUser} driveError={drive.error} driveConfigured={Boolean(googleClientId)} onClose={() => setDialog(null)} onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }} onDeleteProfile={removeProfile} onSaveIncomeSource={saveIncomeSource} onDeleteIncomeSource={removeIncomeSource} onSaveAnnualTargets={updates => { changeNodes(updates); notify(`${updates.length} yearly ${updates.length === 1 ? 'target' : 'targets'} updated.`) }} onSaveBuffer={value => { setBuffer(value); notify('Safety buffer updated.') }} onSaveNode={saveNode} onDeleteNode={deleteItem} onImportData={importJson} onApplyJson={applyJson} onRequestEdit={nodeId => setDialog({ type: 'node', nodeId })} onRequestAdd={parentId => setDialog({ type: 'node', parentId })} onRequestEditIncomeSource={sourceId => setDialog({ type: 'incomeSource', sourceId })} onRequestEditProfile={() => setDialog({ type: 'profile' })} onRequestAddIncomeSource={() => setDialog({ type: 'incomeSource' })} onRequestSinkingFunds={() => setDialog({ type: 'sinkingFunds' })} onConnectDrive={connectDrive} onAddDriveAccount={connectDrive} onSwitchDriveAccount={connectDrive} onDisconnectDrive={disconnectDrive} />
+    <PlanDialog key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'} dialog={dialog} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} buffer={buffer} tree={tree} driveStatus={drive.status} driveUser={driveUser} driveError={drive.error} driveConfigured={Boolean(googleClientId)} driveSetupRequired={Boolean(drive.setupRequired)} onClose={() => dialog?.type === 'driveSync' && drive.setupRequired ? cancelDriveSetup() : setDialog(null)} onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }} onDeleteProfile={removeProfile} onSaveIncomeSource={saveIncomeSource} onDeleteIncomeSource={removeIncomeSource} onSaveAnnualTargets={updates => { changeNodes(updates); notify(`${updates.length} yearly ${updates.length === 1 ? 'target' : 'targets'} updated.`) }} onSaveBuffer={value => { setBuffer(value); notify('Safety buffer updated.') }} onSaveNode={saveNode} onDeleteNode={deleteItem} onImportData={importJson} onApplyJson={applyJson} onRequestEdit={nodeId => setDialog({ type: 'node', nodeId })} onRequestAdd={parentId => setDialog({ type: 'node', parentId })} onRequestEditIncomeSource={sourceId => setDialog({ type: 'incomeSource', sourceId })} onRequestEditProfile={() => setDialog({ type: 'profile' })} onRequestAddIncomeSource={() => setDialog({ type: 'incomeSource' })} onRequestSinkingFunds={() => setDialog({ type: 'sinkingFunds' })} onConnectDrive={connectDrive} onAddDriveAccount={connectDrive} onSwitchDriveAccount={connectDrive} onDisconnectDrive={disconnectDrive} onUseCurrentDrivePlan={() => completeDriveSetup({ useCurrentPlan: true })} onCreateBlankDrivePlan={() => completeDriveSetup({ useCurrentPlan: false })} />
   </div>
 }
 

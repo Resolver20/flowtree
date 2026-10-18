@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-export default function DriveSyncDialog({ status, user, error, configured, onClose, onConnect, onAddAccount, onEditJson }) {
+export default function DriveSyncDialog({ status, user, error, configured, setupRequired, onClose, onConnect, onAddAccount, onEditJson, onUseCurrentPlan, onCreateBlankPlan }) {
   const ref = useRef(null)
   useEffect(() => {
     const opener = document.activeElement
@@ -10,10 +10,16 @@ export default function DriveSyncDialog({ status, user, error, configured, onClo
   }, [])
 
   const connected = status === 'connected' || status === 'saving' || status === 'saved'
-  return <dialog ref={ref} className="modal" aria-labelledby="drive-dialog-title" onCancel={event => { event.preventDefault(); onClose() }}>
-    <button type="button" className="close" aria-label="Close" onClick={onClose}>×</button>
-    <h2 id="drive-dialog-title">Account</h2>
-    {connected ? <>
+  const needsPlanChoice = setupRequired
+  const setupSaving = needsPlanChoice && status === 'saving'
+  return <dialog ref={ref} className="modal" aria-labelledby="drive-dialog-title" onCancel={event => { event.preventDefault(); if (!setupSaving) onClose() }}>
+    <button type="button" className="close" aria-label="Close" disabled={setupSaving} onClick={onClose}>×</button>
+    <h2 id="drive-dialog-title">{needsPlanChoice ? 'Set up Google Drive' : 'Account'}</h2>
+    {needsPlanChoice ? <>
+      <p>No FlowTree plan was found for this account. Your current plan will remain unchanged until you choose how to set up Drive.</p>
+      {error && <span role="alert" className="field-error">{error}</span>}
+      <div className="dialog-actions"><button type="button" disabled={setupSaving} onClick={onClose}>Not now</button><button type="button" disabled={setupSaving} onClick={onCreateBlankPlan}>Create empty Drive plan</button><button type="button" className="modal-submit" disabled={setupSaving} onClick={onUseCurrentPlan}>{setupSaving ? 'Saving…' : 'Save current plan to Drive'}</button></div>
+    </> : connected ? <>
       <div className="account-card">
         {user?.photoLink ? <img src={user.photoLink} alt="" /> : <span className="overview-icon material-symbols-rounded" aria-hidden="true">account_circle</span>}
         <div><strong>{user?.displayName || 'Google account'}</strong><small>{user?.emailAddress || 'Signed in'}</small></div>

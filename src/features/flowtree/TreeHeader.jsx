@@ -82,7 +82,7 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
           <span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</span>
         </button>
         {connected ? <>
-          <small className="account-menu-status">{driveStatus === 'saving' ? 'Saving changes to Google Drive…' : 'Your plan is stored in this Google Drive account.'}</small>
+          <small className="account-menu-status">{driveStatus === 'saving' ? 'Saving changes to Google Drive…' : driveStatus === 'error' ? 'Google Drive save needs attention.' : driveStatus === 'needs-plan-choice' ? 'Choose how to set up this Google Drive account.' : 'Your plan is stored in this Google Drive account.'}</small>
           <button type="button" onClick={() => closeMenuThen(onEditJson)}>Edit plan JSON</button>
           <button type="button" onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>Add or switch account</button>
         </> : <>
