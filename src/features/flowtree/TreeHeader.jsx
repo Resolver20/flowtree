@@ -157,6 +157,7 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
         <button type="button" className={view === 'goals' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGoals)}><span className="material-symbols-rounded" aria-hidden="true">flag</span>Goals</button>
         <button type="button" className={view === 'investments' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowInvestments)}><span className="material-symbols-rounded" aria-hidden="true">trending_up</span>Investments</button>
         <button type="button" className={view === 'ledger' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGeneralLedger)}><span className="material-symbols-rounded" aria-hidden="true">receipt_long</span>General ledgers</button>
+        <button type="button" className={expandAll ? 'is-active' : ''} onClick={() => closeMenuThen(onToggleExpandAll)} aria-label={expandAll ? 'Collapse everything in the full tree' : 'Expand everything in the full tree'}><span className="material-symbols-rounded" aria-hidden="true">account_tree</span>{expandAll ? 'Collapse everything' : 'Expand everything'}</button>
         <button type="button" onClick={() => closeMenuThen(onToggleTheme)} aria-pressed={theme === 'dark'}><span className="material-symbols-rounded" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</button>
       </div>
       <div className="mobile-more-account">

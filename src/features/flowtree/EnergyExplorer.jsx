@@ -14,6 +14,7 @@ import { useElementSize } from './useElementSize'
 import './EnergyExplorer.css'
 
 const THEME_SESSION_KEY = 'flowtree-theme'
+const MOBILE_BREAKPOINT = 760
 
 function DriveSyncStatus({ status }) {
   if (!['saving', 'saved', 'error'].includes(status)) return null
@@ -50,6 +51,21 @@ function annualTargetsOnly(nodes) {
     const children = annualTargetsOnly(node.children || [])
     return node.period === 'year' || children.length ? [{ ...node, children }] : []
   })
+}
+
+function useMobileLayout() {
+  const query = `(max-width: ${MOBILE_BREAKPOINT}px)`
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(query)
+    const update = () => setMatches(mediaQuery.matches)
+    update()
+    mediaQuery.addEventListener('change', update)
+    return () => mediaQuery.removeEventListener('change', update)
+  }, [query])
+
+  return matches
 }
 
 function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
@@ -90,6 +106,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   const [showDriveSaved, setShowDriveSaved] = useState(false)
   const previousDriveStatus = useRef(driveStatus)
   const [viewportRef, viewport, hasMeasuredViewport] = useElementSize()
+  const isMobileLayout = useMobileLayout()
   const orderedTree = useMemo(() => sortTreeByMonthlyTotal(tree), [tree])
   const sinkingTree = useMemo(() => sortTreeByMonthlyTotal(annualTargetsOnly(tree)), [tree])
   const visibleTree = view === 'sinking' ? sinkingTree : orderedTree
@@ -155,14 +172,14 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     const targetBox = destination.getBoundingClientRect()
     const canvasBox = canvas.getBoundingClientRect()
     const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
-    if (viewport.width <= 760) {
+    if (isMobileLayout) {
       canvas.scrollTo({ top: Math.max(0, canvas.scrollTop + targetBox.top - canvasBox.top - 16), behavior })
       return
     }
     const leftDelta = targetBox.left + targetBox.width / 2 - (canvasBox.left + canvasBox.width / 2)
     const topDelta = targetBox.top + targetBox.height / 2 - (canvasBox.top + canvasBox.height / 2)
     canvas.scrollBy({ left: leftDelta, top: topDelta, behavior })
-  }, [path, viewport.width, viewportRef])
+  }, [path, isMobileLayout, viewport.width, viewportRef])
 
   useEffect(() => {
     if (!viewportRef.current) return undefined
@@ -173,7 +190,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       return undefined
     }
 
-    if (viewport.width <= 760) {
+    if (isMobileLayout) {
       canvas.scrollTo({ left: 0, top: 0, behavior: 'auto' })
       return undefined
     }
@@ -192,7 +209,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     })
 
     return () => window.cancelAnimationFrame(frame)
-  }, [viewport.height, viewport.width, viewportRef])
+  }, [isMobileLayout, viewport.height, viewport.width, viewportRef])
 
   function navigate(nextPath) {
     if (expandAll) {
@@ -281,7 +298,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       {visibleTree.length
         ? <TreeCanvas
             layout={layout}
-            mobile={viewport.width <= 760}
+            mobile={isMobileLayout}
             path={path}
             profile={showProfileMarker ? profile : { ...profile, visible: false }}
             driveUser={driveUser}
