@@ -86,8 +86,8 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
           <button type="button" onClick={() => closeMenuThen(onEditJson)}>Edit plan JSON</button>
           <button type="button" onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>Add or switch account</button>
         </> : <>
-          <small className="account-menu-status" role={driveError ? 'alert' : undefined}>{driveError || 'Sign in to load your saved FlowTree plan.'}</small>
-          <button type="button" className="account-menu-primary" disabled={!driveConfigured || driveStatus === 'connecting'} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{driveStatus === 'connecting' ? 'Connecting…' : 'Sign in with Google'}</button>
+          <small id={!driveConfigured ? 'drive-configuration-status' : undefined} className="account-menu-status" role={driveError ? 'alert' : undefined}>{driveError || (!driveConfigured ? 'Google Drive sign-in is unavailable until this app is configured.' : 'Sign in to load your saved FlowTree plan.')}</small>
+          <button type="button" className="account-menu-primary" aria-describedby={!driveConfigured ? 'drive-configuration-status' : undefined} disabled={!driveConfigured || driveStatus === 'connecting'} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{driveStatus === 'connecting' ? 'Connecting…' : 'Sign in with Google'}</button>
         </>}
       </section>}
     </aside>
