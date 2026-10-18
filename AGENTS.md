@@ -94,8 +94,8 @@ For visual or interaction changes, also verify in the browser:
 
 - default whole-tree view;
 - opening and closing nested branches;
-- **Expand everything** at a normal desktop viewport;
-- a narrow/mobile viewport;
+- **Expand everything** at phone portrait, phone landscape, tablet, normal laptop, and wide desktop viewports;
+- the relevant dedicated view at phone portrait, tablet, normal laptop, and wide desktop viewports;
 - keyboard focus and activation;
 - long labels, large Indian-formatted amounts, and newly added nodes;
 - no clipping, unintended scrolling, connector overlap, or connector/card misalignment.
