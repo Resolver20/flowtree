@@ -1,4 +1,12 @@
 /* Global reset only. Page and scene styles live beside their components. */
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('@fontsource/material-symbols-rounded/files/material-symbols-rounded-latin-400-normal.woff2') format('woff2');
+}
+
 :root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #26313a;

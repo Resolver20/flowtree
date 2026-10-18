@@ -42,20 +42,21 @@ async function driveRequest(path, accessToken, { baseUrl = DRIVE_API, ...options
   return response.status === 204 ? null : response.json()
 }
 
-export async function connectGoogleDrive({ clientId, scope = GOOGLE_DRIVE_SCOPE } = {}) {
+export async function connectGoogleDrive({ clientId, scope = GOOGLE_DRIVE_SCOPE, prompt = 'consent', loginHint } = {}) {
   if (!clientId) throw new Error('Set VITE_GOOGLE_CLIENT_ID before connecting Google Drive.')
   await loadIdentityScript()
   return new Promise((resolve, reject) => {
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope,
+      ...(loginHint ? { login_hint: loginHint } : {}),
       callback: response => {
         if (response.error) reject(new Error(response.error_description || 'Google Drive authorization was not completed.'))
         else resolve(response.access_token)
       },
       error_callback: error => reject(new Error(error?.type || 'Google Drive authorization was not completed.')),
     })
-    tokenClient.requestAccessToken({ prompt: 'consent' })
+    tokenClient.requestAccessToken({ prompt })
   })
 }
 
@@ -72,7 +73,7 @@ export async function getDriveUser({ accessToken } = {}) {
   return result.user || {}
 }
 
-export async function findOrCreateFolder({ accessToken, folderName = 'gpt' } = {}) {
+export async function findOrCreateFolder({ accessToken, folderName = 'FlowTree' } = {}) {
   if (!accessToken) throw new Error('A Google Drive access token is required.')
   const query = encodeURIComponent(`name = '${folderName.replaceAll("'", "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`)
   const result = await driveRequest(`/files?q=${query}&spaces=drive&fields=files(id,name,mimeType)&pageSize=10`, accessToken)

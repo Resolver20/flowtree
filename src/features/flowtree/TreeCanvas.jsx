@@ -3,12 +3,12 @@ import { colorForNode } from './nodePresentation'
 import TreeNodeCard from './TreeNodeCard'
 import { roundedElbowPath } from './treeLayout'
 
-function PersonNode({ profile, point, worldWidth, worldHeight, onManage }) {
+function PersonNode({ profile, point, worldWidth, worldHeight, driveSaved }) {
   if (!profile.visible) return null
   return <div className="energy-person" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
+    {driveSaved && <span className="drive-saved-pulse material-symbols-rounded" role="status" aria-label="Saved to Google Drive">cloud_done</span>}
     <span className="person-disc material-symbols-rounded" aria-hidden="true">person</span>
     <strong>{profile.name}</strong>
-    <button type="button" className="card-info" onClick={onManage} aria-label={`View and manage ${profile.name}`} title={`View and manage ${profile.name}`}><span className="material-symbols-rounded" aria-hidden="true">info</span></button>
   </div>
 }
 
@@ -33,7 +33,7 @@ function FinanceNode({ available, isOpen, onToggle, point, worldWidth, worldHeig
   </div>
 }
 
-export default function TreeCanvas({ layout, isTransitioning, planOpen, onTogglePlan, path, profile, incomeSources, tree, onManageIncomeSource, onManageProfile, onNavigate, onInspect }) {
+export default function TreeCanvas({ layout, planOpen, onTogglePlan, path, profile, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect }) {
   const rootById = new Map(tree.map(item => [item.id, item]))
   const introPaths = [
     ...layout.incomeSourcePoints.map(point => roundedElbowPath(
@@ -61,7 +61,7 @@ export default function TreeCanvas({ layout, isTransitioning, planOpen, onToggle
     }}
   >
     <div
-      className={`energy-world amount-tree${isTransitioning ? ' is-transitioning' : ''}`}
+      className="energy-world amount-tree"
       style={{
         width: layout.worldWidth,
         height: layout.height,
@@ -77,7 +77,7 @@ export default function TreeCanvas({ layout, isTransitioning, planOpen, onToggle
           style={{ '--branch-color': group.columnIndex === 0 ? '#9da7b6' : colorForNode(rootById.get(group.rootId)) }}
         />)}
       </svg>
-      <PersonNode profile={profile} point={layout.personPoint} worldWidth={layout.worldWidth} worldHeight={layout.height} onManage={onManageProfile} />
+      <PersonNode profile={profile} point={layout.personPoint} worldWidth={layout.worldWidth} worldHeight={layout.height} driveSaved={driveSaved} />
       {incomeSources.map((source, index) => <IncomeSourceNode key={source.id} source={source} point={layout.incomeSourcePoints[index]} worldWidth={layout.worldWidth} worldHeight={layout.height} onManage={onManageIncomeSource} />)}
       <FinanceNode available={layout.available} isOpen={planOpen} onToggle={onTogglePlan} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} />
       {layout.positionedColumns.flatMap((column, columnIndex) => column.items.map(entry => <TreeNodeCard

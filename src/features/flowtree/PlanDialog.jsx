@@ -4,6 +4,7 @@ import { formatDate, formatMoney } from '../../lib/money'
 import { iconForNode } from './nodePresentation'
 import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
 import DriveSyncDialog from './DriveSyncDialog'
+import { parseFlowImport, serializeFlowData } from '../../domain/flowDataTransfer'
 
 const formatStatus = status => status[0].toUpperCase() + status.slice(1)
 
@@ -52,7 +53,7 @@ function DialogShell({ title, children, onClose, wide = false }) {
     const opener = document.activeElement
     const element = ref.current
     element.showModal()
-    element.querySelector('input, select')?.focus()
+    element.querySelector('input, select, textarea')?.focus()
     return () => { element.close(); if (opener?.isConnected) opener.focus() }
   }, [])
   return <dialog ref={ref} className={`modal ${wide ? 'is-wide' : ''}`} aria-labelledby="dialog-title" onCancel={event => { event.preventDefault(); onClose() }}>
@@ -62,7 +63,7 @@ function DialogShell({ title, children, onClose, wide = false }) {
   </dialog>
 }
 
-function ProfileManageDialog({ profile, onClose, onDelete, onRequestEdit, onRequestAddIncome }) {
+function ProfileManageDialog({ profile, onClose, onDelete, onRequestEdit, onRequestAddIncome, onRequestSinkingFunds }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   if (confirmDelete) return <DialogShell title={`Remove ${profile.name}?`} onClose={onClose}>
     <p>This removes only the profile marker from the graph. Income sources and the monthly plan remain unchanged.</p>
@@ -71,7 +72,7 @@ function ProfileManageDialog({ profile, onClose, onDelete, onRequestEdit, onRequ
 
   return <DialogShell title={profile.name} onClose={onClose}>
     <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">person</span><div><span>Profile marker</span><strong>{profile.name}</strong></div></div>
-    <div className="dialog-actions manage-actions"><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Remove…</button><button type="button" onClick={onRequestAddIncome}>Add income source</button><button type="button" className="modal-submit" onClick={onRequestEdit}>Edit name</button></div>
+    <div className="dialog-actions manage-actions"><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Remove…</button><button type="button" onClick={onRequestAddIncome}>Add income source</button><button type="button" onClick={onRequestSinkingFunds}>Sinking funds</button><button type="button" className="modal-submit" onClick={onRequestEdit}>Edit name</button></div>
   </DialogShell>
 }
 
@@ -135,7 +136,7 @@ function collectAnnualTargets(nodes, parents = []) {
   })
 }
 
-function AnnualTargetsDialog({ tree, onClose, onSave }) {
+function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', description = 'Review every annual commitment and savings goal together. Expected progress and monthly requirements update as you edit.' }) {
   const targets = collectAnnualTargets(tree)
   const [drafts, setDrafts] = useState(() => targets.map(({ node, parentPath }) => ({
     id: node.id,
@@ -164,8 +165,8 @@ function AnnualTargetsDialog({ tree, onClose, onSave }) {
     onClose()
   }
 
-  return <DialogShell title="Yearly targets" onClose={onClose} wide>
-    <p>Review every annual commitment and savings goal together. Expected progress and monthly requirements update as you edit.</p>
+  return <DialogShell title={title} onClose={onClose} wide>
+    <p>{description}</p>
     {!drafts.length ? <div className="empty-annual-targets"><strong>No yearly targets yet</strong><span>Change a destination’s frequency to Yearly and it will appear here.</span></div> : <form onSubmit={submit}>
       <div className="annual-target-list">
         {drafts.map(draft => {
@@ -197,6 +198,30 @@ function ImportPlanDialog({ dialog, onClose, onImport }) {
     </dl>
     <div className="import-warning">Export your current plan first if you may need it later. You can also undo immediately after importing, until the next plan change or reload.</div>
     <div className="dialog-actions"><button type="button" onClick={onClose}>Cancel</button><button type="button" className="danger-button" onClick={() => onImport(dialog.data)}>Replace my plan</button></div>
+  </DialogShell>
+}
+
+function JsonEditorDialog({ data, onClose, onSave }) {
+  const [json, setJson] = useState(() => serializeFlowData(data))
+  const [error, setError] = useState('')
+
+  function submit(event) {
+    event.preventDefault()
+    try {
+      onSave(parseFlowImport(json))
+      onClose()
+    } catch (reason) {
+      setError(reason.message || 'Enter valid FlowTree JSON.')
+    }
+  }
+
+  return <DialogShell title="Edit plan JSON" onClose={onClose} wide>
+    <p>Change your plan directly, then save. This is the same simple JSON stored in your FlowTree Google Drive file. Validation runs before anything is replaced.</p>
+    <form onSubmit={submit}>
+      <label>Plan JSON<textarea className="json-editor" value={json} onChange={event => { setJson(event.target.value); setError('') }} spellCheck="false" aria-invalid={Boolean(error)} aria-describedby={error ? 'json-error' : undefined} /></label>
+      {error && <span id="json-error" role="alert" className="field-error">{error}</span>}
+      <div className="dialog-actions"><button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">Validate and save JSON</button></div>
+    </form>
   </DialogShell>
 }
 
@@ -311,14 +336,16 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   </DialogShell>
 }
 
-export default function PlanDialog({ dialog, profile, incomeSources, buffer, tree, driveStatus, driveUser, driveError, onClose, onSaveProfile, onDeleteProfile, onSaveIncomeSource, onDeleteIncomeSource, onSaveAnnualTargets, onSaveBuffer, onSaveNode, onDeleteNode, onImportData, onRequestEdit, onRequestAdd, onRequestEditIncomeSource, onRequestEditProfile, onRequestAddIncomeSource, onConnectDrive, onDisconnectDrive }) {
+export default function PlanDialog({ dialog, profile, incomeSources, buffer, tree, driveStatus, driveUser, driveError, driveConfigured, onClose, onSaveProfile, onDeleteProfile, onSaveIncomeSource, onDeleteIncomeSource, onSaveAnnualTargets, onSaveBuffer, onSaveNode, onDeleteNode, onImportData, onApplyJson, onRequestEdit, onRequestAdd, onRequestEditIncomeSource, onRequestEditProfile, onRequestAddIncomeSource, onRequestSinkingFunds, onConnectDrive, onAddDriveAccount }) {
   if (!dialog) return null
-  if (dialog.type === 'driveSync') return <DriveSyncDialog status={driveStatus} user={driveUser} error={driveError} onClose={onClose} onConnect={onConnectDrive} onDisconnect={onDisconnectDrive} />
-  if (dialog.type === 'manageProfile') return <ProfileManageDialog profile={profile} onClose={onClose} onDelete={onDeleteProfile} onRequestEdit={onRequestEditProfile} onRequestAddIncome={onRequestAddIncomeSource} />
+  if (dialog.type === 'driveSync') return <DriveSyncDialog status={driveStatus} user={driveUser} error={driveError} configured={driveConfigured} onClose={onClose} onConnect={onConnectDrive} onAddAccount={onAddDriveAccount} onEditJson={() => onApplyJson()} />
+  if (dialog.type === 'editJson') return <JsonEditorDialog data={{ profile, incomeSources, buffer: Number(buffer) || 0, tree }} onClose={onClose} onSave={onApplyJson} />
+  if (dialog.type === 'manageProfile') return <ProfileManageDialog profile={profile} onClose={onClose} onDelete={onDeleteProfile} onRequestEdit={onRequestEditProfile} onRequestAddIncome={onRequestAddIncomeSource} onRequestSinkingFunds={() => onRequestSinkingFunds()} />
   if (dialog.type === 'profile') return <ProfileDialog profile={profile} onClose={onClose} onSave={onSaveProfile} />
   if (dialog.type === 'manageIncomeSource') return <IncomeSourceManageDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onDelete={onDeleteIncomeSource} onRequestEdit={onRequestEditIncomeSource} />
   if (dialog.type === 'incomeSource') return <IncomeSourceDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onSave={onSaveIncomeSource} />
   if (dialog.type === 'annualTargets') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} />
+  if (dialog.type === 'sinkingFunds') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} title="Sinking funds" description="These are your yearly targets. Flowtree sets aside their monthly equivalents so they are ready when each payment is due." />
   if (dialog.type === 'importJson') return <ImportPlanDialog dialog={dialog} onClose={onClose} onImport={onImportData} />
   if (dialog.type === 'buffer') return <BufferDialog buffer={buffer} onClose={onClose} onSave={onSaveBuffer} />
   if (dialog.type === 'manage') return <ManageDialog node={findNode(tree, dialog.nodeId)} onClose={onClose} onDelete={onDeleteNode} onRequestEdit={onRequestEdit} onRequestAdd={onRequestAdd} />

@@ -5,19 +5,19 @@
  */
 
 export const FLOW_GROUPS = [
-  { id: 'needs', name: 'Cash Flow', note: 'Day-to-day needs', icon: '⌂', tone: 'blue' },
-  { id: 'obligations', name: 'Debt Commitments', note: 'EMIs and fixed commitments', icon: '▰', tone: 'coral' },
-  { id: 'provisions', name: 'Emergency Fund', note: 'Money for unexpected shocks', icon: '◴', tone: 'gold' },
-  { id: 'protection', name: 'Risk Protection', note: 'Insurance protection', icon: '✳', tone: 'violet' },
-  { id: 'tax', name: 'Tax Obligations', note: 'Planned annual payments', icon: '⌁', tone: 'gold' },
-  { id: 'goals', name: 'Life goals', note: 'Your next chapters', icon: '⚑', tone: 'pink' },
-  { id: 'growth', name: 'Long-Term Growth', note: 'Future wealth building', icon: '↗', tone: 'green' },
+  { id: 'needs', name: 'Cash Flow', note: 'Day-to-day needs', icon: 'account_balance_wallet', tone: 'blue' },
+  { id: 'obligations', name: 'Debt Commitments', note: 'EMIs and fixed commitments', icon: 'account_balance', tone: 'coral' },
+  { id: 'provisions', name: 'Emergency Fund', note: 'Money for unexpected shocks', icon: 'emergency', tone: 'gold' },
+  { id: 'protection', name: 'Risk Protection', note: 'Insurance protection', icon: 'shield', tone: 'violet' },
+  { id: 'tax', name: 'Tax Obligations', note: 'Planned annual payments', icon: 'calendar_month', tone: 'gold' },
+  { id: 'goals', name: 'Life goals', note: 'Your next chapters', icon: 'flag', tone: 'pink' },
+  { id: 'growth', name: 'Long-Term Growth', note: 'Future wealth building', icon: 'trending_up', tone: 'green' },
 ]
 
 export const SUBSCRIPTION_NAMES = new Set(['Google Drive', 'Apple One', 'GPT', 'Netflix'])
 export const NODE_STATUSES = ['dormant', 'seeded', 'active', 'funded']
 
-function makeNode({ id, name, amount = 0, savedAmount = 0, period = 'month', status = 'active', icon = '✦', tone = 'blue', note = '', children = [] }) {
+function makeNode({ id, name, amount = 0, savedAmount = 0, period = 'month', status = 'active', icon = 'savings', tone = 'blue', note = '', children = [] }) {
   return { id, name, amount, savedAmount, period, status, icon, tone, note, children }
 }
 
@@ -25,7 +25,7 @@ function createGroupNodes() {
   return FLOW_GROUPS.map(group => makeNode({
     ...group,
     children: group.id === 'needs'
-      ? [makeNode({ id: 'subscriptions', name: 'Subscriptions', note: 'Digital services', icon: '◈', tone: 'blue' })]
+      ? [makeNode({ id: 'subscriptions', name: 'Subscriptions', note: 'Digital services', icon: 'subscriptions', tone: 'blue' })]
       : [],
   }))
 }
@@ -57,12 +57,17 @@ export function monthsUntilTarget(dueDate, today = new Date()) {
 
 export function expectedAnnualSavings(node, today = new Date()) {
   const target = Math.max(0, Number(node.amount) || 0)
+  const savedAmount = Math.min(target, Math.max(0, Number(node.savedAmount) || 0))
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.dueDate || '')
-  if (!match) return Math.min(target, Math.max(0, Number(node.savedAmount) || 0))
+  if (!match) return savedAmount
   const [, year, month] = match.map(Number)
   const monthsToDue = (year - today.getFullYear()) * 12 + (month - 1 - today.getMonth())
   const completedMonths = 12 - Math.min(12, Math.max(0, monthsToDue))
-  return target * completedMonths / 12
+  const scheduledSavings = target * completedMonths / 12
+
+  // A deadline provides the planned pace, but never hides progress the
+  // person has already recorded for this target.
+  return Math.max(savedAmount, scheduledSavings)
 }
 
 export function monthlyAllocation(node, today = new Date()) {
@@ -122,7 +127,7 @@ export function createTreeFromBuckets(buckets = startingBuckets) {
       savedAmount: bucket.savedAmount || 0,
       period: bucket.period,
       status: bucket.status || 'active',
-      icon: '✦',
+      icon: 'savings',
       tone: group.tone,
     })
 
@@ -135,6 +140,27 @@ export function createTreeFromBuckets(buckets = startingBuckets) {
     }
   }
   return tree
+}
+
+/** Move known digital services into one Cash Flow → Subscriptions branch.
+ * Older Drive plans could have these services directly under Cash Flow. */
+export function organizeSubscriptions(tree) {
+  const needsIndex = tree.findIndex(node => node.id === 'needs')
+  if (needsIndex === -1) return tree
+
+  const needs = tree[needsIndex]
+  const directSubscriptions = (needs.children || []).filter(node => node.id !== 'subscriptions' && SUBSCRIPTION_NAMES.has(node.name))
+  if (!directSubscriptions.length && needs.name === 'Cash Flow') return tree
+
+  const existingGroup = needs.children.find(node => node.id === 'subscriptions')
+  const subscriptionGroup = existingGroup || (directSubscriptions.length ? makeNode({ id: 'subscriptions', name: 'Subscriptions', note: 'Digital services', icon: 'subscriptions', tone: needs.tone }) : null)
+  const existingIds = new Set((subscriptionGroup?.children || []).map(node => node.id))
+  const children = [
+    ...(subscriptionGroup ? [{ ...subscriptionGroup, name: 'Subscriptions', children: [...(subscriptionGroup.children || []), ...directSubscriptions.filter(node => !existingIds.has(node.id))] }] : []),
+    ...needs.children.filter(node => node.id !== 'subscriptions' && !SUBSCRIPTION_NAMES.has(node.name)),
+  ]
+  const nextNeeds = { ...needs, name: 'Cash Flow', children }
+  return tree.map((node, index) => index === needsIndex ? nextNeeds : node)
 }
 
 /** Move the original starter plan into the FPSB-style planning areas without

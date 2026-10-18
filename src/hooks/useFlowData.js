@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react'
-import { addChild, createTreeFromBuckets, removeNode, updateNode } from '../domain/flowTree'
-
-const CURRENT_KEY = 'flowtree-v2'
-const LEGACY_KEY = 'flowtree-data'
+import { addChild, createTreeFromBuckets, organizeSubscriptions, removeNode, updateNode } from '../domain/flowTree'
 
 function localDateValue(date = new Date()) {
   const year = date.getFullYear()
@@ -20,14 +17,6 @@ function normalizeIncomeSource(source) {
   }
 }
 
-function readJson(key) {
-  try {
-    return JSON.parse(localStorage.getItem(key) || 'null')
-  } catch {
-    return null
-  }
-}
-
 function normalizeData(data) {
   const legacyIncome = Math.max(0, Number(data?.income) || 0)
   return {
@@ -36,28 +25,10 @@ function normalizeData(data) {
     incomeSources: Array.isArray(data?.incomeSources)
       ? data.incomeSources.map(normalizeIncomeSource)
       : [normalizeIncomeSource({ id: 'salary', name: 'Salary', amount: legacyIncome, icon: 'payments' })],
+    tree: organizeSubscriptions(Array.isArray(data?.tree) ? data.tree : createTreeFromBuckets([])),
   }
 }
 
-function readInitialData() {
-  const current = readJson(CURRENT_KEY)
-  if (current && Array.isArray(current.tree)) {
-    return normalizeData(current)
-  }
-
-  // Preserve legacy browser data while migrating the plan into the tree shape.
-  const legacy = readJson(LEGACY_KEY)
-  return normalizeData({
-    income: legacy?.income ?? '',
-    buffer: legacy?.buffer ?? 0,
-    tree: createTreeFromBuckets(legacy?.buckets),
-    transactions: legacy?.transactions ?? [],
-  })
-}
-
-// Drive is the account-level source of truth. Start a newly connected Drive
-// account from an empty plan rather than copying data left in this browser by
-// a different account.
 export function createBlankFlowData() {
   return normalizeData({
     profile: { name: 'You', visible: true },
@@ -68,21 +39,15 @@ export function createBlankFlowData() {
 }
 
 export function useFlowData() {
-  const [data, setData] = useState(readInitialData)
-  const [storageError, setStorageError] = useState('')
+  const [data, setData] = useState(createBlankFlowData)
 
-  // Storage is an external system; reflect write failures in the UI without
-  // discarding the user's in-memory edits.
-  /* oxlint-disable react/set-state-in-effect */
+  // Plans are intentionally kept only in React memory until a Google Drive
+  // connection is established. Remove old browser-persistent copies as soon
+  // as the app starts so closing the tab leaves no local financial data.
   useEffect(() => {
-    try {
-      localStorage.setItem(CURRENT_KEY, JSON.stringify(data))
-      setStorageError('')
-    } catch {
-      setStorageError('Changes are only in this tab. Browser storage is unavailable; keep this tab open.')
-    }
-  }, [data])
-  /* oxlint-enable react/set-state-in-effect */
+    localStorage.removeItem('flowtree-v2')
+    localStorage.removeItem('flowtree-data')
+  }, [])
 
   function changeProfile(changes) {
     setData(previous => ({ ...previous, profile: { ...previous.profile, ...changes } }))
@@ -132,8 +97,8 @@ export function useFlowData() {
   }
 
   function replaceData(nextData) {
-    setData(nextData)
+    setData(normalizeData(nextData))
   }
 
-  return { ...data, storageError, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData }
+  return { ...data, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData }
 }

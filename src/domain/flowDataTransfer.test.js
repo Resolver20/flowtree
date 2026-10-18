@@ -19,6 +19,7 @@ test('Flowtree JSON export round-trips the supported plan fields', () => {
   assert.equal(payload.version, 1)
   assert.equal(payload.exportedAt, exportedAt.toISOString())
   assert.deepEqual(parseFlowImport(serializeFlowData(plan, exportedAt)), plan)
+  assert.deepEqual(JSON.parse(serializeFlowData(plan, exportedAt)), plan)
   assert.deepEqual(summarizeFlowData(plan), { destinations: 2, yearlyTargets: 1, incomeSources: 1 })
 })
 

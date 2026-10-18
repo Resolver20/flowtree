@@ -5,24 +5,54 @@ import { formatMoney } from '../../lib/money'
 import TreeCanvas from './TreeCanvas'
 import TreeHeader from './TreeHeader'
 import TreeStatus from './TreeStatus'
+import LoansView from './LoansView'
+import GoalsView from './GoalsView'
 import { createTreeLayout } from './treeLayout'
 import { useElementSize } from './useElementSize'
 import './EnergyExplorer.css'
 
-export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, salary, buffer, driveStatus, onAddChild, onAddIncomeSource, onManageAnnualTargets, onManageIncomeSource, onManageProfile, onManageNode, onEditBuffer, onExportJson, onImportJson, onManageDrive }) {
-  const [demo, setDemo] = useState(false)
+const THEME_SESSION_KEY = 'flowtree-theme'
+
+function readTheme() {
+  try {
+    return window.sessionStorage.getItem(THEME_SESSION_KEY) === 'dark' ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
+
+function annualTargetsOnly(nodes) {
+  return nodes.flatMap(node => {
+    const children = annualTargetsOnly(node.children || [])
+    return node.period === 'year' || children.length ? [{ ...node, children }] : []
+  })
+}
+
+export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, salary, buffer, driveUser, driveStatus, driveConfigured, onManageIncomeSource, onConnectDrive, onEditJson, onManageNode, onSaveLoan, onSaveGoal }) {
+  const demo = false
+  const [view, setView] = useState('home')
   const [expandAll, setExpandAll] = useState(false)
   const [planOpen, setPlanOpen] = useState(true)
-  const [isTransitioning, setIsTransitioning] = useState(false)
-  const hasRenderedTree = useRef(false)
-  const [viewportRef, viewport] = useElementSize()
+  const [theme, setTheme] = useState(readTheme)
+  const [showDriveSaved, setShowDriveSaved] = useState(false)
+  const previousDriveStatus = useRef(driveStatus)
+  const [viewportRef, viewport, hasMeasuredViewport] = useElementSize()
   const orderedTree = useMemo(() => sortTreeByMonthlyTotal(tree), [tree])
+  const sinkingTree = useMemo(() => sortTreeByMonthlyTotal(annualTargetsOnly(tree)), [tree])
+  const visibleTree = view === 'sinking' ? sinkingTree : orderedTree
+  const loans = useMemo(() => {
+    const debt = tree.find(node => node.id === 'obligations')
+    return (debt?.children || []).filter(node => node.loan || /loan|emi|debt/i.test(node.name))
+  }, [tree])
+  const goals = useMemo(() => tree.find(node => node.id === 'goals')?.children || [], [tree])
+  const visibleTreeExpanded = expandAll
+  const showProfileMarker = profile.visible && view === 'home'
 
-  const income = demo ? Math.round(totalChildren(orderedTree) * .75 + buffer) : salary
-  const flow = useMemo(() => allocateEnergy(orderedTree, Math.max(0, income - buffer)), [orderedTree, income, buffer])
-  const currentNode = findPath(orderedTree, path)
+  const income = demo ? Math.round(totalChildren(visibleTree) * .75 + buffer) : salary
+  const flow = useMemo(() => allocateEnergy(visibleTree, Math.max(0, income - buffer)), [visibleTree, income, buffer])
+  const currentNode = findPath(visibleTree, path)
   const currentFunding = energyAtPath(flow.allocations, path)
-  const currentChildren = currentNode?.children || tree
+  const currentChildren = currentNode?.children || visibleTree
   const currentAllocations = currentFunding?.children || flow.allocations
   const nextFunding = currentChildren.length
     ? currentAllocations.find(item => item.target > item.allocated)
@@ -34,21 +64,28 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       ? `Next: ${nextName} needs ${formatMoney(nextFunding.target - nextFunding.allocated)}.`
       : 'Every monthly target in this view is filled.'
   const layout = useMemo(() => ({
-    ...createTreeLayout({ tree: orderedTree, path, allocations: flow.allocations, expandAll, planOpen, viewport, incomeSourceCount: incomeSources.length, showPerson: profile.visible }),
+    ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, planOpen, viewport, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
     available: Math.max(0, income - buffer),
     income,
-  }), [orderedTree, path, flow.allocations, expandAll, planOpen, viewport, income, buffer, incomeSources.length, profile.visible])
-  const breadcrumbs = path.map((_, index) => ({ path: path.slice(0, index + 1), node: findPath(orderedTree, path.slice(0, index + 1)) }))
+  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, planOpen, viewport, income, buffer, incomeSources.length, showProfileMarker])
+  const breadcrumbs = path.map((_, index) => ({ path: path.slice(0, index + 1), node: findPath(visibleTree, path.slice(0, index + 1)) }))
 
   useEffect(() => {
-    if (!hasRenderedTree.current) {
-      hasRenderedTree.current = true
-      return undefined
-    }
-    setIsTransitioning(true)
-    const timer = window.setTimeout(() => setIsTransitioning(false), 420)
+    const completedSave = previousDriveStatus.current === 'saving' && driveStatus === 'saved'
+    previousDriveStatus.current = driveStatus
+    if (!completedSave) return undefined
+    setShowDriveSaved(true)
+    const timer = window.setTimeout(() => setShowDriveSaved(false), 1800)
     return () => window.clearTimeout(timer)
-  }, [expandAll, path])
+  }, [driveStatus])
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(THEME_SESSION_KEY, theme)
+    } catch {
+      // Theme preference is optional and must not block the planner.
+    }
+  }, [theme])
 
   useEffect(() => {
     if (!path.length || viewport.width >= 900 || !viewportRef.current) return
@@ -81,50 +118,78 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }
 
   function returnToRoot() {
+    setView('home')
     setExpandAll(false)
     setPath([])
   }
 
   function toggleExpandAll() {
+    if (view === 'sinking') {
+      setView('home')
+      setExpandAll(true)
+      setPlanOpen(true)
+      setPath([])
+      return
+    }
     setExpandAll(value => !value)
     setPlanOpen(true)
     setPath([])
   }
 
-  return <main className="energy-home">
+  function showSinkingFunds() {
+    setView('sinking')
+    setExpandAll(false)
+    setPlanOpen(true)
+    setPath([])
+  }
+
+  function showLoans() {
+    setView('loans')
+    setExpandAll(false)
+    setPath([])
+  }
+
+  function showGoals() {
+    setView('goals')
+    setExpandAll(false)
+    setPath([])
+  }
+
+  return <main className={`energy-home theme-${theme}`}>
     <TreeHeader
       breadcrumbs={breadcrumbs}
-      demo={demo}
       expandAll={expandAll}
-      driveStatus={driveStatus}
+      view={view}
+      profile={profile}
       onReturnToRoot={returnToRoot}
       onNavigate={setPath}
-      onAddIncomeSource={onAddIncomeSource}
-      onManageAnnualTargets={onManageAnnualTargets}
-      onEditBuffer={onEditBuffer}
-      onAddChild={onAddChild}
-      onExportJson={onExportJson}
-      onImportJson={onImportJson}
+      driveUser={driveUser}
+      driveStatus={driveStatus}
+      driveConfigured={driveConfigured}
+      theme={theme}
+      onConnectDrive={onConnectDrive}
+      onEditJson={onEditJson}
+      onToggleTheme={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
+      onShowSinkingFunds={showSinkingFunds}
+      onShowLoans={showLoans}
+      onShowGoals={showGoals}
       onToggleExpandAll={toggleExpandAll}
-      onToggleDemo={() => setDemo(value => !value)}
-      onManageDrive={onManageDrive}
     />
-    <div ref={viewportRef} className="energy-viewport" tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
+    {view === 'loans' ? <LoansView loans={loans} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
       <TreeCanvas
         layout={layout}
-        isTransitioning={isTransitioning}
         planOpen={planOpen}
         onTogglePlan={togglePlan}
         path={path}
-        profile={profile}
+        profile={showProfileMarker ? profile : { ...profile, visible: false }}
+        driveSaved={showDriveSaved}
         incomeSources={incomeSources}
-        tree={orderedTree}
+        tree={visibleTree}
         onManageIncomeSource={onManageIncomeSource}
-        onManageProfile={onManageProfile}
         onNavigate={navigate}
         onInspect={onManageNode}
       />
     </div>
-    <TreeStatus demo={demo} flow={flow} available={layout.available} status={status} />
+    <TreeStatus demo={demo} sinking={view === 'sinking'} flow={flow} available={layout.available} status={status} /></>}
   </main>
 }

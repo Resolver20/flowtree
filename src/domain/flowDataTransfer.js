@@ -51,6 +51,18 @@ function dateAt(value, path) {
   return value
 }
 
+function loanAt(value, path) {
+  if (value === undefined || value === null) return null
+  const loan = objectAt(value, path)
+  const principal = amountAt(loan.principal, `${path}.principal`)
+  const remainingPrincipal = amountAt(loan.remainingPrincipal, `${path}.remainingPrincipal`, principal)
+  if (remainingPrincipal > principal) fail(`${path}.remainingPrincipal cannot exceed ${path}.principal.`)
+  const annualRate = amountAt(loan.annualRate, `${path}.annualRate`)
+  const tenureMonths = loan.tenureMonths
+  if (!Number.isInteger(tenureMonths) || tenureMonths < 1 || tenureMonths > 600) fail(`${path}.tenureMonths must be an integer from 1 to 600.`)
+  return { principal, remainingPrincipal, annualRate, tenureMonths, extraPayment: amountAt(loan.extraPayment, `${path}.extraPayment`, 0) }
+}
+
 function normalizeNode(node, path, ids, counters, depth) {
   if (depth > MAX_DEPTH) fail(`The tree cannot be deeper than ${MAX_DEPTH} levels.`)
   if (++counters.nodes > MAX_NODES) fail(`The tree cannot contain more than ${MAX_NODES} items.`)
@@ -64,6 +76,7 @@ function normalizeNode(node, path, ids, counters, depth) {
   const status = source.status ?? 'active'
   if (!NODE_STATUSES.includes(status)) fail(`${path}.status must be one of: ${NODE_STATUSES.join(', ')}.`)
 
+  const normalizedLoan = loanAt(source.loan, `${path}.loan`)
   return {
     id,
     name: textAt(source.name, `${path}.name`),
@@ -76,6 +89,7 @@ function normalizeNode(node, path, ids, counters, depth) {
     symbol: optionalText(source.symbol, `${path}.symbol`, '', 64),
     tone: optionalText(source.tone, `${path}.tone`, 'blue', 32),
     note: optionalText(source.note, `${path}.note`, '', 500),
+    ...(normalizedLoan ? { loan: normalizedLoan } : {}),
     children: arrayAt(source.children ?? [], `${path}.children`).map((child, index) => normalizeNode(child, `${path}.children[${index}]`, ids, counters, depth + 1)),
   }
 }
@@ -130,8 +144,8 @@ export function createFlowExport(data, exportedAt = new Date()) {
   }
 }
 
-export function serializeFlowData(data, exportedAt) {
-  return `${JSON.stringify(createFlowExport(data, exportedAt), null, 2)}\n`
+export function serializeFlowData(data) {
+  return `${JSON.stringify(normalizePlan(data), null, 2)}\n`
 }
 
 export function parseFlowImport(text) {

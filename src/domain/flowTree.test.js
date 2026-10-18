@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   addChild,
   createTreeFromBuckets,
+  organizeSubscriptions,
   findPath,
   migrateFinancialCategories,
   monthlyTotal,
@@ -61,6 +62,13 @@ test('yearly target deadlines spread only the remaining balance across future mo
   assert.equal(monthsUntilTarget('2026-09-30', today), 1)
 })
 
+test('yearly progress preserves savings already recorded ahead of schedule', () => {
+  const today = new Date(2026, 9, 18)
+  const node = { amount: 12000, savedAmount: 3000, dueDate: '2027-09-20', period: 'year', status: 'active', children: [] }
+
+  assert.deepEqual(annualTargetProgress(node, today), { target: 12000, saved: 3000, ratio: 0.25 })
+})
+
 test('expected yearly savings totals annual targets across the full tree', () => {
   const today = new Date(2026, 8, 20)
   const nodes = [
@@ -99,6 +107,21 @@ test('subscriptions form a second level and parent totals count each service onc
   assert.equal(monthlyTotal(subscriptions), 2550)
   assert.ok(Math.abs(monthlyTotal(needs) - (1000 + 4000 / 12 + 2550)) < 0.001)
   assert.ok(Math.abs(totalChildren(tree) - (1000 + 4000 / 12 + 2550 + 20000 + 19000 / 12 + 11000)) < 0.001)
+})
+
+test('legacy direct services move under Cash Flow subscriptions', () => {
+  const tree = createTreeFromBuckets([])
+  const migrated = organizeSubscriptions(addChild(addChild(tree, 'needs', { id: 'drive', name: 'Google Drive', amount: 150, period: 'month', status: 'active', children: [] }), 'needs', { id: 'gpt', name: 'GPT', amount: 2000, period: 'month', status: 'active', children: [] }))
+  const needs = findPath(migrated, ['needs'])
+  const subscriptions = findPath(migrated, ['needs', 'subscriptions'])
+  assert.equal(needs.name, 'Cash Flow')
+  assert.deepEqual(subscriptions.children.map(node => node.id), ['drive', 'gpt'])
+  assert.equal(needs.children.some(node => node.id === 'drive' || node.id === 'gpt'), false)
+})
+
+test('the Cash Flow root keeps its name when a legacy plan mislabeled it as subscriptions', () => {
+  const tree = createTreeFromBuckets([]).map(node => node.id === 'needs' ? { ...node, name: 'Subscriptions' } : node)
+  assert.equal(findPath(organizeSubscriptions(tree), ['needs']).name, 'Cash Flow')
 })
 
 test('a dormant branch contributes nothing until activated', () => {

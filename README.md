@@ -1,10 +1,10 @@
-# Flowtree
+# FlowTree
 
-Flowtree is a React application for understanding a monthly money plan as a hierarchy:
+FlowTree is a private, browser-first planning tool for understanding a monthly money plan as a hierarchy:
 
 `income -> categories -> child destinations`
 
-It shows where planned income would go, which target would be funded next, and what remains after the safety buffer and monthly targets. It does not connect to a bank, move money, or claim that planned amounts are actual savings.
+It shows where planned income would go, which target would be funded next, and what remains after the safety buffer and monthly targets. It includes dedicated views for sinking funds, loans, and life goals. It does not connect to a bank, move money, or claim that planned amounts are actual savings.
 
 ## Live site
 
@@ -51,8 +51,8 @@ npm run build
 - Options contains only plan-level controls such as income, buffer, top-level categories, expansion, and sample mode.
 - The footer explains the next unfunded target or the amount left after targets and buffer.
 - Options allow income and buffer editing, destination creation, full-tree expansion, and a temporary sample flow.
-- The first screen is Google sign-in. Each user’s Drive plan is restored before the planning view opens, then saved automatically after every change.
-- Browser `localStorage` is used only as a resilient local cache; the signed-in user’s Google Drive backup is the source restored at the start of each session.
+- Google Drive sign-in is available from the profile menu. A connected user’s Drive plan is restored and later changes are saved automatically.
+- Financial plan data is kept only in active React memory while the page is open. Old browser-local plan copies are removed.
 - Options can export a portable JSON backup and import a validated JSON plan after a replacement preview.
 - A destination picker provides direct keyboard/touch access to every nested item, with unscaled Edit and Add child actions.
 - Forms preview monthly branch totals, support decimals and icon selection, and trap keyboard focus until closed (Escape cancels).
@@ -60,6 +60,15 @@ npm run build
 - Subscription presets cover major streaming, music, cloud, productivity, AI, gaming, news, fitness, food, transport, telecom, and software memberships.
 - Deletion explicitly previews the entire affected branch. Undo is available in the notification until it is dismissed, another plan change occurs, or the page reloads.
 - New items are automatically selected. Custom category names and removed categories remain unchanged on reload; storage failures show a warning.
+
+### How to use FlowTree
+
+1. Start on **Home** and add income sources plus a safety buffer.
+2. Add monthly destinations to the appropriate planning category.
+3. Use **Sinking funds** for dated yearly payments, **Loans** for payoff projections, and **Life goals** for goal targets that also appear in Home.
+4. Use the profile menu to sign in with Google Drive when you want to restore or save your plan in your own Drive.
+
+Read the full [user guide](./docs/USER_GUIDE.md) or download the [PDF guide](./docs/FlowTree-User-Guide.pdf). For implementation details, see the [technical architecture](./docs/ARCHITECTURE.md).
 
 ## Financial model
 
@@ -83,68 +92,30 @@ Show a positive result as **Available** or **Unassigned**. If the result is nega
 
 ## JSON backup and import
 
-Use **Options → Export plan as JSON** to download a complete backup. Use **Options → Import plan from JSON** to select a file. Flowtree validates the file and shows its income-source, destination, and yearly-target counts before asking whether to replace the current browser plan.
+Use **Account → Edit plan JSON** to open the current plan in Flowtree. You can edit it directly; Flowtree validates the JSON before replacing the active plan, then saves the validated version to Google Drive.
 
 Import replaces the current plan. Export the current plan first when you may want to restore it later. An immediate **Undo** is available until the next plan change or page reload. Files larger than 2 MB, duplicate IDs, negative amounts, invalid dates, unknown statuses, excessive nesting, and unsupported export versions are rejected before any saved data changes.
 
-You can also create a JSON file yourself. Save the following as, for example, `my-flowtree-plan.json`:
+The Drive file is intentionally a plain plan object—there is no wrapper, metadata, or export timestamp. You can also create or edit it outside Flowtree:
 
 ```json
 {
-  "format": "flowtree-plan",
-  "version": 1,
-  "data": {
-    "profile": {
-      "name": "You",
-      "visible": true
-    },
-    "incomeSources": [
-      {
-        "id": "salary",
-        "name": "Salary",
-        "amount": 60000,
-        "icon": "payments",
-        "startDate": "2026-09-23",
-        "dayOfMonth": 1
-      }
-    ],
-    "buffer": 5000,
-    "tree": [
-      {
-        "id": "cash-flow",
-        "name": "Cash Flow",
-        "amount": 0,
-        "period": "month",
-        "status": "active",
-        "icon": "account_balance_wallet",
-        "tone": "blue",
-        "children": [
-          {
-            "id": "rent",
-            "name": "Rent",
-            "amount": 18000,
-            "period": "month",
-            "status": "active",
-            "icon": "home",
-            "tone": "blue",
-            "children": []
-          },
-          {
-            "id": "insurance",
-            "name": "Insurance",
-            "amount": 12000,
-            "savedAmount": 3000,
-            "dueDate": "2027-09-20",
-            "period": "year",
-            "status": "active",
-            "icon": "shield",
-            "tone": "red",
-            "children": []
-          }
-        ]
-      }
-    ]
-  }
+  "profile": { "name": "You" },
+  "incomeSources": [
+    { "id": "salary", "name": "Salary", "amount": 60000 }
+  ],
+  "buffer": 5000,
+  "tree": [
+    {
+      "id": "cash-flow",
+      "name": "Cash Flow",
+      "amount": 0,
+      "children": [
+        { "id": "rent", "name": "Rent", "amount": 18000, "children": [] },
+        { "id": "insurance", "name": "Insurance", "amount": 12000, "period": "year", "dueDate": "2027-09-20", "children": [] }
+      ]
+    }
+  ]
 }
 ```
 
@@ -158,11 +129,11 @@ Authoring rules:
 - Income `startDate` is optional and uses `YYYY-MM-DD`; `dayOfMonth` is optional and is an integer from 1 to 31 (default: 1). These fields describe the expected monthly income cadence for planning only; Flowtree does not schedule transfers.
 - `children` is always an array. Use `[]` for the end of a branch, or nest more destination objects to continue the hierarchy.
 - `savedAmount`, `dueDate`, `icon`, `tone`, and `note` are optional. Missing optional values receive safe defaults.
-- A raw object containing `profile`, `incomeSources`, `buffer`, and `tree` is also accepted, but the versioned wrapper above is recommended for future compatibility.
+- Versioned Flowtree exports from earlier releases are still accepted for compatibility.
 
 ## Google Drive sync
 
-Google sign-in is the entry point for every user. The app asks the user to sign in with their own Google account, creates or uses an app-owned private `gpt` folder, restores `flowtree-plan.json` when it exists, and saves later plan changes automatically. No Google credentials are stored in Flowtree data or committed to the repository.
+Google Drive sign-in is optional. The app asks the user to sign in with their own Google account, creates or uses an app-owned private `FlowTree` folder, restores `flowtree-plan.json` when it exists, and saves later plan changes automatically. No Google credentials are stored in FlowTree data or committed to the repository.
 
 The public [privacy policy](./public/privacy.html) and [terms](./public/terms.html) describe the limited Google Drive access used by the app.
 
@@ -182,10 +153,13 @@ Pushing to `main` runs the included GitHub Pages workflow. It builds the Vite ap
 | `src/features/flowtree/TreeCanvas.jsx` | SVG connectors, root node, and positioned tree cards |
 | `src/features/flowtree/treeLayout.js` | Pure column, subtree-band, and connector layout calculation |
 | `src/features/flowtree/PlanDialog.jsx` | Income, buffer, node-editing, and child-creation dialogs |
+| `src/features/flowtree/LoansView.jsx` | Loan inputs, payoff overview, and amortization schedule |
+| `src/features/flowtree/GoalsView.jsx` | Dedicated Life goals creation and overview |
 | `src/features/flowtree/EnergyExplorer.css` | Active visual system |
 | `src/domain/flowTree.js` | Tree operations and monthly totals |
 | `src/domain/energyFlow.js` | Pure plan-allocation algorithm |
-| `src/hooks/useFlowData.js` | Local persistence |
+| `src/domain/loan.js` | Pure monthly-payment and payoff schedule calculation |
+| `src/hooks/useFlowData.js` | In-memory plan state and mutations |
 | `src/domain/*.test.js` | Domain tests |
 
 The earlier prototype screens, styles, and unused assets were removed. The active home screen is fully contained in `src/features/flowtree/`.
@@ -196,6 +170,8 @@ The earlier prototype screens, styles, and unused assets were removed. The activ
 - [`REACT.md`](./REACT.md) — React architecture and coding conventions
 - [`VITE.md`](./VITE.md) — development, assets, environment variables, and deployment
 - [`DESIGN.md`](./DESIGN.md) — accepted visual and interaction system
+- [`docs/USER_GUIDE.md`](./docs/USER_GUIDE.md) — non-technical product guide
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — technical architecture
 
 ## Framework references
 
