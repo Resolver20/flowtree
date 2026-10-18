@@ -119,8 +119,9 @@ export function createTreeLayout({ tree, path, allocations, expandAll, viewport,
   const leftEdge = showPerson ? PERSON_X - 36 : incomeSourceCount ? INCOME_SOURCE_X - 98 : SOURCE_X - 36
   const rightEdge = COLUMN_START + Math.max(0, columns.length - 1) * COLUMN_GAP + 98
   const centeredOffset = (worldWidth - leftEdge - rightEdge) / 2
-  // Keep the income root inside the narrow viewport; branches may extend right and scroll.
-  const narrowOffset = isNarrowViewport ? -280 : 0
+  // Start narrow screens at the person and income sources. The later branches remain
+  // available through the canvas's horizontal scroll instead of hiding the plan's start.
+  const narrowOffset = isNarrowViewport ? -140 : 0
   const horizontalOffset = centeredOffset + narrowOffset
   const personPoint = { x: PERSON_X + horizontalOffset, y: height / 2 }
   const incomeSourcePoints = Array.from({ length: incomeSourceCount }, (_, index) => ({

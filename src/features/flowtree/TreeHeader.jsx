@@ -61,7 +61,7 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
           <span className="material-symbols-rounded" aria-hidden="true">receipt_long</span>
           <span>General ledger</span>
         </button>
-        <button type="button" className={expandAll ? 'is-active' : ''} onClick={() => closeMenuThen(onToggleExpandAll)} aria-pressed={expandAll} aria-label={overviewLabel}>
+        <button type="button" className={expandAll ? 'is-active' : ''} onClick={() => closeMenuThen(onToggleExpandAll)} aria-label={overviewLabel}>
           <span className="material-symbols-rounded" aria-hidden="true">account_tree</span>
           <span>{overviewLabel}</span>
         </button>
