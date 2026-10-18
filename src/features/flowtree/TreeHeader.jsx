@@ -2,12 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 
 export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onEditJson, onShowSinkingFunds, onShowLoans, onShowGoals, onShowInvestments, onShowGeneralLedger, onToggleExpandAll, onToggleTheme }) {
   const homeActive = view === 'home' && !breadcrumbs.length && !expandAll
-  const treeView = view === 'home' || view === 'sinking'
-  const overviewLabel = expandAll
-    ? 'Collapse tree'
-    : view === 'sinking'
-      ? 'Expand sinking funds'
-      : 'Full tree overview'
+  // Full view is a stable toggle. Its selected appearance shows the active state
+  // without adding a second exit action or changing the control's label.
+  const overviewLabel = 'Full view'
   const [accountOpen, setAccountOpen] = useState(false)
   const accountRef = useRef(null)
   const connected = Boolean(driveUser)
@@ -64,7 +61,7 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
           <span className="material-symbols-rounded" aria-hidden="true">receipt_long</span>
           <span>General ledger</span>
         </button>
-        <button type="button" className={expandAll ? 'is-active' : ''} onClick={() => closeMenuThen(onToggleExpandAll)} aria-current={expandAll ? 'page' : undefined} aria-label={treeView ? overviewLabel : 'Open full tree overview'}>
+        <button type="button" className={expandAll ? 'is-active' : ''} onClick={() => closeMenuThen(onToggleExpandAll)} aria-pressed={expandAll} aria-label={overviewLabel}>
           <span className="material-symbols-rounded" aria-hidden="true">account_tree</span>
           <span>{overviewLabel}</span>
         </button>
@@ -94,11 +91,9 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
         </>}
       </section>}
     </aside>
-    <nav className="energy-breadcrumbs" aria-label="Flow location">
-      {expandAll
-        ? <button type="button" className="exit-full-preview" onClick={onToggleExpandAll}><span className="material-symbols-rounded" aria-hidden="true">close_fullscreen</span>Exit full preview</button>
-        : <><button onClick={onReturnToRoot}>Whole tree</button>
-          {breadcrumbs.map(crumb => <span key={crumb.node.id}> / <button onClick={() => onNavigate(crumb.path)}>{crumb.node.name}</button></span>)}</>}
-    </nav>
+    {!expandAll && <nav className="energy-breadcrumbs" aria-label="Flow location">
+      <button onClick={onReturnToRoot}>Whole tree</button>
+      {breadcrumbs.map(crumb => <span key={crumb.node.id}> / <button onClick={() => onNavigate(crumb.path)}>{crumb.node.name}</button></span>)}
+    </nav>}
   </>
 }
