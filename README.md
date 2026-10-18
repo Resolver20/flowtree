@@ -57,7 +57,7 @@ npm run build
 - The profile menu contains Google Drive sign-in, JSON editing for connected accounts, account switching, and the light/dark appearance control. A connected user's Google profile photo also appears on the Home flow. A connected user’s Drive plan is restored and later changes are saved automatically.
 - Loans include a live **Draft payoff sketch** so a proposed rate, tenure, or extra principal amount can be reviewed before it is saved. Saving a loan updates its monthly payment in Home and queues the connected Drive plan for upload.
 - **Investments** keeps Long-Term Growth entries together. Record an investment type, a manually entered current value, and its monthly contribution; the contribution appears in Home, while the value is never treated as live market data or allocatable money.
-- **General ledger** keeps named expense records such as Home GL separate from monthly planning. Creating a GL or adding an expense is included in the same Drive JSON sync.
+- **General ledger** keeps named expense records such as Home GL separate from monthly planning. Each ledger records its assigned amount, total expenses, and remaining amount; creating a GL or adding an expense is included in the same Drive JSON sync.
 - Financial plan data is kept only in active React memory while the page is open. Old browser-local plan copies are removed.
 - Options can export a portable JSON backup and import a validated JSON plan after a replacement preview.
 - A destination picker provides direct keyboard/touch access to every nested item, with unscaled Edit and Add child actions.

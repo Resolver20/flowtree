@@ -93,6 +93,7 @@ function generalLedgersAt(value) {
       name: textAt(source.name, `data.generalLedgers[${ledgerIndex}].name`),
       note: optionalText(source.note, `data.generalLedgers[${ledgerIndex}].note`, '', 300),
       symbol: optionalText(source.symbol, `data.generalLedgers[${ledgerIndex}].symbol`, 'receipt_long', 64),
+      budget: amountAt(source.budget, `data.generalLedgers[${ledgerIndex}].budget`, 0),
       entries: entries.map((entry, entryIndex) => {
         const item = objectAt(entry, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}]`)
         const entryId = textAt(item.id, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].id`)

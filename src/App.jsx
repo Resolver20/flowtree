@@ -225,14 +225,14 @@ function App() {
     notify(`${name} added to Long-Term Growth.`)
   }
 
-  function saveGeneralLedger({ id, name, note, symbol }) {
+  function saveGeneralLedger({ id, name, note, symbol, budget }) {
     if (id) {
-      updateGeneralLedger(id, { name, note, symbol })
+      updateGeneralLedger(id, { name, note, symbol, budget })
       notify(`${name} general ledger updated.`)
       return id
     }
     const ledgerId = crypto.randomUUID()
-    createGeneralLedger({ id: ledgerId, name, note, symbol, entries: [] })
+    createGeneralLedger({ id: ledgerId, name, note, symbol, budget, entries: [] })
     notify(`${name} general ledger created.`)
     return ledgerId
   }

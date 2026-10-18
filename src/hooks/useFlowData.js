@@ -17,6 +17,16 @@ function normalizeIncomeSource(source) {
   }
 }
 
+function normalizeGeneralLedger(ledger) {
+  return {
+    ...ledger,
+    // Older Drive plans did not have a ledger budget. Keep them usable while
+    // making the new remaining calculation predictable.
+    budget: Math.max(0, Number(ledger?.budget) || 0),
+    entries: Array.isArray(ledger?.entries) ? ledger.entries : [],
+  }
+}
+
 function normalizeData(data) {
   const legacyIncome = Math.max(0, Number(data?.income) || 0)
   return {
@@ -25,7 +35,7 @@ function normalizeData(data) {
     incomeSources: Array.isArray(data?.incomeSources)
       ? data.incomeSources.map(normalizeIncomeSource)
       : [normalizeIncomeSource({ id: 'salary', name: 'Salary', amount: legacyIncome, icon: 'payments' })],
-    generalLedgers: Array.isArray(data?.generalLedgers) ? data.generalLedgers : [],
+    generalLedgers: Array.isArray(data?.generalLedgers) ? data.generalLedgers.map(normalizeGeneralLedger) : [],
     tree: organizeSubscriptions(Array.isArray(data?.tree) ? data.tree : createTreeFromBuckets([])),
   }
 }

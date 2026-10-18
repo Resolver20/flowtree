@@ -5,7 +5,7 @@ import { createFlowExport, parseFlowImport, serializeFlowData, summarizeFlowData
 const plan = {
   profile: { name: 'You', visible: true },
   incomeSources: [{ id: 'salary', name: 'Salary', amount: 60000, icon: 'payments', startDate: '2026-09-23', dayOfMonth: 1 }],
-  generalLedgers: [{ id: 'home-gl', name: 'Home GL', note: '', symbol: 'home', entries: [{ id: 'groceries', date: '2026-09-20', description: 'Groceries', amount: 1250 }] }],
+  generalLedgers: [{ id: 'home-gl', name: 'Home GL', note: '', symbol: 'home', budget: 5000, entries: [{ id: 'groceries', date: '2026-09-20', description: 'Groceries', amount: 1250 }] }],
   buffer: 5000,
   tree: [{
     id: 'needs', name: 'Cash Flow', amount: 0, savedAmount: 0, startDate: '', dueDate: '', period: 'month', status: 'active', icon: 'wallet', symbol: '', tone: 'blue', note: '',
@@ -35,6 +35,13 @@ test('manual raw JSON plans are accepted and normalized', () => {
   assert.deepEqual(imported.generalLedgers, [])
   assert.equal(imported.tree[0].period, 'month')
   assert.equal(imported.tree[0].status, 'active')
+})
+
+test('general ledger budgets preserve valid amounts and safely migrate older plans', () => {
+  const legacy = { ...plan, generalLedgers: [{ ...plan.generalLedgers[0], budget: undefined }] }
+  assert.equal(parseFlowImport(JSON.stringify(legacy)).generalLedgers[0].budget, 0)
+  assert.throws(() => parseFlowImport(JSON.stringify({ ...plan, generalLedgers: [{ ...plan.generalLedgers[0], budget: -1 }] })), /budget must be a non-negative number/)
+  assert.throws(() => parseFlowImport(JSON.stringify({ ...plan, generalLedgers: [{ ...plan.generalLedgers[0], budget: '5000' }] })), /budget must be a non-negative number/)
 })
 
 test('invalid and ambiguous imports are rejected before replacement', () => {
