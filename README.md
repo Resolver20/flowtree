@@ -41,6 +41,7 @@ npm run build
 
 ## Current experience
 
+- The compact touch navigation retains every planning view and account access on phone portrait and short landscape screens.
 - The home screen keeps the income source on the left and reveals deeper levels to the right.
 - The **Monthly plan** root is always visible and expanded. Only category and destination branches can be opened or collapsed.
 - Every sibling level is ordered by monthly total from highest to lowest, including children revealed when a node expands.

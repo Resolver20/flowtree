@@ -371,3 +371,26 @@
   .annual-target-summary { grid-template-columns: 1fr; }
   .import-summary { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 420px) {
+  .energy-sidebar { gap: 0; padding-inline: 4px; }
+  .sidebar-brand { padding: 0; }
+  .energy-brand > span:last-child { display: none; }
+  .energy-brand .flowtree-mark { width: 28px; height: 28px; font-size: 17px; }
+  .sidebar-nav { gap: 0; }
+  .sidebar-nav button, .sidebar-profile { width: 32px; min-height: 36px; }
+  .energy-viewport { inset-bottom: 218px; }
+  .summary-heading { align-items: start; }
+  .summary-heading span { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; text-overflow: clip; white-space: normal; }
+}
+
+@media (max-width: 760px) and (max-height: 500px) {
+  .energy-sidebar { min-height: 54px; padding-block: 7px; }
+  .energy-brand .flowtree-mark { width: 28px; height: 28px; font-size: 17px; }
+  .sidebar-nav button, .sidebar-profile { width: 36px; min-height: 36px; }
+  .energy-breadcrumbs { top: 59px; }
+  .energy-viewport { inset: 82px 0 132px; padding-block: 8px; }
+  .energy-status { right: 10px; bottom: 9px; left: 10px; gap: 6px; padding: 8px 12px 7px; }
+  .summary-heading { gap: 7px; }
+  .summary-heading span { white-space: nowrap; }
+}

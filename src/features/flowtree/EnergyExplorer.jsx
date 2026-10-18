@@ -127,9 +127,29 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }, [path, viewport.width, viewportRef])
 
   useEffect(() => {
-    if (!viewportRef.current) return
-    viewportRef.current.scrollTo({ left: 0, top: 0, behavior: 'auto' })
-  }, [viewport.width, viewportRef])
+    if (!viewportRef.current) return undefined
+
+    const canvas = viewportRef.current
+    if (viewport.width >= 900) {
+      canvas.scrollTo({ left: 0, top: 0, behavior: 'auto' })
+      return undefined
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const root = canvas.querySelector('.energy-source')
+      if (!root) return
+
+      const rootBox = root.getBoundingClientRect()
+      const canvasBox = canvas.getBoundingClientRect()
+      canvas.scrollTo({
+        left: 0,
+        top: Math.max(0, rootBox.top - canvasBox.top - (canvas.clientHeight - rootBox.height) / 2),
+        behavior: 'auto',
+      })
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [viewport.height, viewport.width, viewportRef])
 
   function navigate(nextPath) {
     if (expandAll) {
