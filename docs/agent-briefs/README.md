@@ -19,3 +19,14 @@ The current codebase is a browser-local React 19 and Vite application written in
 For parallel requests, give each workstream a non-overlapping file or responsibility boundary. Do not ask multiple workers to edit the same files. The coordinator combines findings and remains responsible for the final decision and verification.
 
 Implementation and review are separate responsibilities. The developer makes a precise, minimal patch; UI, finance, QA, or integration review only the relevant surface before release.
+
+## Permanent release gate
+
+Every code change follows this release sequence:
+
+1. Route the implementation to the **Developer implementation** workstream.
+2. Have the **Flowtree Code Reviewer** release-gate chat independently review the completed change before it is released.
+3. Resolve or explicitly accept the review findings, then commit the reviewed change with a precise imperative Git message.
+4. Deploy that commit to GitHub Pages.
+
+Do not skip, reorder, or combine the implementation and independent-review steps. This gate applies to every code change, regardless of size; documentation-only work continues to follow the normal documentation and validation guidance unless it also changes code.
