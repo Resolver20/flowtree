@@ -393,6 +393,10 @@
   .summary-heading span { white-space: nowrap; }
 }
 
+@media (max-width: 600px) and (max-height: 500px) {
+  .energy-viewport { inset: 93px 0 115px; }
+}
+
 .ledger-stat-grid > div.is-remaining { border-color: #d4e8db; background: #f3fbf6; }
 .ledger-stat-grid > div.is-over { border-color: #efd7cd; background: #fff7f3; }
 .ledger-stat-grid > div.is-remaining strong { color: #26704c; }
