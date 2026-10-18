@@ -211,6 +211,20 @@ function App() {
     notify(`${name} added to Life goals.`)
   }
 
+  function saveInvestment({ id, name, type, amount, currentValue, status, symbol }) {
+    // `amount` remains the monthly planning contribution. The recorded value
+    // is deliberately metadata, so it cannot be mistaken for allocatable cash.
+    const changes = { name, amount, savedAmount: 0, period: 'month', dueDate: '', startDate: '', status, icon: symbol, symbol, investment: { type, currentValue } }
+    if (id) {
+      changeNode(id, changes)
+      notify(`${name} investment updated.`)
+      return
+    }
+    const growth = findNode(tree, 'growth')
+    createChild('growth', { id: crypto.randomUUID(), ...changes, tone: growth?.tone || 'green', note: '', children: [] })
+    notify(`${name} added to Long-Term Growth.`)
+  }
+
   function saveGeneralLedger({ id, name, note, symbol }) {
     if (id) {
       updateGeneralLedger(id, { name, note, symbol })
@@ -266,7 +280,7 @@ function App() {
   const driveUser = drive.user ? { emailAddress: drive.user.emailAddress, displayName: drive.user.displayName, photoLink: drive.user.photoLink } : null
 
   return <div className="app-shell energy-mode">
-    <EnergyExplorer tree={tree} path={path} onPathChange={setPath} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} salary={monthlyIncome} buffer={Number(buffer) || 0} onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })} onConnectDrive={connectDrive} onEditJson={() => setDialog({ type: 'editJson' })} onManageNode={nodeId => setDialog({ type: 'manage', nodeId })} onSaveLoan={saveLoan} onSaveGoal={saveGoal} onSaveGeneralLedger={saveGeneralLedger} onDeleteGeneralLedger={deleteGeneralLedger} onSaveLedgerExpense={saveLedgerExpense} onDeleteLedgerEntry={deleteLedgerEntry} driveUser={driveUser} driveStatus={drive.status} driveError={drive.error} driveConfigured={Boolean(googleClientId)} />
+    <EnergyExplorer tree={tree} path={path} onPathChange={setPath} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} salary={monthlyIncome} buffer={Number(buffer) || 0} onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })} onConnectDrive={connectDrive} onEditJson={() => setDialog({ type: 'editJson' })} onManageNode={nodeId => setDialog({ type: 'manage', nodeId })} onSaveLoan={saveLoan} onSaveGoal={saveGoal} onSaveInvestment={saveInvestment} onSaveGeneralLedger={saveGeneralLedger} onDeleteGeneralLedger={deleteGeneralLedger} onSaveLedgerExpense={saveLedgerExpense} onDeleteLedgerEntry={deleteLedgerEntry} driveUser={driveUser} driveStatus={drive.status} driveError={drive.error} driveConfigured={Boolean(googleClientId)} />
     {notice && <div className="change-notice" role="status"><span>{notice.message}</span>{(notice.tree || notice.undo) && <button onClick={() => { if (notice.tree) { restoreTree(notice.tree); setPath(notice.path) } else { notice.undo() } notify('Deletion undone.') }}>Undo</button>}<button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
     <PlanDialog key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'} dialog={dialog} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} buffer={buffer} tree={tree} driveStatus={drive.status} driveUser={driveUser} driveError={drive.error} driveConfigured={Boolean(googleClientId)} onClose={() => setDialog(null)} onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }} onDeleteProfile={removeProfile} onSaveIncomeSource={saveIncomeSource} onDeleteIncomeSource={removeIncomeSource} onSaveAnnualTargets={updates => { changeNodes(updates); notify(`${updates.length} yearly ${updates.length === 1 ? 'target' : 'targets'} updated.`) }} onSaveBuffer={value => { setBuffer(value); notify('Safety buffer updated.') }} onSaveNode={saveNode} onDeleteNode={deleteItem} onImportData={importJson} onApplyJson={applyJson} onRequestEdit={nodeId => setDialog({ type: 'node', nodeId })} onRequestAdd={parentId => setDialog({ type: 'node', parentId })} onRequestEditIncomeSource={sourceId => setDialog({ type: 'incomeSource', sourceId })} onRequestEditProfile={() => setDialog({ type: 'profile' })} onRequestAddIncomeSource={() => setDialog({ type: 'incomeSource' })} onRequestSinkingFunds={() => setDialog({ type: 'sinkingFunds' })} onConnectDrive={connectDrive} onAddDriveAccount={connectDrive} onSwitchDriveAccount={connectDrive} onDisconnectDrive={disconnectDrive} />
   </div>

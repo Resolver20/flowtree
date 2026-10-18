@@ -4,7 +4,7 @@ FlowTree is a private, browser-first planning tool for understanding a monthly m
 
 `income -> categories -> child destinations`
 
-It shows where planned income would go, which target would be funded next, and what remains after the safety buffer and monthly targets. It includes dedicated views for sinking funds, loans, and life goals. It does not connect to a bank, move money, or claim that planned amounts are actual savings.
+It shows where planned income would go, which target would be funded next, and what remains after the safety buffer and monthly targets. It includes dedicated views for sinking funds, loans, life goals, and investments. It does not connect to a bank, move money, or claim that planned amounts are actual savings.
 
 ## Live site
 
@@ -54,6 +54,7 @@ npm run build
 - Options allow income and buffer editing, destination creation, full-tree expansion, and a temporary sample flow.
 - The profile menu contains Google Drive sign-in, JSON editing for connected accounts, account switching, and the light/dark appearance control. A connected user's Google profile photo also appears on the Home flow. A connected user’s Drive plan is restored and later changes are saved automatically.
 - Loans include a live **Draft payoff sketch** so a proposed rate, tenure, or extra principal amount can be reviewed before it is saved. Saving a loan updates its monthly payment in Home and queues the connected Drive plan for upload.
+- **Investments** keeps Long-Term Growth entries together. Record an investment type, a manually entered current value, and its monthly contribution; the contribution appears in Home, while the value is never treated as live market data or allocatable money.
 - **General ledger** keeps named expense records such as Home GL separate from monthly planning. Creating a GL or adding an expense is included in the same Drive JSON sync.
 - Financial plan data is kept only in active React memory while the page is open. Old browser-local plan copies are removed.
 - Options can export a portable JSON backup and import a validated JSON plan after a replacement preview.
@@ -68,7 +69,7 @@ npm run build
 
 1. Start on **Home** and add income sources plus a safety buffer.
 2. Add monthly destinations to the appropriate planning category.
-3. Use **Sinking funds** for dated yearly payments, **Loans** for payoff projections, **Life goals** for end-dated goal targets, and **General ledger** for separate expense tracking.
+3. Use **Sinking funds** for dated yearly payments, **Loans** for payoff projections, **Life goals** for end-dated goal targets, **Investments** for Long-Term Growth contributions, and **General ledger** for separate expense tracking.
 4. Use the profile menu to choose light or dark mode, then sign in with Google Drive when you want to restore or save your plan in your own Drive.
 
 Read the full [user guide](./docs/USER_GUIDE.md) or download the [PDF guide](./docs/FlowTree-User-Guide.pdf). For implementation details, see the [technical architecture](./docs/ARCHITECTURE.md).
@@ -132,6 +133,7 @@ Authoring rules:
 - Income `startDate` is optional and uses `YYYY-MM-DD`; `dayOfMonth` is optional and is an integer from 1 to 31 (default: 1). These fields describe the expected monthly income cadence for planning only; Flowtree does not schedule transfers.
 - `children` is always an array. Use `[]` for the end of a branch, or nest more destination objects to continue the hierarchy.
 - `savedAmount`, `dueDate`, `icon`, `tone`, and `note` are optional. Missing optional values receive safe defaults.
+- An investment can include optional metadata: `"investment": { "type": "Mutual fund", "currentValue": 125000 }`. Its node `amount` remains the monthly contribution; `currentValue` is a user-entered record only.
 - Versioned Flowtree exports from earlier releases are still accepted for compatibility.
 
 ## Google Drive sync
@@ -158,6 +160,7 @@ Pushing to `main` runs the included GitHub Pages workflow. It builds the Vite ap
 | `src/features/flowtree/PlanDialog.jsx` | Income, buffer, node-editing, and child-creation dialogs |
 | `src/features/flowtree/LoansView.jsx` | Loan inputs, payoff overview, and amortization schedule |
 | `src/features/flowtree/GoalsView.jsx` | Dedicated Life goals creation and overview |
+| `src/features/flowtree/InvestmentsView.jsx` | Dedicated Long-Term Growth investment creation and overview |
 | `src/features/flowtree/EnergyExplorer.css` | Active visual system |
 | `src/domain/flowTree.js` | Tree operations and monthly totals |
 | `src/domain/energyFlow.js` | Pure plan-allocation algorithm |

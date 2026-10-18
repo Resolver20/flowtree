@@ -50,6 +50,10 @@ While editing a loan, use **Draft payoff sketch** to test the payment, projected
 
 Use **Life goals** to create monthly goals or targets such as travel, a purchase, or a milestone fund. Choose a relevant icon, then for a target enter its start date, end date, and any amount already accumulated. FlowTree shows the progress percentage, recalculates the monthly amount needed for the remaining time, and reflects it in the **Life goals** branch on Home.
 
+## Investments
+
+Use **Investments** for Long-Term Growth entries such as mutual funds, PF, equity, or deposits. Add the investment type, monthly contribution, a current value you enter yourself, and an icon. The monthly contribution appears in Home under **Long-Term Growth**. Current value is only a record for your reference: FlowTree does not connect to a broker or retrieve live market prices.
+
 ## General ledger
 
 Use **General ledger** to create separate GLs such as Home GL, Travel, or a project. Choose an icon while creating or editing a GL, then add an expense date, description, and amount and review the entries and total in that GL. Ledger expenses are records only: they do not change Home allocations, sinking funds, or life-goal progress.

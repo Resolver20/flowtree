@@ -11,6 +11,7 @@ Browser
     EnergyExplorer - page-level navigation and derived view state
       TreeCanvas - interactive money-flow tree
       LoansView - loan payoff projection and amortization table
+      InvestmentsView - Long-Term Growth investment records
       GoalsView - dedicated life-goal authoring and overview
       TreeHeader - application navigation and account menu
   Domain modules - pure calculation and immutable tree updates
@@ -58,6 +59,7 @@ Only the Drive session reference is held in session storage. No Google credentia
 - **Sinking funds**: yearly targets in the same tree shape, with its own focused and fully expanded state;
 - **Loans**: payoff detail, editable draft payoff sketch, and schedule for Debt Commitments. Saving derives the monthly payment from the same loan projection used by Home;
 - **Life goals**: goal authoring with end-date progress, accumulated savings, and Home-plan reflection;
+- **Investments**: Long-Term Growth records with a monthly contribution and manually entered current value. The current value is metadata and does not enter allocation totals;
 - **General ledger**: named, icon-selectable expense ledgers kept separate from the planning tree;
 - **Full tree overview**: expanded hierarchy layout.
 

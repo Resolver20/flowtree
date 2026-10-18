@@ -45,3 +45,13 @@ test('invalid and ambiguous imports are rejected before replacement', () => {
   assert.throws(() => parseFlowImport(JSON.stringify({ format: 'flowtree-plan', version: 2, data: plan })), /version 2 is not supported/)
   assert.throws(() => parseFlowImport(JSON.stringify({ ...plan, generalLedgers: [{ ...plan.generalLedgers[0], entries: [{ id: 'same', date: '2026-09-20', description: 'One', amount: 1 }, { id: 'same', date: '2026-09-21', description: 'Two', amount: 1 }] }] })), /Duplicate ledger entry id/)
 })
+
+test('investment metadata round-trips and rejects negative recorded values', () => {
+  const investmentPlan = {
+    ...plan,
+    tree: [{ id: 'growth', name: 'Long-Term Growth', amount: 0, children: [{ id: 'index-fund', name: 'Index fund', amount: 5000, investment: { type: 'Mutual fund', currentValue: 125000 }, children: [] }] }],
+  }
+  const imported = parseFlowImport(serializeFlowData(investmentPlan))
+  assert.deepEqual(imported.tree[0].children[0].investment, { type: 'Mutual fund', currentValue: 125000 })
+  assert.throws(() => parseFlowImport(JSON.stringify({ ...investmentPlan, tree: [{ ...investmentPlan.tree[0], children: [{ ...investmentPlan.tree[0].children[0], investment: { type: 'Mutual fund', currentValue: -1 } }] }] })), /investment.currentValue must be a non-negative number/)
+})

@@ -7,6 +7,7 @@ import TreeHeader from './TreeHeader'
 import TreeStatus from './TreeStatus'
 import LoansView from './LoansView'
 import GoalsView from './GoalsView'
+import InvestmentsView from './InvestmentsView'
 import GeneralLedgerView from './GeneralLedgerView'
 import { createTreeLayout } from './treeLayout'
 import { useElementSize } from './useElementSize'
@@ -51,7 +52,7 @@ function annualTargetsOnly(nodes) {
   })
 }
 
-export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onEditJson, onManageNode, onSaveLoan, onSaveGoal, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
+export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onEditJson, onManageNode, onSaveLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const demo = false
   const [view, setView] = useState('home')
   const [expandedViews, setExpandedViews] = useState({ home: false, sinking: false })
@@ -67,6 +68,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     return (debt?.children || []).filter(node => node.loan || /loan|emi|debt/i.test(node.name))
   }, [tree])
   const goals = useMemo(() => tree.find(node => node.id === 'goals')?.children || [], [tree])
+  const investments = useMemo(() => tree.find(node => node.id === 'growth')?.children || [], [tree])
   const expandAll = view === 'home' || view === 'sinking' ? expandedViews[view] : false
   const visibleTreeExpanded = expandAll
   const showProfileMarker = view === 'home' && (profile.visible || Boolean(driveUser?.photoLink))
@@ -170,6 +172,11 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     setPath([])
   }
 
+  function showInvestments() {
+    setView('investments')
+    setPath([])
+  }
+
   function showGeneralLedger() {
     setView('ledger')
     setPath([])
@@ -194,11 +201,12 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       onShowSinkingFunds={showSinkingFunds}
       onShowLoans={showLoans}
       onShowGoals={showGoals}
+      onShowInvestments={showInvestments}
       onShowGeneralLedger={showGeneralLedger}
       onToggleExpandAll={toggleExpandAll}
     />
     <DriveSyncStatus status={driveStatus} />
-    {view === 'loans' ? <LoansView loans={loans} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
+    {view === 'loans' ? <LoansView loans={loans} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
       {visibleTree.length
         ? <TreeCanvas
             layout={layout}

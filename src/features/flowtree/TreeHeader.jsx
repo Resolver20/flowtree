@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onEditJson, onShowSinkingFunds, onShowLoans, onShowGoals, onShowGeneralLedger, onToggleExpandAll, onToggleTheme }) {
+export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onEditJson, onShowSinkingFunds, onShowLoans, onShowGoals, onShowInvestments, onShowGeneralLedger, onToggleExpandAll, onToggleTheme }) {
   const homeActive = view === 'home' && !breadcrumbs.length && !expandAll
   const treeView = view === 'home' || view === 'sinking'
   const overviewLabel = expandAll
@@ -55,6 +55,10 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
         <button type="button" className={view === 'goals' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGoals)} aria-current={view === 'goals' ? 'page' : undefined}>
           <span className="material-symbols-rounded" aria-hidden="true">flag</span>
           <span>Life goals</span>
+        </button>
+        <button type="button" className={view === 'investments' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowInvestments)} aria-current={view === 'investments' ? 'page' : undefined}>
+          <span className="material-symbols-rounded" aria-hidden="true">trending_up</span>
+          <span>Investments</span>
         </button>
         <button type="button" className={view === 'ledger' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGeneralLedger)} aria-current={view === 'ledger' ? 'page' : undefined}>
           <span className="material-symbols-rounded" aria-hidden="true">receipt_long</span>

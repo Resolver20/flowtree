@@ -65,6 +65,17 @@ function loanAt(value, path) {
   return { principal, remainingPrincipal, annualRate, tenureMonths, extraPayment: amountAt(loan.extraPayment, `${path}.extraPayment`, 0) }
 }
 
+function investmentAt(value, path) {
+  // Investment values are user-entered records, separate from the monthly
+  // contribution that participates in the plan allocation.
+  if (value === undefined || value === null) return null
+  const investment = objectAt(value, path)
+  return {
+    type: optionalText(investment.type, `${path}.type`, 'Investment', 64),
+    currentValue: amountAt(investment.currentValue, `${path}.currentValue`, 0),
+  }
+}
+
 function generalLedgersAt(value) {
   if (value === undefined || value === null) return []
   const ids = new Set()
@@ -107,6 +118,7 @@ function normalizeNode(node, path, ids, counters, depth) {
   if (!NODE_STATUSES.includes(status)) fail(`${path}.status must be one of: ${NODE_STATUSES.join(', ')}.`)
 
   const normalizedLoan = loanAt(source.loan, `${path}.loan`)
+  const normalizedInvestment = investmentAt(source.investment, `${path}.investment`)
   return {
     id,
     name: textAt(source.name, `${path}.name`),
@@ -121,6 +133,7 @@ function normalizeNode(node, path, ids, counters, depth) {
     tone: optionalText(source.tone, `${path}.tone`, 'blue', 32),
     note: optionalText(source.note, `${path}.note`, '', 500),
     ...(normalizedLoan ? { loan: normalizedLoan } : {}),
+    ...(normalizedInvestment ? { investment: normalizedInvestment } : {}),
     children: arrayAt(source.children ?? [], `${path}.children`).map((child, index) => normalizeNode(child, `${path}.children[${index}]`, ids, counters, depth + 1)),
   }
 }
