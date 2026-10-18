@@ -20,6 +20,10 @@ For parallel requests, give each workstream a non-overlapping file or responsibi
 
 Implementation and review are separate responsibilities. The developer makes a precise, minimal patch; UI, finance, QA, or integration review only the relevant surface before release.
 
+## Visible workstream record
+
+When assigning an internal subagent workstream, create its own dedicated visible Codex chat at the same time. That chat must record the assigned scope, precise files or responsibility boundary, before/after flow when applicable, evidence or validation, and final outcome. Keep this record current through completion so the coordinator and release reviewer can trace the work without relying on hidden subagent context.
+
 ## Permanent release gate
 
 Every code change follows this release sequence:
