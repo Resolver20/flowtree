@@ -6,12 +6,12 @@ Flowtree can use Google Drive as an optional JSON backup location. The browser c
 
 1. In Google Cloud Console, create or select a project and enable **Google Drive API**.
 2. Create an OAuth **Web application** client ID.
-3. Add the Flowtree origin to the client’s authorised JavaScript origins (for example `http://127.0.0.1:5178`).
+3. Add the exact Flowtree origins to the client’s authorised JavaScript origins: `http://127.0.0.1:5173` for local development and `https://resolver20.github.io` for GitHub Pages. Do not add the `/flowtree/` path. This browser token flow does not need an authorised redirect URI.
 4. For local development, set `VITE_GOOGLE_CLIENT_ID` in `.env.local` (see `.env.example`). For GitHub Pages, add the same value to repository variable `GOOGLE_OAUTH_CLIENT_ID`; the deploy workflow supplies it at build time.
-5. Open Flowtree. Google sign-in is the first screen. The app signs the user in, restores `flowtree-plan.json` if present, and saves later changes automatically.
+5. Open Flowtree and select the profile menu, then **Sign in with Google**. The app restores `flowtree-plan.json` if present and saves later changes automatically.
 
 If the sign-in control reports that Google Identity Services did not load, use a normal browser with popups and third-party Google scripts allowed. Confirm that the deployed origin is registered exactly as an origin, for example `https://resolver20.github.io` (not `https://resolver20.github.io/flowtree/`). If the consent screen remains in Testing, the signing-in account must be listed as a test user.
 
 The `drive.file` scope limits access to files the app creates or files the user explicitly opens with the app. The token is held in memory only; Flowtree does not store Google credentials in local storage. When a signed-in account has no Flowtree backup yet, the app creates a clean plan containing only the starter categories. It never uploads a previous browser user's cached plan into a new Google account.
 
-The existing exported plan can be uploaded to the `gpt` folder as `flowtree-plan.json`. Store the folder ID in app settings rather than hard-coding a user account or password.
+The connected account owns the app-created private `FlowTree` folder and its `flowtree-plan.json` file. Flowtree discovers that folder after sign-in; it does not hard-code a user account, folder ID, or password.
