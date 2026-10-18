@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onEditJson, onShowSinkingFunds, onShowLoans, onShowGoals, onShowInvestments, onShowGeneralLedger, onToggleExpandAll, onToggleTheme }) {
+export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onEditJson, onShowPlan, onShowSinkingFunds, onShowLoans, onShowGoals, onShowInvestments, onShowGeneralLedger, onToggleExpandAll, onToggleTheme }) {
   const homeActive = view === 'home' && !breadcrumbs.length && !expandAll
   // Full view is a stable toggle. Its selected appearance shows the active state
   // without adding a second exit action or changing the control's label.
   const overviewLabel = 'Full view'
   const [accountOpen, setAccountOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const accountRef = useRef(null)
+  const mobileMoreRef = useRef(null)
+  const mobileMoreButtonRef = useRef(null)
   const connected = Boolean(driveUser)
 
   useEffect(() => {
@@ -25,8 +28,48 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
     }
   }, [accountOpen])
 
+  function closeMore() {
+    setMoreOpen(false)
+    window.requestAnimationFrame(() => mobileMoreButtonRef.current?.focus())
+  }
+
+  useEffect(() => {
+    if (!moreOpen) return undefined
+    const closeOnEscape = event => {
+      if (event.key === 'Escape') closeMore()
+    }
+    const keepFocusInMenu = event => {
+      if (event.key !== 'Tab') return
+      const controls = [...(mobileMoreRef.current?.querySelectorAll('button:not(:disabled)') || [])]
+      if (!controls.length) return
+      const first = controls[0]
+      const last = controls.at(-1)
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    const closeOnOutsidePress = event => {
+      if (!mobileMoreRef.current?.contains(event.target) && !mobileMoreButtonRef.current?.contains(event.target)) closeMore()
+    }
+    const firstControl = mobileMoreRef.current?.querySelector('button')
+    firstControl?.focus()
+    document.addEventListener('keydown', closeOnEscape)
+    document.addEventListener('keydown', keepFocusInMenu)
+    document.addEventListener('pointerdown', closeOnOutsidePress)
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape)
+      document.removeEventListener('keydown', keepFocusInMenu)
+      document.removeEventListener('pointerdown', closeOnOutsidePress)
+    }
+  }, [moreOpen])
+
   function closeMenuThen(action) {
     setAccountOpen(false)
+    setMoreOpen(false)
     action()
   }
 
@@ -91,6 +134,40 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
         </>}
       </section>}
     </aside>
+    <nav className="mobile-bottom-nav" aria-label="Primary navigation">
+      <button type="button" className={homeActive ? 'is-active' : ''} onClick={() => closeMenuThen(onReturnToRoot)} aria-current={homeActive ? 'page' : undefined}>
+        <span className="material-symbols-rounded" aria-hidden="true">home</span><span>Home</span>
+      </button>
+      <button type="button" className={view === 'home' && expandAll ? 'is-active' : ''} onClick={() => closeMenuThen(onShowPlan)} aria-current={view === 'home' && expandAll ? 'page' : undefined}>
+        <span className="material-symbols-rounded" aria-hidden="true">account_tree</span><span>Plan</span>
+      </button>
+      <button type="button" className={view === 'sinking' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowSinkingFunds)} aria-current={view === 'sinking' ? 'page' : undefined}>
+        <span className="material-symbols-rounded" aria-hidden="true">savings</span><span>Sinking</span>
+      </button>
+      <button type="button" className={view === 'loans' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowLoans)} aria-current={view === 'loans' ? 'page' : undefined}>
+        <span className="material-symbols-rounded" aria-hidden="true">account_balance</span><span>Loans</span>
+      </button>
+      <button ref={mobileMoreButtonRef} type="button" className={moreOpen ? 'is-active' : ''} onClick={() => setMoreOpen(open => !open)} aria-expanded={moreOpen} aria-controls="mobile-more-menu">
+        <span className="material-symbols-rounded" aria-hidden="true">more_horiz</span><span>More</span>
+      </button>
+    </nav>
+    {moreOpen && <><button type="button" className="mobile-more-backdrop" aria-label="Close more options" onClick={closeMore} /><section ref={mobileMoreRef} id="mobile-more-menu" className="mobile-more-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title">
+      <div className="mobile-more-heading"><strong id="mobile-more-title">More</strong><button type="button" onClick={closeMore} aria-label="Close more options"><span className="material-symbols-rounded" aria-hidden="true">close</span></button></div>
+      <div className="mobile-more-actions">
+        <button type="button" className={view === 'goals' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGoals)}><span className="material-symbols-rounded" aria-hidden="true">flag</span>Goals</button>
+        <button type="button" className={view === 'investments' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowInvestments)}><span className="material-symbols-rounded" aria-hidden="true">trending_up</span>Investments</button>
+        <button type="button" className={view === 'ledger' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGeneralLedger)}><span className="material-symbols-rounded" aria-hidden="true">receipt_long</span>General ledgers</button>
+        <button type="button" onClick={() => closeMenuThen(onToggleTheme)} aria-pressed={theme === 'dark'}><span className="material-symbols-rounded" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</button>
+      </div>
+      <div className="mobile-more-account">
+        <strong>{driveUser?.displayName || profile.name}</strong>
+        <small>{driveUser?.emailAddress || (driveConfigured ? 'Connect Google Drive to restore and save your plan.' : 'Google Drive sign-in is not configured.')}</small>
+        <small className="mobile-drive-status" role={driveStatus === 'error' || driveError ? 'alert' : undefined}>{driveError || (connected ? driveStatus === 'saving' ? 'Saving changes to Google Drive…' : driveStatus === 'error' ? 'Google Drive save needs attention.' : 'Your plan is stored in this Google Drive account.' : '')}</small>
+        {connected
+          ? <><button type="button" onClick={() => closeMenuThen(onEditJson)}>Edit plan JSON</button><button type="button" onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>Add or switch account</button></>
+          : <button type="button" disabled={!driveConfigured || driveStatus === 'connecting'} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{driveStatus === 'connecting' ? 'Connecting…' : 'Sign in with Google'}</button>}
+      </div>
+    </section></>}
     {!expandAll && <nav className="energy-breadcrumbs" aria-label="Flow location">
       <button onClick={onReturnToRoot}>Whole tree</button>
       {breadcrumbs.map(crumb => <span key={crumb.node.id}> / <button onClick={() => onNavigate(crumb.path)}>{crumb.node.name}</button></span>)}

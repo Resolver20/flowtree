@@ -52,6 +52,36 @@ function annualTargetsOnly(nodes) {
   })
 }
 
+function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
+  const monthLabel = new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric' }).format(new Date())
+  const available = income - buffer - planned
+  const hasIncome = income > 0
+  const health = !hasIncome
+    ? 'Set your monthly income to start planning this month.'
+    : available < 0
+      ? `Over-planned by ${formatMoney(Math.abs(available))} after your safety buffer.`
+      : planned === 0
+        ? 'No monthly targets are planned yet.'
+        : `${Math.round(planned / income * 100)}% of this month’s income is planned after your safety buffer.`
+
+  return <header className="mobile-home-outlook">
+    <div className="mobile-home-outlook-heading">
+      <span><small>{monthLabel}</small><strong>Monthly outlook</strong></span>
+      <span className="mobile-home-avatar" aria-label={driveUser?.displayName || profile.name}>
+        {driveUser?.photoLink
+          ? <img src={driveUser.photoLink} alt="" />
+          : <span className="material-symbols-rounded" aria-hidden="true">person</span>}
+      </span>
+    </div>
+    <div className="mobile-home-totals" aria-label="Monthly plan summary">
+      <span><small>Income</small><strong>{formatMoney(income)}</strong></span>
+      <span><small>Planned</small><strong>{formatMoney(planned)}</strong></span>
+      <span className={available < 0 ? 'is-over' : 'is-available'}><small>{available < 0 ? 'Over-planned' : 'Available'}</small><strong>{formatMoney(Math.abs(available))}</strong></span>
+    </div>
+    <p>{health}</p>
+  </header>
+}
+
 export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onEditJson, onManageNode, onSaveLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const demo = false
   const [view, setView] = useState('home')
@@ -74,6 +104,8 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   const showProfileMarker = view === 'home' && (profile.visible || Boolean(driveUser?.photoLink))
 
   const income = demo ? Math.round(totalChildren(visibleTree) * .75 + buffer) : salary
+  const planned = totalChildren(orderedTree)
+  const showMobileHomeOutlook = view === 'home' && !path.length && !expandAll
   const flow = useMemo(() => allocateEnergy(visibleTree, Math.max(0, income - buffer)), [visibleTree, income, buffer])
   const currentNode = findPath(visibleTree, path)
   const currentFunding = energyAtPath(flow.allocations, path)
@@ -92,6 +124,8 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, viewport, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
     available: Math.max(0, income - buffer),
     income,
+    allocations: flow.allocations,
+    expandAll: visibleTreeExpanded,
   }), [visibleTree, path, flow.allocations, visibleTreeExpanded, viewport, income, buffer, incomeSources.length, showProfileMarker])
   const breadcrumbs = path.map((_, index) => ({ path: path.slice(0, index + 1), node: findPath(visibleTree, path.slice(0, index + 1)) }))
 
@@ -120,9 +154,13 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     const canvas = viewportRef.current
     const targetBox = destination.getBoundingClientRect()
     const canvasBox = canvas.getBoundingClientRect()
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    if (viewport.width <= 760) {
+      canvas.scrollTo({ top: Math.max(0, canvas.scrollTop + targetBox.top - canvasBox.top - 16), behavior })
+      return
+    }
     const leftDelta = targetBox.left + targetBox.width / 2 - (canvasBox.left + canvasBox.width / 2)
     const topDelta = targetBox.top + targetBox.height / 2 - (canvasBox.top + canvasBox.height / 2)
-    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
     canvas.scrollBy({ left: leftDelta, top: topDelta, behavior })
   }, [path, viewport.width, viewportRef])
 
@@ -131,6 +169,11 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
 
     const canvas = viewportRef.current
     if (viewport.width >= 900) {
+      canvas.scrollTo({ left: 0, top: 0, behavior: 'auto' })
+      return undefined
+    }
+
+    if (viewport.width <= 760) {
       canvas.scrollTo({ left: 0, top: 0, behavior: 'auto' })
       return undefined
     }
@@ -182,6 +225,12 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     setPath([])
   }
 
+  function showPlan() {
+    setView('home')
+    setExpandedViews(current => ({ ...current, home: true }))
+    setPath([])
+  }
+
   function showLoans() {
     setView('loans')
     setPath([])
@@ -219,6 +268,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       onEditJson={onEditJson}
       onToggleTheme={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
       onShowSinkingFunds={showSinkingFunds}
+      onShowPlan={showPlan}
       onShowLoans={showLoans}
       onShowGoals={showGoals}
       onShowInvestments={showInvestments}
@@ -226,10 +276,12 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       onToggleExpandAll={toggleExpandAll}
     />
     <DriveSyncStatus status={driveStatus} />
-    {view === 'loans' ? <LoansView loans={loans} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
+    {view === 'loans' ? <LoansView loans={loans} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
+      {showMobileHomeOutlook && <MobileHomeOutlook profile={profile} driveUser={driveUser} income={income} buffer={buffer} planned={planned} />}
       {visibleTree.length
         ? <TreeCanvas
             layout={layout}
+            mobile={viewport.width <= 760}
             path={path}
             profile={showProfileMarker ? profile : { ...profile, visible: false }}
             driveUser={driveUser}
@@ -242,6 +294,6 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
           />
         : <EmptyTreeState sinking={view === 'sinking'} onReturnHome={returnToRoot} />}
     </div>
-    <TreeStatus demo={demo} sinking={view === 'sinking'} flow={flow} available={layout.available} status={status} /></>}
+    <TreeStatus demo={demo} mobileHome={showMobileHomeOutlook} sinking={view === 'sinking'} flow={flow} available={layout.available} status={status} /></>}
   </main>
 }

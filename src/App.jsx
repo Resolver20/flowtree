@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from './domain/flowDataTransfer'
 import { findNode, organizeSubscriptions, pathToNode } from './domain/flowTree'
 import { loanProjection } from './domain/loan'
+import { driveRestoreMode } from './domain/driveRestoreCandidates'
 import { canAutosaveDrive } from './domain/driveSyncState'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import PlanDialog from './features/flowtree/PlanDialog'
 import { createBlankFlowData, useFlowData } from './hooks/useFlowData'
-import { connectGoogleDrive, downloadFlowtreeBackup, findFlowtreeBackup, findOrCreateFolder, getDriveUser, revokeGoogleDriveAccess, uploadFlowtreeBackup } from './lib/googleDriveSync'
+import { connectGoogleDrive, downloadFlowtreeBackup, findOrCreateFolder, getDriveUser, listFlowtreeRestoreCandidates, revokeGoogleDriveAccess, uploadFlowtreeBackup } from './lib/googleDriveSync'
 
 const DRIVE_FOLDER_NAME = 'FlowTree'
 const DRIVE_FILE_NAME = 'flowtree-plan.json'
@@ -59,6 +60,24 @@ function App() {
     return () => window.clearTimeout(timeout)
   }, [notice])
 
+  async function restoreDriveCandidate({ accessToken, user, candidate, candidates = [] }) {
+    try {
+      const restoredPlan = parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId: candidate.id }))
+      replaceDataRef.current({ ...restoredPlan, tree: organizeSubscriptions(restoredPlan.tree) })
+      setPath([])
+      writeDriveSession({ accessToken, folderId: candidate.folderId, fileId: candidate.id })
+      setDrive({ status: 'connected', user, error: '', accessToken, folderId: candidate.folderId, fileId: candidate.id })
+      notify(`Your plan was restored from Google Drive for ${user.emailAddress || 'your Google account'}.`)
+    } catch (error) {
+      if (candidates.length > 1) {
+        setDrive({ status: 'needs-restore-choice', user, error: error.message || 'Could not restore that Google Drive plan.', accessToken, folderId: '', fileId: '', restoreCandidates: candidates })
+        setDialog({ type: 'driveSync' })
+        return
+      }
+      setDrive({ status: 'error', user: null, error: error.message || 'Could not restore your Google Drive plan. No data was uploaded.', accessToken: '', folderId: '', fileId: '' })
+    }
+  }
+
   async function connectDrive({ prompt = 'select_account consent' } = {}) {
     if (!googleClientId) {
       setDrive(previous => ({ ...previous, status: 'unavailable', error: 'Google Drive sign-in has not been configured for this deployment.' }))
@@ -67,24 +86,22 @@ function App() {
     setDrive(previous => ({ ...previous, status: 'connecting', error: '' }))
     try {
       const accessToken = await connectGoogleDrive({ clientId: googleClientId, prompt })
-      const [user, folder] = await Promise.all([
+      const [user, discovery] = await Promise.all([
         getDriveUser({ accessToken }),
-        findOrCreateFolder({ accessToken, folderName: DRIVE_FOLDER_NAME }),
+        listFlowtreeRestoreCandidates({ accessToken, folderName: DRIVE_FOLDER_NAME, fileName: DRIVE_FILE_NAME }),
       ])
-      const existingFile = await findFlowtreeBackup({ accessToken, folderId: folder.id, fileName: DRIVE_FILE_NAME })
-      let file = existingFile
-      if (existingFile) {
-        const restoredPlan = parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId: existingFile.id }))
-        replaceDataRef.current({ ...restoredPlan, tree: organizeSubscriptions(restoredPlan.tree) })
-        setPath([])
-        notify(`Your plan was restored from Google Drive for ${user.emailAddress || 'your Google account'}.`)
-      } else {
-        setDrive({ status: 'needs-plan-choice', setupRequired: true, user, error: '', accessToken, folderId: folder.id, fileId: '' })
+      const mode = driveRestoreMode(discovery.candidates)
+      if (mode === 'restore') {
+        await restoreDriveCandidate({ accessToken, user, candidate: discovery.candidates[0] })
+        return
+      }
+      if (mode === 'choose') {
+        setDrive({ status: 'needs-restore-choice', user, error: '', accessToken, folderId: '', fileId: '', restoreCandidates: discovery.candidates })
         setDialog({ type: 'driveSync' })
         return
       }
-      writeDriveSession({ accessToken, folderId: folder.id, fileId: file.id })
-      setDrive({ status: 'connected', user, error: '', accessToken, folderId: folder.id, fileId: file.id })
+      setDrive({ status: 'needs-plan-choice', setupRequired: true, user, error: '', accessToken, folderId: discovery.folders[0]?.id || '', fileId: '' })
+      setDialog({ type: 'driveSync' })
     } catch (error) {
       setDrive(previous => ({ ...previous, status: 'error', error: error.message || 'Google Drive sign-in failed.' }))
     }
@@ -132,19 +149,20 @@ function App() {
   }
 
   async function completeDriveSetup({ useCurrentPlan }) {
-    if (!drive.accessToken || !drive.folderId || drive.status !== 'needs-plan-choice') return
+    if (!drive.accessToken || drive.status !== 'needs-plan-choice') return
     const plan = useCurrentPlan
       ? { profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree }
       : createBlankFlowData()
     setDrive(previous => ({ ...previous, status: 'saving', error: '' }))
     try {
-      const file = await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: drive.folderId, fileName: DRIVE_FILE_NAME, contents: serializeFlowData(plan) })
+      const folder = drive.folderId ? { id: drive.folderId } : await findOrCreateFolder({ accessToken: drive.accessToken, folderName: DRIVE_FOLDER_NAME })
+      const file = await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: folder.id, fileName: DRIVE_FILE_NAME, contents: serializeFlowData(plan) })
       if (!useCurrentPlan) {
         replaceData(plan)
         setPath([])
       }
-      writeDriveSession({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: file.id })
-      setDrive(previous => ({ ...previous, status: 'saved', setupRequired: false, error: '', fileId: file.id }))
+      writeDriveSession({ accessToken: drive.accessToken, folderId: folder.id, fileId: file.id })
+      setDrive(previous => ({ ...previous, status: 'saved', setupRequired: false, error: '', folderId: folder.id, fileId: file.id }))
       setDialog(null)
       notify(useCurrentPlan ? 'Your current plan was saved to Google Drive.' : 'A new private FlowTree plan was created in your Google Drive.')
     } catch (error) {
@@ -156,6 +174,13 @@ function App() {
     clearDriveSession()
     setDrive({ status: googleClientId ? 'idle' : 'unavailable', setupRequired: false, user: null, error: '', accessToken: '', folderId: '', fileId: '' })
     setDialog(null)
+  }
+
+  function chooseDriveRestoreCandidate(candidateId) {
+    const candidate = (drive.restoreCandidates || []).find(item => item.id === candidateId)
+    if (!candidate || !drive.accessToken || !drive.user) return
+    setDrive(previous => ({ ...previous, status: 'restoring', error: '' }))
+    restoreDriveCandidate({ accessToken: drive.accessToken, user: drive.user, candidate, candidates: drive.restoreCandidates })
   }
 
   useEffect(() => {
@@ -309,7 +334,7 @@ function App() {
   return <div className="app-shell energy-mode">
     <EnergyExplorer tree={tree} path={path} onPathChange={setPath} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} salary={monthlyIncome} buffer={Number(buffer) || 0} onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })} onConnectDrive={connectDrive} onEditJson={() => setDialog({ type: 'editJson' })} onManageNode={nodeId => setDialog({ type: 'manage', nodeId })} onSaveLoan={saveLoan} onSaveGoal={saveGoal} onSaveInvestment={saveInvestment} onSaveGeneralLedger={saveGeneralLedger} onDeleteGeneralLedger={deleteGeneralLedger} onSaveLedgerExpense={saveLedgerExpense} onDeleteLedgerEntry={deleteLedgerEntry} driveUser={driveUser} driveStatus={drive.status} driveError={drive.error} driveConfigured={Boolean(googleClientId)} />
     {notice && <div className="change-notice" role="status"><span>{notice.message}</span>{(notice.tree || notice.undo) && <button onClick={() => { if (notice.tree) { restoreTree(notice.tree); setPath(notice.path) } else { notice.undo() } notify('Deletion undone.') }}>Undo</button>}<button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
-    <PlanDialog key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'} dialog={dialog} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} buffer={buffer} tree={tree} driveStatus={drive.status} driveUser={driveUser} driveError={drive.error} driveConfigured={Boolean(googleClientId)} driveSetupRequired={Boolean(drive.setupRequired)} onClose={() => dialog?.type === 'driveSync' && drive.setupRequired ? cancelDriveSetup() : setDialog(null)} onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }} onDeleteProfile={removeProfile} onSaveIncomeSource={saveIncomeSource} onDeleteIncomeSource={removeIncomeSource} onSaveAnnualTargets={updates => { changeNodes(updates); notify(`${updates.length} yearly ${updates.length === 1 ? 'target' : 'targets'} updated.`) }} onSaveBuffer={value => { setBuffer(value); notify('Safety buffer updated.') }} onSaveNode={saveNode} onDeleteNode={deleteItem} onImportData={importJson} onApplyJson={applyJson} onRequestEdit={nodeId => setDialog({ type: 'node', nodeId })} onRequestAdd={parentId => setDialog({ type: 'node', parentId })} onRequestEditIncomeSource={sourceId => setDialog({ type: 'incomeSource', sourceId })} onRequestEditProfile={() => setDialog({ type: 'profile' })} onRequestAddIncomeSource={() => setDialog({ type: 'incomeSource' })} onRequestSinkingFunds={() => setDialog({ type: 'sinkingFunds' })} onConnectDrive={connectDrive} onAddDriveAccount={connectDrive} onSwitchDriveAccount={connectDrive} onDisconnectDrive={disconnectDrive} onUseCurrentDrivePlan={() => completeDriveSetup({ useCurrentPlan: true })} onCreateBlankDrivePlan={() => completeDriveSetup({ useCurrentPlan: false })} />
+    <PlanDialog key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'} dialog={dialog} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} buffer={buffer} tree={tree} driveStatus={drive.status} driveUser={driveUser} driveError={drive.error} driveConfigured={Boolean(googleClientId)} driveSetupRequired={Boolean(drive.setupRequired)} driveRestoreCandidates={drive.restoreCandidates || []} onClose={() => dialog?.type === 'driveSync' && (drive.setupRequired || drive.restoreCandidates?.length) ? cancelDriveSetup() : setDialog(null)} onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }} onDeleteProfile={removeProfile} onSaveIncomeSource={saveIncomeSource} onDeleteIncomeSource={removeIncomeSource} onSaveAnnualTargets={updates => { changeNodes(updates); notify(`${updates.length} yearly ${updates.length === 1 ? 'target' : 'targets'} updated.`) }} onSaveBuffer={value => { setBuffer(value); notify('Safety buffer updated.') }} onSaveNode={saveNode} onDeleteNode={deleteItem} onImportData={importJson} onApplyJson={applyJson} onRequestEdit={nodeId => setDialog({ type: 'node', nodeId })} onRequestAdd={parentId => setDialog({ type: 'node', parentId })} onRequestEditIncomeSource={sourceId => setDialog({ type: 'incomeSource', sourceId })} onRequestEditProfile={() => setDialog({ type: 'profile' })} onRequestAddIncomeSource={() => setDialog({ type: 'incomeSource' })} onRequestSinkingFunds={() => setDialog({ type: 'sinkingFunds' })} onConnectDrive={connectDrive} onAddDriveAccount={connectDrive} onSwitchDriveAccount={connectDrive} onDisconnectDrive={disconnectDrive} onUseCurrentDrivePlan={() => completeDriveSetup({ useCurrentPlan: true })} onCreateBlankDrivePlan={() => completeDriveSetup({ useCurrentPlan: false })} onChooseDriveRestoreCandidate={chooseDriveRestoreCandidate} />
   </div>
 }
 

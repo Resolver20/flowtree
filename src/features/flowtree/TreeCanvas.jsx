@@ -1,5 +1,6 @@
 import { formatMoney } from '../../lib/money'
 import { colorForNode } from './nodePresentation'
+import MobileTree from './MobileTree'
 import TreeNodeCard from './TreeNodeCard'
 import { roundedElbowPath } from './treeLayout'
 
@@ -34,7 +35,20 @@ function FinanceNode({ available, point, worldWidth, worldHeight }) {
   </div>
 }
 
-export default function TreeCanvas({ layout, path, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect }) {
+export default function TreeCanvas({ layout, mobile, path, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect }) {
+  if (mobile) {
+    return <MobileTree
+      available={layout.available}
+      allocations={layout.allocations}
+      expandAll={layout.expandAll}
+      incomeSources={incomeSources}
+      path={path}
+      tree={tree}
+      onManageIncomeSource={onManageIncomeSource}
+      onNavigate={onNavigate}
+      onInspect={onInspect}
+    />
+  }
   const rootById = new Map(tree.map(item => [item.id, item]))
   const introPaths = [
     ...layout.incomeSourcePoints.map(point => roundedElbowPath(

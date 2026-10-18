@@ -1,3 +1,5 @@
+import { orderDriveRestoreCandidates } from '../domain/driveRestoreCandidates'
+
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3'
 const GIS_SCRIPT = 'https://accounts.google.com/gsi/client'
@@ -78,6 +80,19 @@ export async function findFlowtreeBackup({ accessToken, folderId, fileName = 'fl
   const query = encodeURIComponent(`'${folderId}' in parents and name = '${fileName.replaceAll("'", "\\'")}' and trashed = false`)
   const result = await driveRequest(`/files?q=${query}&spaces=drive&fields=files(id,name,modifiedTime,mimeType)&pageSize=10`, accessToken)
   return result.files?.[0] || null
+}
+
+export async function listFlowtreeRestoreCandidates({ accessToken, folderName = 'FlowTree', fileName = 'flowtree-plan.json' }) {
+  if (!accessToken) throw new Error('A Google Drive access token is required.')
+  const folderQuery = encodeURIComponent(`name = '${folderName.replaceAll("'", "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`)
+  const folderResult = await driveRequest(`/files?q=${folderQuery}&spaces=drive&fields=files(id,name,modifiedTime,mimeType)&pageSize=100&orderBy=modifiedTime%20desc`, accessToken)
+  const folders = folderResult.files || []
+  const fileResults = await Promise.all(folders.map(async folder => {
+    const fileQuery = encodeURIComponent(`'${folder.id}' in parents and name = '${fileName.replaceAll("'", "\\'")}' and trashed = false`)
+    const result = await driveRequest(`/files?q=${fileQuery}&spaces=drive&fields=files(id,name,modifiedTime,mimeType)&pageSize=100&orderBy=modifiedTime%20desc`, accessToken)
+    return (result.files || []).map(file => ({ ...file, folderId: folder.id, folderName: folder.name }))
+  }))
+  return { folders, candidates: orderDriveRestoreCandidates(fileResults.flat()) }
 }
 
 export async function getDriveUser({ accessToken } = {}) {

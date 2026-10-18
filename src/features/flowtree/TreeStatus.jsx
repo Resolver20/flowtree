@@ -1,11 +1,11 @@
 import { formatMoney } from '../../lib/money'
 
-export default function TreeStatus({ demo, sinking, flow, available, status }) {
+export default function TreeStatus({ demo, mobileHome, sinking, flow, available, status }) {
   const planUsed = Math.max(0, available - flow.remaining)
   const usedPercent = available > 0 ? Math.round(planUsed / available * 100) : 0
   const remainingPercent = available > 0 ? Math.round(flow.remaining / available * 100) : 0
 
-  return <footer className="energy-status">
+  return <footer className={`energy-status${mobileHome ? ' is-mobile-home' : ''}`}>
     <div className="summary-heading">
       <strong>{sinking ? 'Sinking funds outlook' : 'Monthly outlook'}</strong>
       <span aria-live="polite">{status}</span>
