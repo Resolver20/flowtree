@@ -1,6 +1,6 @@
 .material-symbols-rounded { font-family: 'Material Symbols Rounded'; font-weight: 400; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none; white-space: nowrap; word-wrap: normal; direction: ltr; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 .energy-mode { --canvas: #f7f8fa; --surface: #fff; --line: #d9dde4; --text: #252a34; --muted: #737b88; --accent: #5f739d; min-height: 100dvh; background: var(--canvas); color: var(--text); }
-.energy-home.theme-dark { --canvas: #1d2430; --surface: #283241; --line: #445269; --text: #edf1f7; --muted: #b4becd; --accent: #aabdfd; background: var(--canvas); color: var(--text); }
+.energy-home.theme-dark { --canvas: #111827; --surface: #1b2636; --line: #34445a; --text: #f4f7fb; --muted: #aebbd0; --accent: #9db5ff; background: var(--canvas); color: var(--text); }
 .drive-login { display: grid; min-height: 100dvh; padding: clamp(24px, 5vw, 72px); background: #f7f8fa; color: #252a34; }
 .drive-login-shell { position: relative; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(310px, .85fr); grid-template-rows: auto 1fr auto; align-items: center; gap: clamp(26px, 5vw, 72px); width: min(1180px, 100%); min-height: min(700px, calc(100dvh - 48px)); margin: auto; }
 .drive-login-brand { grid-column: 1 / -1; display: flex; align-items: center; gap: 11px; color: #37445b; font-size: 17px; font-weight: 650; letter-spacing: -.4px; }
@@ -78,6 +78,8 @@
 .account-menu-identity small, .account-menu-status { color: #788498; font-size: 10px; line-height: 1.4; }
 .account-menu button { min-height: 34px; padding: 7px 9px; border: 1px solid #dbe1eb; border-radius: 8px; background: #f9fafc; color: #46556c; font-size: 11px; text-align: left; }
 .account-menu button:hover, .account-menu button:focus-visible { border-color: #aebbd0; background: #f0f4fb; color: #304e98; }
+.account-menu .account-menu-theme { display: flex; align-items: center; gap: 8px; }
+.account-menu-theme .material-symbols-rounded { font-size: 17px; }
 .account-menu .account-menu-primary { border-color: #5366c8; background: #5366c8; color: #fff; text-align: center; }
 .account-menu .account-menu-primary:hover, .account-menu .account-menu-primary:focus-visible { border-color: #4658b5; background: #4658b5; color: #fff; }
 .account-menu button:disabled { cursor: not-allowed; opacity: .58; }
@@ -94,7 +96,7 @@
 .energy-person { position: absolute; z-index: 5; display: grid; justify-items: center; gap: 7px; width: 72px; transform: translate(-50%, -50%); color: #53627e; }
 .drive-saved-pulse { position: absolute; top: 18px; right: 54px; display: grid; width: 26px; height: 26px; place-items: center; border-radius: 50%; background: #edf9f0; color: #2f8a50; font-size: 17px; animation: drive-save-pulse 1.8s ease-out both; }
 @keyframes drive-save-pulse { 0% { opacity: 0; transform: translateX(7px) scale(.7); } 18%, 64% { opacity: 1; transform: translateX(0) scale(1); } 100% { opacity: 0; transform: translateX(-5px) scale(.85); } }
-.person-disc { display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid #ccd4e0; border-radius: 50%; background: #fff; color: #687793; font-size: 26px; }
+.person-disc, .person-avatar-image { display: grid; width: 56px; height: 56px; place-items: center; border: 1px solid #ccd4e0; border-radius: 50%; background: #fff; color: #687793; font-size: 26px; object-fit: cover; }
 .energy-person strong { font-size: 12px; font-weight: 550; }
 .income-source { position: absolute; width: 196px; height: 56px; transform: translate(-50%, -50%); }
 .income-source-card { display: flex; align-items: center; gap: 11px; width: 100%; height: 100%; padding: 9px 13px; border: 1px solid #d8dfeb; border-radius: 12px; background: #fff; color: #334158; text-align: left; transition: border-color 120ms ease, background-color 120ms ease; }
@@ -104,11 +106,7 @@
 .income-source strong { font-size: 12px; font-weight: 550; }
 .income-source small { color: #6f7a8d; font-size: 11px; font-variant-numeric: tabular-nums; }
 .energy-source { position: absolute; display: flex; flex-direction: column; align-items: center; width: 80px; height: 80px; transform: translate(-50%, -50%); }
-.energy-finance-toggle { position: relative; display: grid; place-items: center; width: 72px; height: 72px; padding: 0; border: 1px solid #86d9a2; border-radius: 50%; background: #f0fdf4; color: #526a91; cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease; }
-.energy-finance-toggle:hover, .energy-finance-toggle:focus-visible { border-color: #5dbb7c; background: #e7f9ed; }
-.plan-toggle-cue { position: absolute; right: 5px; bottom: 6px; color: #71829c; font-size: 15px; transition: transform 240ms ease; }
-.energy-source.is-finance:not(.is-open) .plan-toggle-cue { transform: rotate(-90deg); }
-.energy-source.is-finance.is-open .plan-toggle-cue { transform: rotate(0); }
+.energy-finance-root { display: grid; width: 72px; height: 72px; place-items: center; border: 1px solid #86d9a2; border-radius: 50%; background: #f0fdf4; color: #526a91; }
 .energy-root-icon { font-size: 30px; }
 .energy-source strong { position: absolute; top: -46px; color: #303640; font-size: 13px; font-weight: 500; white-space: nowrap; }
 .energy-source > span { position: absolute; top: -26px; color: var(--muted); font-size: 12px; white-space: nowrap; }
@@ -150,58 +148,57 @@
 .plan-totals > div:first-child strong { color: #27704c; }
 .plan-totals > div:last-child strong { color: #5b53a6; }
 .energy-status > small { grid-column: 1 / -1; color: #818a99; font-size: 8px; text-align: center; }
-.theme-dark .energy-sidebar { border-color: #3d4a60; background: #222b39; }
-.theme-dark .energy-brand .flowtree-mark { border-color: #52658e; background: #2e3d60; color: #becbff; }
-.theme-dark .sidebar-section-label, .theme-dark .sidebar-profile small { color: #aab5c7; }
-.theme-dark .sidebar-nav button, .theme-dark .theme-toggle, .theme-dark .sidebar-profile { color: #c8d1df; }
-.theme-dark .sidebar-nav button:hover, .theme-dark .sidebar-nav button:focus-visible, .theme-dark .theme-toggle:hover, .theme-dark .theme-toggle:focus-visible, .theme-dark .sidebar-profile:hover, .theme-dark .sidebar-profile:focus-visible { border-color: #52627b; background: #303b4d; color: #edf3ff; }
-.theme-dark .sidebar-nav button.is-active { border-color: #6076b0; background: #354568; color: #edf2ff; }
-.theme-dark .sidebar-profile { border-top-color: #3d4a60; }
-.theme-dark .sidebar-profile strong, .theme-dark .account-card strong { color: #edf1f7; }
-.theme-dark .sidebar-avatar, .theme-dark .sidebar-avatar-image, .theme-dark .person-disc { border-color: #526078; background: #303a4b; color: #ced8e8; }
-.theme-dark .account-menu { border-color: #4c5a70; background: #2a3444; box-shadow: 0 14px 34px #070b1240; }
-.theme-dark .account-menu-identity { border-bottom-color: #435066; }
-.theme-dark .account-menu-identity strong { color: #edf1f7; }
-.theme-dark .account-menu-identity small, .theme-dark .account-menu-status { color: #bdc7d7; }
-.theme-dark .account-menu button { border-color: #4c5a70; background: #344052; color: #e1e8f3; }
-.theme-dark .account-menu button:hover, .theme-dark .account-menu button:focus-visible { border-color: #7386a5; background: #405068; color: #fff; }
-.theme-dark .energy-breadcrumbs, .theme-dark .energy-breadcrumbs button { color: #b8c2d2; }
-.theme-dark .energy-breadcrumbs button:hover { color: #fff; }
-.theme-dark .energy-track { stroke: #71809a; }
-.theme-dark .intro-track { stroke: #8b9ab1; }
-.theme-dark .energy-person, .theme-dark .energy-source strong, .theme-dark .amount-node, .theme-dark .amount-copy strong, .theme-dark .amount-number { color: #edf1f7; }
-.theme-dark .energy-source > span, .theme-dark .income-source small, .theme-dark .amount-number small, .theme-dark .target-meta { color: #b4becd; }
-.theme-dark .income-source-card, .theme-dark .amount-node { border-color: #4a586f; background: #283241; color: #edf1f7; }
-.theme-dark .income-source-card:hover, .theme-dark .has-children .amount-node:hover { border-color: #8091af; background: #303b4d; }
-.theme-dark .income-source-card > .material-symbols-rounded { color: #aabdfd; }
-.theme-dark .energy-child .amount-copy strong { color: #d7dfeb; }
-.theme-dark .energy-finance-toggle { border-color: #4b8a6b; background: #263d35; color: #d9e9df; }
-.theme-dark .energy-finance-toggle:hover, .theme-dark .energy-finance-toggle:focus-visible { border-color: #6aa887; background: #2e4a40; }
-.theme-dark .node-progress { background: #435168; }
-.theme-dark .card-info { border-color: #4c5a70; background: #2c3748; color: #bac5d6; }
-.theme-dark .card-info:hover, .theme-dark .card-info:focus-visible { border-color: #788aa5; background: #3a475b; color: #fff; }
-.theme-dark .energy-status { border-color: #465672; background: #273246; box-shadow: 0 10px 28px #070b122e; color: #dfe7f3; }
-.theme-dark .summary-heading strong, .theme-dark .plan-totals strong { color: #edf1f7; }
-.theme-dark .summary-heading span, .theme-dark .plan-totals span, .theme-dark .plan-totals strong small, .theme-dark .energy-status > small { color: #b4becd; }
-.theme-dark .plan-totals > div { border-color: #46556d; background: #303b4c; }
-.theme-dark .plan-totals > div:first-child { border-color: #426654; background: #293f35; }
-.theme-dark .plan-totals > div:last-child { border-color: #59558a; background: #343452; }
-.theme-dark .plan-totals > div:first-child strong { color: #8dd5aa; }
-.theme-dark .plan-totals > div:last-child strong { color: #c1bcff; }
-.theme-dark .modal { background: #283241; }
-.theme-dark .modal p, .theme-dark .modal label, .theme-dark .modal form > small, .theme-dark .amount-preview small, .theme-dark .target-preview small, .theme-dark .calculated-field small { color: #bdc7d7; }
-.theme-dark .modal input, .theme-dark .modal select, .theme-dark .modal textarea { border-color: #516078; background: #222b39; color: #edf1f7; }
-.theme-dark .close:hover, .theme-dark .close:focus-visible { background: #38465a; color: #fff; }
-.theme-dark .dialog-actions button { border-color: #526078; background: #303b4d; color: #edf1f7; }
-.theme-dark .account-card, .theme-dark .card-overview, .theme-dark .target-preview, .theme-dark .calculated-field, .theme-dark .annual-target-row { border-color: #4b596f; background: #2d3747; }
-.theme-dark .overview-icon { background: #38455a; color: #b7c8ff; }
-.theme-dark .card-facts div { border-bottom-color: #404d61; }
-.theme-dark .card-facts dt, .theme-dark .card-overview span, .theme-dark .calculated-field span { color: #bdc7d7; }
-.theme-dark .card-facts dd, .theme-dark .annual-target-summary strong { color: #edf1f7; }
-.theme-dark .annual-target-summary { border-top-color: #445168; }
-.theme-dark .annual-target-summary small, .theme-dark .annual-target-heading small { color: #b8c2d1; }
-.theme-dark .modal .annual-target-heading input { color: #edf1f7; }
-.theme-dark .change-notice { border-color: #526078; background: #2d3747; color: #edf1f7; box-shadow: 0 8px 22px #070b122e; }
+.theme-dark .energy-sidebar { border-color: #2d3b50; background: #151f2e; }
+.theme-dark .energy-brand .flowtree-mark { border-color: #405681; background: #21304a; color: #a9bfff; }
+.theme-dark .sidebar-section-label, .theme-dark .sidebar-profile small { color: #93a3ba; }
+.theme-dark .sidebar-nav button, .theme-dark .theme-toggle, .theme-dark .sidebar-profile { color: #cbd6e6; }
+.theme-dark .sidebar-nav button:hover, .theme-dark .sidebar-nav button:focus-visible, .theme-dark .theme-toggle:hover, .theme-dark .theme-toggle:focus-visible, .theme-dark .sidebar-profile:hover, .theme-dark .sidebar-profile:focus-visible { border-color: #4b6184; background: #202e42; color: #f4f7fb; }
+.theme-dark .sidebar-nav button.is-active { border-color: #667fb4; background: #283b5b; color: #f4f7fb; }
+.theme-dark .sidebar-profile { border-top-color: #2d3b50; }
+.theme-dark .sidebar-profile strong, .theme-dark .account-card strong { color: #f4f7fb; }
+.theme-dark .sidebar-avatar, .theme-dark .sidebar-avatar-image, .theme-dark .person-disc, .theme-dark .person-avatar-image { border-color: #40516b; background: #202e42; color: #d8e1ef; }
+.theme-dark .account-menu { border-color: #3b4d66; background: #1b2738; box-shadow: 0 14px 34px #05091273; }
+.theme-dark .account-menu-identity { border-bottom-color: #31415a; }
+.theme-dark .account-menu-identity strong { color: #f4f7fb; }
+.theme-dark .account-menu-identity small, .theme-dark .account-menu-status { color: #aebbd0; }
+.theme-dark .account-menu button { border-color: #3b4d66; background: #202e42; color: #e2e9f4; }
+.theme-dark .account-menu button:hover, .theme-dark .account-menu button:focus-visible { border-color: #607ba8; background: #293b56; color: #fff; }
+.theme-dark .energy-breadcrumbs, .theme-dark .energy-breadcrumbs button { color: #aebbd0; }
+.theme-dark .energy-breadcrumbs button:hover { color: #f4f7fb; }
+.theme-dark .energy-track { stroke: #62718a; }
+.theme-dark .intro-track { stroke: #8290a8; }
+.theme-dark .energy-person, .theme-dark .energy-source strong, .theme-dark .amount-node, .theme-dark .amount-copy strong, .theme-dark .amount-number { color: #f4f7fb; }
+.theme-dark .energy-source > span, .theme-dark .income-source small, .theme-dark .amount-number small, .theme-dark .target-meta { color: #aebbd0; }
+.theme-dark .income-source-card, .theme-dark .amount-node { border-color: #3b4d66; background: #1b2636; color: #f4f7fb; }
+.theme-dark .income-source-card:hover, .theme-dark .has-children .amount-node:hover { border-color: #6380ae; background: #223149; }
+.theme-dark .income-source-card > .material-symbols-rounded { color: #a9bfff; }
+.theme-dark .energy-child .amount-copy strong { color: #e4ebf5; }
+.theme-dark .energy-finance-root { border-color: #3b7d65; background: #18352f; color: #c6e5d6; }
+.theme-dark .node-progress { background: #34445a; }
+.theme-dark .card-info { border-color: #3b4d66; background: #202e42; color: #c6d1e1; }
+.theme-dark .card-info:hover, .theme-dark .card-info:focus-visible { border-color: #607ba8; background: #293b56; color: #fff; }
+.theme-dark .energy-status { border-color: #3b4d66; background: #182536; box-shadow: 0 10px 28px #0509124d; color: #e7edf6; }
+.theme-dark .summary-heading strong, .theme-dark .plan-totals strong { color: #f4f7fb; }
+.theme-dark .summary-heading span, .theme-dark .plan-totals span, .theme-dark .plan-totals strong small, .theme-dark .energy-status > small { color: #aebbd0; }
+.theme-dark .plan-totals > div { border-color: #3b4d66; background: #202e42; }
+.theme-dark .plan-totals > div:first-child { border-color: #356d57; background: #193a31; }
+.theme-dark .plan-totals > div:last-child { border-color: #4a5d87; background: #24324d; }
+.theme-dark .plan-totals > div:first-child strong { color: #98dbb6; }
+.theme-dark .plan-totals > div:last-child strong { color: #b6c8ff; }
+.theme-dark .modal { background: #1b2636; }
+.theme-dark .modal p, .theme-dark .modal label, .theme-dark .modal form > small, .theme-dark .amount-preview small, .theme-dark .target-preview small, .theme-dark .calculated-field small { color: #aebbd0; }
+.theme-dark .modal input, .theme-dark .modal select, .theme-dark .modal textarea { border-color: #40516b; background: #141f2e; color: #f4f7fb; }
+.theme-dark .close:hover, .theme-dark .close:focus-visible { background: #293b56; color: #fff; }
+.theme-dark .dialog-actions button { border-color: #40516b; background: #202e42; color: #f4f7fb; }
+.theme-dark .account-card, .theme-dark .card-overview, .theme-dark .target-preview, .theme-dark .calculated-field, .theme-dark .annual-target-row { border-color: #3b4d66; background: #202e42; }
+.theme-dark .overview-icon { background: #273855; color: #b7c9ff; }
+.theme-dark .card-facts div { border-bottom-color: #31415a; }
+.theme-dark .card-facts dt, .theme-dark .card-overview span, .theme-dark .calculated-field span { color: #aebbd0; }
+.theme-dark .card-facts dd, .theme-dark .annual-target-summary strong { color: #f4f7fb; }
+.theme-dark .annual-target-summary { border-top-color: #34445a; }
+.theme-dark .annual-target-summary small, .theme-dark .annual-target-heading small { color: #aebbd0; }
+.theme-dark .modal .annual-target-heading input { color: #f4f7fb; }
+.theme-dark .change-notice { border-color: #40516b; background: #202e42; color: #f4f7fb; box-shadow: 0 8px 22px #0509124d; }
 .modal::backdrop { background: #26324755; }
 .modal { position: fixed; margin: auto; width: min(480px, calc(100% - 24px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 30px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); }
 .modal.is-wide { width: min(780px, calc(100% - 24px)); }
@@ -217,7 +214,7 @@
 .close:hover, .close:focus-visible { background: #f0f4ff; }
 .energy-home button:focus-visible, .energy-home summary:focus-visible, .energy-viewport:focus-visible, .modal button:focus-visible, .modal input:focus-visible, .modal select:focus-visible, .modal textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (max-width: 900px) { .energy-breadcrumbs { right: 36px; } .energy-viewport { inset: 78px 0 178px 224px; } .energy-status { top: auto; right: 18px; bottom: 18px; left: 242px; width: auto; max-width: 760px; grid-template-columns: minmax(180px, .8fr) minmax(340px, 1.2fr); gap: 18px 24px; padding: 15px 18px 13px; } .summary-heading strong { font-size: 13px; } .summary-heading span { font-size: 10px; } .plan-totals > div { padding: 10px 12px; } .plan-totals strong { font-size: 17px; } .energy-status > small { font-size: 9px; } }
-@media (max-width: 760px) { .energy-sidebar { right: 0; bottom: auto; width: auto; min-height: 64px; flex-direction: row; align-items: center; gap: 8px; padding: 10px; border-right: 0; border-bottom: 1px solid #dfe4eb; } .sidebar-brand { flex: 0 0 auto; padding: 0 4px; } .energy-brand span { font-size: 16px; } .energy-brand .flowtree-mark { width: 30px; height: 30px; font-size: 19px; } .energy-mode-label, .sidebar-section-label, .sidebar-nav button > span:last-child, .theme-toggle > span:last-child, .sidebar-profile > span:last-child { display: none; } .sidebar-nav { display: flex; gap: 3px; margin: 0 0 0 auto; } .sidebar-nav button, .theme-toggle, .sidebar-profile { display: grid; width: 38px; min-height: 38px; place-items: center; margin: 0; padding: 0; } .sidebar-profile { margin: 0; } .sidebar-avatar { width: 28px; height: 28px; } .account-menu { top: 58px; right: 10px; bottom: auto; left: auto; width: min(280px, calc(100vw - 20px)); } .energy-breadcrumbs { top: 72px; right: 18px; left: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .energy-viewport { inset: 102px 0 203px; } .energy-status { right: 10px; bottom: 18px; left: 10px; grid-template-columns: 1fr; gap: 9px; padding: 11px 12px 9px; } .summary-heading { grid-template-columns: auto 1fr; align-items: baseline; gap: 10px; } .summary-heading span, .energy-status > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .plan-totals > div { padding: 8px 10px; } .plan-totals strong { font-size: 15px; } .form-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .energy-sidebar { right: 0; bottom: auto; width: auto; min-height: 64px; flex-direction: row; align-items: center; gap: 8px; padding: 10px; border-right: 0; border-bottom: 1px solid #dfe4eb; } .sidebar-brand { flex: 0 0 auto; padding: 0 4px; } .energy-brand span { font-size: 16px; } .energy-brand .flowtree-mark { width: 30px; height: 30px; font-size: 19px; } .energy-mode-label, .sidebar-section-label, .sidebar-nav button > span:last-child, .sidebar-profile > span:last-child { display: none; } .sidebar-nav { display: flex; gap: 3px; margin: 0 0 0 auto; } .sidebar-nav button, .sidebar-profile { display: grid; width: 38px; min-height: 38px; place-items: center; margin: 0; padding: 0; } .sidebar-profile { margin: 0; } .sidebar-avatar { width: 28px; height: 28px; } .account-menu { top: 58px; right: 10px; bottom: auto; left: auto; width: min(280px, calc(100vw - 20px)); } .energy-breadcrumbs { top: 72px; right: 18px; left: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .energy-viewport { inset: 102px 0 203px; } .energy-status { right: 10px; bottom: 18px; left: 10px; grid-template-columns: 1fr; gap: 9px; padding: 11px 12px 9px; } .summary-heading { grid-template-columns: auto 1fr; align-items: baseline; gap: 10px; } .summary-heading span, .energy-status > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .plan-totals > div { padding: 8px 10px; } .plan-totals strong { font-size: 15px; } .form-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .drive-login { padding: 24px 20px; } .drive-login-shell { grid-template-columns: 1fr; grid-template-rows: auto; gap: 26px; min-height: auto; } .drive-login-brand, .drive-login-preview { grid-column: auto; } .drive-login-intro { padding: 20px 0 0; } .drive-login h1 { font-size: clamp(36px, 11vw, 52px); letter-spacing: -1.8px; } .drive-login-card { width: 100%; } .drive-login-preview { padding-top: 24px; } .drive-preview-income { left: 5%; } .drive-preview-plan { left: 37%; } .drive-preview-cash, .drive-preview-goals { right: 3%; } .drive-preview-line-one { left: 29%; width: 12%; } .drive-preview-line-two { left: 51%; width: 16%; } }
 .energy-viewport { scrollbar-width: thin; scrollbar-color: #c7cfdb transparent; }
 .loans-view { position: absolute; inset: 0 0 0 224px; overflow: auto; padding: 46px clamp(24px, 5vw, 76px) 48px; background: #f7f8fa; color: #303640; }
@@ -252,6 +249,21 @@
 .loan-editor { max-width: 925px; margin: 0 auto 18px; padding: 22px; }.loan-workspace .loan-editor { max-width: none; margin: 0; }.loan-editor-heading strong { display: block; color: #344158; font-size: 15px; }.loan-editor-heading span { display: block; max-width: 490px; margin-top: 5px; color: #748095; font-size: 11px; line-height: 1.45; }.loan-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }.loan-editor label { display: grid; gap: 6px; color: #657287; font-size: 11px; }.loan-editor input { width: 100%; padding: 9px 10px; border: 1px solid #d6deeb; border-radius: 8px; background: #fbfcfe; color: #303b4f; }.loan-editor-actions { display: flex; justify-content: flex-end; margin-top: 16px; }.loans-empty { display: grid; justify-items: center; max-width: 520px; gap: 10px; margin: 90px auto; padding: 35px; text-align: center; }.loans-empty .material-symbols-rounded { color: #7c3aed; font-size: 32px; }.loans-empty strong { color: #344158; }.loans-empty p { margin: 0 0 8px; color: #748095; font-size: 12px; line-height: 1.5; }
 .theme-dark .loans-view { background: #1f2733; color: #e8edf5; }.theme-dark .loans-header h1, .theme-dark .loan-details h2, .theme-dark .loan-schedule h3, .theme-dark .loan-stat-grid strong, .theme-dark .loan-payment-summary strong, .theme-dark .loan-editor-heading strong, .theme-dark .loan-list strong { color: #edf1f7; }.theme-dark .loans-header p, .theme-dark .loan-editor-heading span, .theme-dark .loan-stat-grid span, .theme-dark .loan-payment-summary span, .theme-dark .loan-stat-grid small, .theme-dark .loan-payment-summary small, .theme-dark .loan-schedule p, .theme-dark .loan-editor label, .theme-dark .loan-list small { color: #bac4d3; }.theme-dark .loan-details, .theme-dark .loan-editor, .theme-dark .loans-empty, .theme-dark .loan-list button { border-color: #46536a; background: #283241; }.theme-dark .loan-list button:hover, .theme-dark .loan-list button:focus-visible, .theme-dark .loan-list button.is-selected { border-color: #6076b0; background: #354568; }.theme-dark .loan-stat-grid > div { border-color: #445168; background: #2c3747; }.theme-dark .loan-payment-summary > div:first-child { border-color: #57558a; background: #343452; }.theme-dark .loan-payment-summary > div:last-child { border-color: #6d5848; background: #3c332d; }.theme-dark .loan-editor input, .theme-dark .loan-details-heading button, .theme-dark .loan-editor-heading button { border-color: #516078; background: #222b39; color: #edf1f7; }.theme-dark .loan-table-wrap { border-color: #46536a; }.theme-dark .loan-schedule th { background: #303b4d; color: #c9d3e3; }.theme-dark .loan-schedule td { border-color: #3d495d; color: #dbe2ed; }
 .goals-view { position: absolute; inset: 0 0 0 224px; overflow: auto; padding: 46px clamp(24px, 5vw, 76px) 48px; background: #f7f8fa; color: #303640; }.goals-header { display: flex; max-width: 1160px; align-items: flex-start; justify-content: space-between; gap: 22px; margin: 0 auto 28px; }.goals-header h1, .goal-details h2 { margin: 5px 0 8px; color: #293444; }.goals-header h1 { font-size: 30px; letter-spacing: -.8px; }.goals-header p { max-width: 560px; margin: 0; color: #68758a; font-size: 13px; line-height: 1.55; }.goal-add, .goals-empty button, .goal-save { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border: 1px solid #b83e87; border-radius: 8px; background: #c0438d; color: #fff; font-size: 12px; }.goal-add .material-symbols-rounded { font-size: 17px; }.goals-workspace { display: grid; max-width: 1160px; grid-template-columns: 235px minmax(0, 1fr); gap: 18px; margin: 0 auto; }.goal-list { display: grid; align-content: start; gap: 7px; }.goal-list button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 58px; padding: 10px; border: 1px solid #dde3eb; border-radius: 10px; background: #fff; color: #536178; text-align: left; }.goal-list button:hover, .goal-list button:focus-visible, .goal-list button.is-selected { border-color: #e4b8d1; background: #fff2f9; color: #a43073; }.goal-list .material-symbols-rounded { color: #db2777; font-size: 21px; }.goal-list span:last-child { display: grid; min-width: 0; gap: 3px; }.goal-list strong { overflow: hidden; color: #3b4658; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.goal-list small { color: #7d889a; font-size: 10px; }.goal-details, .goal-editor, .goals-empty { border: 1px solid #dce2eb; border-radius: 14px; background: #fff; box-shadow: 0 8px 22px #34466d0d; }.goal-details { padding: 23px; }.goal-details-heading, .goal-editor-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }.goal-details h2 { font-size: 21px; }.goal-details-heading button, .goal-editor-heading button { min-height: 34px; padding: 7px 10px; border: 1px solid #d4dce9; border-radius: 8px; background: #fff; color: #46556c; font-size: 11px; }.goal-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 21px; }.goal-stat-grid > div, .goal-home-link { display: grid; gap: 6px; padding: 13px; border: 1px solid #e1e6ee; border-radius: 10px; background: #fbfcfe; }.goal-stat-grid span { color: #798598; font-size: 10px; }.goal-stat-grid strong { color: #2f3c51; font-size: 15px; font-variant-numeric: tabular-nums; }.goal-home-link { grid-template-columns: auto 1fr; align-items: start; margin-top: 16px; border-color: #efd6e5; background: #fff6fb; }.goal-home-link .material-symbols-rounded { color: #c33483; font-size: 22px; }.goal-home-link strong { color: #693457; font-size: 12px; }.goal-home-link p { margin: 4px 0 0; color: #7d6275; font-size: 11px; line-height: 1.45; }.goal-editor { max-width: 925px; margin: 0 auto 18px; padding: 22px; }.goals-workspace .goal-editor { max-width: none; margin: 0; }.goal-editor-heading strong { display: block; color: #344158; font-size: 15px; }.goal-editor-heading span { display: block; max-width: 490px; margin-top: 5px; color: #748095; font-size: 11px; line-height: 1.45; }.goal-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }.goal-editor label { display: grid; gap: 6px; color: #657287; font-size: 11px; }.goal-editor input, .goal-editor select { width: 100%; padding: 9px 10px; border: 1px solid #d6deeb; border-radius: 8px; background: #fbfcfe; color: #303b4f; }.goal-preview { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin-top: 14px; padding: 12px 13px; border: 1px solid #eed7e5; border-radius: 9px; background: #fff8fc; }.goal-preview span, .goal-preview small { color: #80677a; font-size: 10px; }.goal-preview strong { color: #a52e74; font-size: 14px; font-variant-numeric: tabular-nums; }.goal-preview small { grid-column: 1 / -1; }.goal-editor-actions { display: flex; justify-content: flex-end; margin-top: 16px; }.goals-empty { display: grid; justify-items: center; max-width: 520px; gap: 10px; margin: 90px auto; padding: 35px; text-align: center; }.goals-empty .material-symbols-rounded { color: #db2777; font-size: 32px; }.goals-empty strong { color: #344158; }.goals-empty p { margin: 0 0 8px; color: #748095; font-size: 12px; line-height: 1.5; }.theme-dark .goals-view { background: #1f2733; color: #e8edf5; }.theme-dark .goals-header h1, .theme-dark .goal-details h2, .theme-dark .goal-stat-grid strong, .theme-dark .goal-editor-heading strong, .theme-dark .goal-list strong { color: #edf1f7; }.theme-dark .goals-header p, .theme-dark .goal-editor-heading span, .theme-dark .goal-stat-grid span, .theme-dark .goal-editor label, .theme-dark .goal-list small, .theme-dark .goal-home-link p { color: #bac4d3; }.theme-dark .goal-details, .theme-dark .goal-editor, .theme-dark .goals-empty, .theme-dark .goal-list button { border-color: #46536a; background: #283241; }.theme-dark .goal-list button:hover, .theme-dark .goal-list button:focus-visible, .theme-dark .goal-list button.is-selected { border-color: #a5618f; background: #53354a; }.theme-dark .goal-stat-grid > div { border-color: #445168; background: #2c3747; }.theme-dark .goal-home-link, .theme-dark .goal-preview { border-color: #704a64; background: #403141; }.theme-dark .goal-home-link strong { color: #f1c7df; }.theme-dark .goal-editor input, .theme-dark .goal-editor select, .theme-dark .goal-details-heading button, .theme-dark .goal-editor-heading button { border-color: #516078; background: #222b39; color: #edf1f7; }
+.theme-dark .loans-view, .theme-dark .goals-view { background: var(--canvas); color: var(--text); }
+.theme-dark .loans-header h1, .theme-dark .loan-details h2, .theme-dark .loan-schedule h3, .theme-dark .loan-stat-grid strong, .theme-dark .loan-payment-summary strong, .theme-dark .loan-editor-heading strong, .theme-dark .loan-list strong, .theme-dark .loans-empty strong, .theme-dark .goals-header h1, .theme-dark .goal-details h2, .theme-dark .goal-stat-grid strong, .theme-dark .goal-editor-heading strong, .theme-dark .goal-list strong, .theme-dark .goals-empty strong { color: #f4f7fb; }
+.theme-dark .loans-header p, .theme-dark .loan-editor-heading span, .theme-dark .loan-stat-grid span, .theme-dark .loan-payment-summary span, .theme-dark .loan-stat-grid small, .theme-dark .loan-payment-summary small, .theme-dark .loan-schedule p, .theme-dark .loan-editor label, .theme-dark .loan-list small, .theme-dark .loans-empty p, .theme-dark .goals-header p, .theme-dark .goal-editor-heading span, .theme-dark .goal-stat-grid span, .theme-dark .goal-editor label, .theme-dark .goal-list small, .theme-dark .goal-home-link p, .theme-dark .goals-empty p { color: #aebbd0; }
+.theme-dark .loan-details, .theme-dark .loan-editor, .theme-dark .loans-empty, .theme-dark .loan-list button, .theme-dark .goal-details, .theme-dark .goal-editor, .theme-dark .goals-empty, .theme-dark .goal-list button { border-color: #3b4d66; background: #1b2636; }
+.theme-dark .loan-list button:hover, .theme-dark .loan-list button:focus-visible, .theme-dark .loan-list button.is-selected { border-color: #6380ae; background: #223149; }
+.theme-dark .goal-list button:hover, .theme-dark .goal-list button:focus-visible, .theme-dark .goal-list button.is-selected { border-color: #8c5b83; background: #362a3c; }
+.theme-dark .loan-stat-grid > div, .theme-dark .goal-stat-grid > div { border-color: #3b4d66; background: #202e42; }
+.theme-dark .loan-payment-summary > div:first-child { border-color: #4a5d87; background: #24324d; }
+.theme-dark .loan-payment-summary > div:last-child { border-color: #76583f; background: #3b3028; }
+.theme-dark .goal-home-link, .theme-dark .goal-preview { border-color: #76536f; background: #352938; }
+.theme-dark .goal-home-link strong { color: #f0c3dc; }
+.theme-dark .loan-editor input, .theme-dark .loan-details-heading button, .theme-dark .loan-editor-heading button, .theme-dark .goal-editor input, .theme-dark .goal-editor select, .theme-dark .goal-details-heading button, .theme-dark .goal-editor-heading button { border-color: #40516b; background: #141f2e; color: #f4f7fb; }
+.theme-dark .loan-table-wrap { border-color: #3b4d66; }
+.theme-dark .loan-schedule th { background: #202e42; color: #cbd6e6; }
+.theme-dark .loan-schedule td { border-color: #31415a; color: #e2e9f4; }
 @media (max-width: 900px) {
   .energy-viewport { overflow: auto; display: block; padding: 12px 0; overscroll-behavior: contain; }
   .energy-world-frame { display: block; justify-self: start; margin: 0; }

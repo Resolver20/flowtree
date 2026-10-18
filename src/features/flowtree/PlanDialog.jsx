@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { annualTargetProgress, countBranch, expectedAnnualSavings, findNode, monthlyAllocation, monthlyTotal, NODE_STATUSES, totalChildren } from '../../domain/flowTree'
 import { formatDate, formatMoney } from '../../lib/money'
-import { iconForNode } from './nodePresentation'
+import { colorForNode, iconForNode } from './nodePresentation'
 import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
 import DriveSyncDialog from './DriveSyncDialog'
 import { parseFlowImport, serializeFlowData } from '../../domain/flowDataTransfer'
@@ -237,7 +237,7 @@ function ManageDialog({ node, onClose, onDelete, onRequestEdit, onRequestAdd }) 
 
   return <DialogShell title={node.name} onClose={onClose}>
     <div className="card-overview">
-      <span className="overview-icon material-symbols-rounded" aria-hidden="true">{iconForNode(node)}</span>
+      <span className="overview-icon material-symbols-rounded" style={{ color: colorForNode(node) }} aria-hidden="true">{iconForNode(node)}</span>
       <div><span>{formatStatus(node.status)} · {node.period === 'year' ? 'Yearly target' : 'Monthly target'}</span><strong>{formatMoney(node.amount || 0)} <small>/{node.period === 'year' ? 'year' : 'month'}</small></strong></div>
     </div>
     {progress && <div className="target-preview">

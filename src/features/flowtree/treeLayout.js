@@ -46,8 +46,7 @@ function createBranchY(tree) {
   return { positions, leafEnd: cursor }
 }
 
-function createColumns(tree, path, allocations, expandAll, planOpen) {
-  if (!planOpen) return []
+function createColumns(tree, path, allocations, expandAll) {
   const rootEntries = tree.map((item, index) => ({
     item,
     path: [item.id],
@@ -96,8 +95,8 @@ function rowY(count, index, height) {
   return EDGE_INSET + (height - EDGE_INSET * 2) * index / (count - 1)
 }
 
-export function createTreeLayout({ tree, path, allocations, expandAll, planOpen = true, viewport, incomeSourceCount = 1, showPerson = true }) {
-  const columns = createColumns(tree, path, allocations, expandAll, planOpen)
+export function createTreeLayout({ tree, path, allocations, expandAll, viewport, incomeSourceCount = 1, showPerson = true }) {
+  const columns = createColumns(tree, path, allocations, expandAll)
   const depthCounts = countNodesByDepth(tree)
   const branchY = createBranchY(tree)
   const height = expandAll
@@ -118,15 +117,9 @@ export function createTreeLayout({ tree, path, allocations, expandAll, planOpen 
       ? .72
     : Math.min(1, viewport.width / worldWidth, viewport.height / height)
   const leftEdge = showPerson ? PERSON_X - 36 : incomeSourceCount ? INCOME_SOURCE_X - 98 : SOURCE_X - 36
-  const rightEdge = planOpen
-    ? COLUMN_START + Math.max(0, columns.length - 1) * COLUMN_GAP + 98
-    : SOURCE_X + 40
+  const rightEdge = COLUMN_START + Math.max(0, columns.length - 1) * COLUMN_GAP + 98
   const centeredOffset = (worldWidth - leftEdge - rightEdge) / 2
-  const narrowOffset = isNarrowViewport
-    ? planOpen
-      ? -140
-      : viewport.width / (2 * scale) - (leftEdge + rightEdge) / 2 - centeredOffset
-    : 0
+  const narrowOffset = isNarrowViewport ? -140 : 0
   const horizontalOffset = centeredOffset + narrowOffset
   const personPoint = { x: PERSON_X + horizontalOffset, y: height / 2 }
   const incomeSourcePoints = Array.from({ length: incomeSourceCount }, (_, index) => ({

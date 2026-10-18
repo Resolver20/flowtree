@@ -32,7 +32,6 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   const demo = false
   const [view, setView] = useState('home')
   const [expandAll, setExpandAll] = useState(false)
-  const [planOpen, setPlanOpen] = useState(true)
   const [theme, setTheme] = useState(readTheme)
   const [showDriveSaved, setShowDriveSaved] = useState(false)
   const previousDriveStatus = useRef(driveStatus)
@@ -46,7 +45,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }, [tree])
   const goals = useMemo(() => tree.find(node => node.id === 'goals')?.children || [], [tree])
   const visibleTreeExpanded = expandAll
-  const showProfileMarker = profile.visible && view === 'home'
+  const showProfileMarker = view === 'home' && (profile.visible || Boolean(driveUser?.photoLink))
 
   const income = demo ? Math.round(totalChildren(visibleTree) * .75 + buffer) : salary
   const flow = useMemo(() => allocateEnergy(visibleTree, Math.max(0, income - buffer)), [visibleTree, income, buffer])
@@ -64,10 +63,10 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       ? `Next: ${nextName} needs ${formatMoney(nextFunding.target - nextFunding.allocated)}.`
       : 'Every monthly target in this view is filled.'
   const layout = useMemo(() => ({
-    ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, planOpen, viewport, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
+    ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, viewport, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
     available: Math.max(0, income - buffer),
     income,
-  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, planOpen, viewport, income, buffer, incomeSources.length, showProfileMarker])
+  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, viewport, income, buffer, incomeSources.length, showProfileMarker])
   const breadcrumbs = path.map((_, index) => ({ path: path.slice(0, index + 1), node: findPath(visibleTree, path.slice(0, index + 1)) }))
 
   useEffect(() => {
@@ -104,17 +103,10 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   useEffect(() => {
     if (!viewportRef.current) return
     viewportRef.current.scrollTo({ left: 0, top: 0, behavior: 'auto' })
-  }, [planOpen, viewport.width, viewportRef])
+  }, [viewport.width, viewportRef])
 
   function navigate(nextPath) {
-    setPlanOpen(true)
     setPath(current => nextPath.join('/') === current.join('/') ? current.slice(0, -1) : nextPath)
-  }
-
-  function togglePlan() {
-    setPlanOpen(value => !value)
-    setExpandAll(false)
-    setPath([])
   }
 
   function returnToRoot() {
@@ -127,19 +119,16 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     if (view === 'sinking') {
       setView('home')
       setExpandAll(true)
-      setPlanOpen(true)
       setPath([])
       return
     }
     setExpandAll(value => !value)
-    setPlanOpen(true)
     setPath([])
   }
 
   function showSinkingFunds() {
     setView('sinking')
     setExpandAll(false)
-    setPlanOpen(true)
     setPath([])
   }
 
@@ -178,10 +167,9 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
     {view === 'loans' ? <LoansView loans={loans} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
       <TreeCanvas
         layout={layout}
-        planOpen={planOpen}
-        onTogglePlan={togglePlan}
         path={path}
         profile={showProfileMarker ? profile : { ...profile, visible: false }}
+        driveUser={driveUser}
         driveSaved={showDriveSaved}
         incomeSources={incomeSources}
         tree={visibleTree}

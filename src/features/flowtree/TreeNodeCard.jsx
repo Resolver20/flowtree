@@ -31,6 +31,6 @@ export default function TreeNodeCard({ entry, isExpanded, isSelected, isCategory
     {hasChildren
       ? <button className="amount-node" type="button" onClick={() => onNavigate(path)} title={`${item.name}: ${targetText}`} aria-label={`${action} ${item.name}, ${targetText}, ${Math.round((annualProgress?.ratio ?? funding.ratio) * 100)} percent filled`}>{cardContent}</button>
       : <div className="amount-node" title={`${item.name}: ${targetText}. End of branch.`}>{cardContent}</div>}
-    <button type="button" className="card-info" onClick={event => { event.stopPropagation(); onInspect(item.id) }} aria-label={`View and manage ${item.name}`} title={`View and manage ${item.name}`}><span className="material-symbols-rounded" aria-hidden="true">info</span></button>
+    <button type="button" className="card-info" style={{ color }} onClick={event => { event.stopPropagation(); onInspect(item.id) }} aria-label={`View and manage ${item.name}`} title={`View and manage ${item.name}`}><span className="material-symbols-rounded" aria-hidden="true">info</span></button>
   </div>
 }

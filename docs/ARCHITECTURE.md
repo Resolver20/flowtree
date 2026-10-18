@@ -60,7 +60,9 @@ Only the Drive session reference is held in session storage. No Google credentia
 - **Life goals**: goal authoring with Home-plan reflection;
 - **Full tree overview**: expanded hierarchy layout.
 
-The tree layout uses a measured viewport, fixed hierarchy columns, disjoint subtree bands, and SVG connectors. The layout is derived at render time and centered after scaling.
+The Home root is deliberately non-interactive and always expanded. Only category and destination branches control progressive disclosure. The tree layout uses a measured viewport, fixed hierarchy columns, disjoint subtree bands, and SVG connectors. The layout is derived at render time and centered after scaling.
+
+`TreeHeader` keeps appearance and account actions together in the profile menu: optional Drive sign-in and account switching, direct JSON editing for a connected account, and the light/dark theme control. The signed-in user's Drive profile photo is also passed to `TreeCanvas` for the Home person marker, with a generic icon fallback. `TreeNodeCard` and `PlanDialog` derive the same semantic color from `nodePresentation.js`, so a card's info control and its detail-view icon stay visually matched.
 
 ## Build and deployment
 

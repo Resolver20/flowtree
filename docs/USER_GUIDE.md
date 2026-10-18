@@ -15,9 +15,21 @@ FlowTree is a private planning tool for mapping monthly income to priorities. It
 Home is the visual money-flow view: `income -> planning categories -> destinations`.
 
 - Every card is a planned monthly amount, not an account balance.
+- The **Monthly plan** root stays open so the starting point is always visible. You can open or close category and destination branches, but not the root itself.
 - Categories are funded in their displayed order. Within a category, direct amounts are reserved before its children.
 - **Available** is what remains after the safety buffer and plan targets. **Over-planned** means targets exceed the available monthly income.
 - Select a branch to reveal its children. Use **Full tree overview** to see every branch together.
+- The small info control on a card uses the same color as the icon in that card's detail view, making it clear which item you are managing.
+
+## Appearance and account menu
+
+Select your profile at the bottom of the left sidebar to open the account menu. This is where FlowTree keeps account-related controls together:
+
+- Switch between light and dark mode.
+- Sign in with Google Drive, or add and switch Google accounts.
+- When signed in, see the same Google profile photo on the Home flow instead of the generic person icon.
+- See whether FlowTree is saving to the current Drive account.
+- Edit the plan JSON after connecting Drive.
 
 ## Sinking funds
 
@@ -41,7 +53,7 @@ The app requests the narrow `drive.file` permission. It does not read Gmail, Cal
 
 ## Direct JSON editing
 
-Use the profile menu and choose **Edit plan JSON** to view and edit the same plain JSON saved in Google Drive. FlowTree validates the document before replacing the active plan. Keep IDs unique and use JSON numbers for monetary fields.
+After connecting Google Drive, use the profile menu and choose **Edit plan JSON** to view and edit the same plain JSON saved in Google Drive. FlowTree validates the document before replacing the active plan. Keep IDs unique and use JSON numbers for monetary fields.
 
 ## A practical routine
 

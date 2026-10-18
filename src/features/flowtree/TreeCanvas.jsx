@@ -3,11 +3,13 @@ import { colorForNode } from './nodePresentation'
 import TreeNodeCard from './TreeNodeCard'
 import { roundedElbowPath } from './treeLayout'
 
-function PersonNode({ profile, point, worldWidth, worldHeight, driveSaved }) {
+function PersonNode({ profile, driveUser, point, worldWidth, worldHeight, driveSaved }) {
   if (!profile.visible) return null
   return <div className="energy-person" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
     {driveSaved && <span className="drive-saved-pulse material-symbols-rounded" role="status" aria-label="Saved to Google Drive">cloud_done</span>}
-    <span className="person-disc material-symbols-rounded" aria-hidden="true">person</span>
+    {driveUser?.photoLink
+      ? <img className="person-avatar-image" src={driveUser.photoLink} alt="" />
+      : <span className="person-disc material-symbols-rounded" aria-hidden="true">person</span>}
     <strong>{profile.name}</strong>
   </div>
 }
@@ -22,18 +24,17 @@ function IncomeSourceNode({ source, point, worldWidth, worldHeight, onManage }) 
   </div>
 }
 
-function FinanceNode({ available, isOpen, onToggle, point, worldWidth, worldHeight }) {
-  return <div className={`energy-source is-finance ${isOpen ? 'is-open' : ''}`} style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
-    <button className="energy-finance-toggle" type="button" onClick={onToggle} aria-expanded={isOpen} aria-label={`${isOpen ? 'Close' : 'Open'} monthly plan`} title={`${isOpen ? 'Close' : 'Open'} monthly plan`}>
+function FinanceNode({ available, point, worldWidth, worldHeight }) {
+  return <div className="energy-source is-finance" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
+    <div className="energy-finance-root">
       <span className="energy-root-icon material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
-      <span className="plan-toggle-cue material-symbols-rounded" aria-hidden="true">expand_more</span>
-    </button>
+    </div>
     <strong>Monthly plan</strong>
     <span>{formatMoney(available)} <small>available</small></span>
   </div>
 }
 
-export default function TreeCanvas({ layout, planOpen, onTogglePlan, path, profile, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect }) {
+export default function TreeCanvas({ layout, path, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect }) {
   const rootById = new Map(tree.map(item => [item.id, item]))
   const introPaths = [
     ...layout.incomeSourcePoints.map(point => roundedElbowPath(
@@ -77,9 +78,9 @@ export default function TreeCanvas({ layout, planOpen, onTogglePlan, path, profi
           style={{ '--branch-color': group.columnIndex === 0 ? '#9da7b6' : colorForNode(rootById.get(group.rootId)) }}
         />)}
       </svg>
-      <PersonNode profile={profile} point={layout.personPoint} worldWidth={layout.worldWidth} worldHeight={layout.height} driveSaved={driveSaved} />
+      <PersonNode profile={profile} driveUser={driveUser} point={layout.personPoint} worldWidth={layout.worldWidth} worldHeight={layout.height} driveSaved={driveSaved} />
       {incomeSources.map((source, index) => <IncomeSourceNode key={source.id} source={source} point={layout.incomeSourcePoints[index]} worldWidth={layout.worldWidth} worldHeight={layout.height} onManage={onManageIncomeSource} />)}
-      <FinanceNode available={layout.available} isOpen={planOpen} onToggle={onTogglePlan} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} />
+      <FinanceNode available={layout.available} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} />
       {layout.positionedColumns.flatMap((column, columnIndex) => column.items.map(entry => <TreeNodeCard
         key={entry.path.join('/')}
         entry={entry}

@@ -32,10 +32,6 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
           <span>Full tree overview</span>
         </button>
       </nav>
-      <button type="button" className="theme-toggle" onClick={onToggleTheme} aria-pressed={theme === 'dark'}>
-        <span className="material-symbols-rounded" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
-        <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-      </button>
       <button type="button" className="sidebar-profile" onClick={() => setAccountOpen(open => !open)} aria-expanded={accountOpen} aria-controls="account-menu" aria-label="Open account menu">
         {driveUser?.photoLink
           ? <img className="sidebar-avatar-image" src={driveUser.photoLink} alt="" />
@@ -47,6 +43,10 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
           <strong>{driveUser?.displayName || profile.name}</strong>
           <small>{driveUser?.emailAddress || 'Your plan is not connected to Google Drive yet.'}</small>
         </div>
+        <button type="button" className="account-menu-theme" onClick={onToggleTheme} aria-pressed={theme === 'dark'}>
+          <span className="material-symbols-rounded" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
+          <span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</span>
+        </button>
         {connected ? <>
           <small className="account-menu-status">{driveStatus === 'saving' ? 'Saving changes to Google Drive…' : 'Your plan is stored in this Google Drive account.'}</small>
           <button type="button" onClick={onEditJson}>Edit plan JSON</button>
