@@ -11,19 +11,19 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
       </header>
       <nav className="sidebar-nav" aria-label="Plan sections">
         <span className="sidebar-section-label">PLAN</span>
-        <button type="button" className={homeActive ? 'is-active' : ''} onClick={onReturnToRoot} aria-current={homeActive ? 'page' : undefined}>
+        <button type="button" className={homeActive ? 'is-active' : ''} onClick={onReturnToRoot} aria-current={homeActive ? 'page' : undefined} aria-label="Home">
           <span className="material-symbols-rounded" aria-hidden="true">home</span>
           <span>Home</span>
         </button>
-        <button type="button" className={view === 'sinking' ? 'is-active' : ''} onClick={onShowSinkingFunds} aria-current={view === 'sinking' ? 'page' : undefined}>
+        <button type="button" className={view === 'sinking' ? 'is-active' : ''} onClick={onShowSinkingFunds} aria-current={view === 'sinking' ? 'page' : undefined} aria-label="Sinking funds">
           <span className="material-symbols-rounded" aria-hidden="true">savings</span>
           <span>Sinking funds</span>
         </button>
-        <button type="button" className={view === 'loans' ? 'is-active' : ''} onClick={onShowLoans} aria-current={view === 'loans' ? 'page' : undefined}>
+        <button type="button" className={view === 'loans' ? 'is-active' : ''} onClick={onShowLoans} aria-current={view === 'loans' ? 'page' : undefined} aria-label="Loans">
           <span className="material-symbols-rounded" aria-hidden="true">account_balance</span>
           <span>Loans</span>
         </button>
-        <button type="button" className={view === 'goals' ? 'is-active' : ''} onClick={onShowGoals} aria-current={view === 'goals' ? 'page' : undefined}>
+        <button type="button" className={view === 'goals' ? 'is-active' : ''} onClick={onShowGoals} aria-current={view === 'goals' ? 'page' : undefined} aria-label="Life goals">
           <span className="material-symbols-rounded" aria-hidden="true">flag</span>
           <span>Life goals</span>
         </button>
