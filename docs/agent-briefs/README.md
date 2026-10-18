@@ -10,9 +10,12 @@ The current codebase is a browser-local React 19 and Vite application written in
 
 ## Routing rules
 
+- **Developer implementation**: owns the bounded code patch for a user request. Before editing, documents the current flow; after editing, documents the new flow, rationale, exact files, preserved behaviour, validation, and risks.
 - **UI and accessibility**: visual layout, responsive behaviour, interaction, keyboard focus, and CSS.
 - **Finance domain**: planning calculations, tree data, loans, goals, import/export validation, and domain tests.
 - **Quality review**: read-only investigation, test gaps, regressions, and validation plans.
 - **Integration and release**: Google Drive sync, build/deployment configuration, documentation, and release checks.
 
 For parallel requests, give each workstream a non-overlapping file or responsibility boundary. Do not ask multiple workers to edit the same files. The coordinator combines findings and remains responsible for the final decision and verification.
+
+Implementation and review are separate responsibilities. The developer makes a precise, minimal patch; UI, finance, QA, or integration review only the relevant surface before release.
