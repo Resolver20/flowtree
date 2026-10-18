@@ -508,4 +508,13 @@
 
 @media (max-width: 760px) and (max-height: 500px) {
   .energy-viewport.has-mobile-home-outlook { bottom: calc(82px + env(safe-area-inset-bottom)); padding-bottom: 100px; }
+  .mobile-home-outlook { gap: 6px; margin-bottom: 10px; padding: 8px 10px; }
+  .mobile-home-outlook-heading strong { font-size: 15px; }
+  .mobile-home-outlook-heading small, .mobile-home-outlook p, .mobile-home-totals small { font-size: 9px; }
+  .mobile-home-avatar, .mobile-home-avatar img { width: 30px; height: 30px; }
+  .mobile-home-avatar .material-symbols-rounded { font-size: 17px; }
+  .mobile-home-totals { gap: 5px; }
+  .mobile-home-totals > span { gap: 2px; padding: 5px 6px; }
+  .mobile-home-totals strong { font-size: 11px; }
+  .mobile-home-outlook p { line-height: 1.25; }
 }
