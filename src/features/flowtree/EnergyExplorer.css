@@ -72,7 +72,7 @@
 .sidebar-profile strong, .sidebar-profile small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-profile strong { color: #435068; font-size: 11px; font-weight: 600; }
 .sidebar-profile small { color: #8993a4; font-size: 10px; }
-.account-menu { position: absolute; z-index: 8; bottom: 14px; left: calc(100% + 12px); display: grid; gap: 8px; width: 260px; padding: 13px; border: 1px solid #d5dce8; border-radius: 12px; background: #fff; box-shadow: 0 14px 34px #34466d1f; }
+.account-menu { position: fixed; z-index: 22; bottom: 14px; left: 236px; display: grid; gap: 8px; width: 260px; padding: 13px; border: 1px solid #d5dce8; border-radius: 12px; background: #fff; box-shadow: 0 14px 34px #34466d1f; }
 .account-menu-identity { display: grid; gap: 3px; padding-bottom: 8px; border-bottom: 1px solid #e8ecf2; }
 .account-menu-identity strong { overflow: hidden; color: #344158; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .account-menu-identity small, .account-menu-status { color: #788498; font-size: 10px; line-height: 1.4; }
@@ -220,9 +220,11 @@
 @media (max-width: 900px) { .energy-breadcrumbs { right: 36px; } .energy-viewport { inset: 78px 0 178px 224px; } .energy-status { top: auto; right: 18px; bottom: 18px; left: 242px; width: auto; max-width: 760px; grid-template-columns: minmax(180px, .8fr) minmax(340px, 1.2fr); gap: 18px 24px; padding: 15px 18px 13px; } .summary-heading strong { font-size: 13px; } .summary-heading span { font-size: 10px; } .plan-totals > div { padding: 10px 12px; } .plan-totals strong { font-size: 17px; } .energy-status > small { font-size: 9px; } }
 @media (max-width: 760px) { .energy-sidebar { right: 0; bottom: auto; width: auto; min-height: 64px; flex-direction: row; align-items: center; gap: 8px; padding: 10px; border-right: 0; border-bottom: 1px solid #dfe4eb; } .sidebar-brand { flex: 0 0 auto; padding: 0 4px; } .energy-brand span { font-size: 16px; } .energy-brand .flowtree-mark { width: 30px; height: 30px; font-size: 19px; } .energy-mode-label, .sidebar-section-label, .sidebar-nav button > span:last-child, .sidebar-profile > span:last-child { display: none; } .sidebar-nav { display: flex; gap: 3px; margin: 0 0 0 auto; } .sidebar-nav button, .sidebar-profile { display: grid; width: 38px; min-height: 38px; place-items: center; margin: 0; padding: 0; } .sidebar-profile { margin: 0; } .sidebar-avatar { width: 28px; height: 28px; } .account-menu { top: 58px; right: 10px; bottom: auto; left: auto; width: min(280px, calc(100vw - 20px)); } .energy-breadcrumbs { top: 72px; right: 18px; left: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .energy-viewport { inset: 102px 0 203px; } .energy-status { right: 10px; bottom: 18px; left: 10px; grid-template-columns: 1fr; gap: 9px; padding: 11px 12px 9px; } .summary-heading { grid-template-columns: auto 1fr; align-items: baseline; gap: 10px; } .summary-heading span, .energy-status > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .plan-totals > div { padding: 8px 10px; } .plan-totals strong { font-size: 15px; } .form-grid { grid-template-columns: 1fr; } }
 
-.mobile-bottom-nav, .mobile-more-menu, .mobile-more-backdrop { display: none; }
+.mobile-account-trigger, .mobile-bottom-nav, .mobile-more-menu, .mobile-more-backdrop { display: none; }
 @media (max-width: 760px) {
   .energy-sidebar { display: none; }
+  .mobile-account-trigger { position: fixed; z-index: 7; top: 8px; right: 12px; display: grid; width: 40px; height: 40px; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--accent); box-shadow: 0 3px 10px #34466d14; }
+  .mobile-account-trigger .sidebar-avatar, .mobile-account-trigger .sidebar-avatar-image { width: 28px; height: 28px; }
   .mobile-bottom-nav { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); min-height: calc(66px + env(safe-area-inset-bottom)); padding: 6px 4px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); box-shadow: 0 -6px 20px #34466d12; }
   .mobile-bottom-nav button { display: grid; min-height: 52px; place-items: center; gap: 3px; padding: 4px 2px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted); font-size: 10px; }
   .mobile-bottom-nav button .material-symbols-rounded { font-size: 21px; }
@@ -240,7 +242,7 @@
   .mobile-more-account small { color: var(--muted); font-size: 11px; line-height: 1.45; }
   .mobile-more-account .mobile-drive-status { color: #a34048; }
   .mobile-more-account button { justify-content: center; min-height: 40px; }
-  .energy-breadcrumbs { top: 7px; right: 16px; left: 16px; }
+  .energy-breadcrumbs { top: 7px; right: 64px; left: 16px; }
   .energy-viewport { inset: 48px 0 177px; display: block; overflow-y: auto; overflow-x: hidden; padding: 12px 16px 24px; }
   .energy-world-frame { width: auto !important; height: auto !important; }
   .energy-status { right: 8px; bottom: calc(72px + env(safe-area-inset-bottom)); left: 8px; max-height: 96px; overflow: hidden; }
@@ -267,6 +269,7 @@
   .mobile-tree-cue { margin-left: auto; color: var(--muted); font-size: 21px; }
   .mobile-tree-children { display: grid; gap: 10px; margin-left: 20px; padding-left: 15px; border-left: 1px solid #c8ced8; }
   .theme-dark .mobile-bottom-nav { border-color: #34445a; background: #151f2e; box-shadow: 0 -6px 20px #0509124d; }
+  .theme-dark .mobile-account-trigger { border-color: #40516b; background: #1b2636; color: #a9bfff; box-shadow: 0 3px 10px #0509124d; }
   .theme-dark .mobile-bottom-nav button.is-active, .theme-dark .mobile-more-actions button.is-active { border-color: #6076a8; background: #243652; color: #f4f7fb; }
   .theme-dark .mobile-more-menu { border-color: #3b4d66; background: #1b2636; box-shadow: 0 14px 38px #05091273; }
   .theme-dark .mobile-more-actions button, .theme-dark .mobile-more-account button { border-color: #40516b; background: #202e42; color: #f4f7fb; }
