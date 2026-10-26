@@ -79,10 +79,12 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
       : planned === 0
         ? 'No monthly targets are planned yet.'
         : `${Math.round(planned / income * 100)}% of this month’s income is planned after your safety buffer.`
+  const availableLabel = available < 0 ? 'Over-planned' : 'Available'
+  const availableIcon = available < 0 ? 'warning' : 'savings'
 
   return <header className="mobile-home-outlook">
     <div className="mobile-home-outlook-heading">
-      <span><small>{monthLabel}</small><strong>Monthly outlook</strong></span>
+      <span className="mobile-home-outlook-title"><small><span className="material-symbols-rounded" aria-hidden="true">calendar_month</span>{monthLabel}</small><strong>Monthly outlook</strong></span>
       <span className="mobile-home-avatar" aria-label={driveUser?.displayName || profile.name}>
         {driveUser?.photoLink
           ? <img src={driveUser.photoLink} alt="" />
@@ -90,11 +92,11 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
       </span>
     </div>
     <div className="mobile-home-totals" aria-label="Monthly plan summary">
-      <span><small>Income</small><strong>{formatMoney(income)}</strong></span>
-      <span><small>Planned</small><strong>{formatMoney(planned)}</strong></span>
-      <span className={available < 0 ? 'is-over' : 'is-available'}><small>{available < 0 ? 'Over-planned' : 'Available'}</small><strong>{formatMoney(Math.abs(available))}</strong></span>
+      <span><small><span className="material-symbols-rounded" aria-hidden="true">payments</span>Income</small><strong>{formatMoney(income)}</strong></span>
+      <span><small><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>Planned</small><strong>{formatMoney(planned)}</strong></span>
+      <span className={available < 0 ? 'is-over' : 'is-available'}><small><span className="material-symbols-rounded" aria-hidden="true">{availableIcon}</span>{availableLabel}</small><strong>{formatMoney(Math.abs(available))}</strong></span>
     </div>
-    <p>{health}</p>
+    <p className="mobile-home-outlook-health"><span className="material-symbols-rounded" aria-hidden="true">insights</span><span>{health}</span></p>
   </header>
 }
 
