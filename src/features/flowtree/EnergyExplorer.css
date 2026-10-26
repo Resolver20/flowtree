@@ -467,8 +467,8 @@
 /* Keep the mobile flow clear of the fixed summary and bottom navigation even
    when the narrower legacy viewport rules above also apply. */
 @media (max-width: 760px) {
-  .energy-viewport { inset: 48px 0 177px; padding: 12px 16px 24px; }
-  .energy-status { right: 8px; bottom: calc(72px + env(safe-area-inset-bottom)); left: 8px; }
+  .energy-viewport { inset: 48px 0 calc(66px + env(safe-area-inset-bottom)); padding: 12px 16px 24px; }
+  .energy-status { display: none; }
 }
 
 @media (max-width: 760px) and (max-height: 500px) {
