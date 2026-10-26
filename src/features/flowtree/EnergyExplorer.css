@@ -225,6 +225,8 @@
   .energy-sidebar { display: none; }
   .mobile-account-trigger { position: fixed; z-index: 7; top: 8px; right: 12px; display: grid; width: 40px; height: 40px; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--accent); box-shadow: 0 3px 10px #34466d14; }
   .mobile-account-trigger .sidebar-avatar, .mobile-account-trigger .sidebar-avatar-image { width: 28px; height: 28px; }
+  .drive-sync-status { top: 8px; right: 60px; max-width: calc(100vw - 116px); overflow: hidden; white-space: nowrap; }
+  .drive-sync-status > span:last-child { overflow: hidden; text-overflow: ellipsis; }
   .mobile-bottom-nav { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); min-height: calc(66px + env(safe-area-inset-bottom)); padding: 6px 4px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); box-shadow: 0 -6px 20px #34466d12; }
   .mobile-bottom-nav button { display: grid; min-height: 52px; place-items: center; gap: 3px; padding: 4px 2px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted); font-size: 10px; }
   .mobile-bottom-nav button .material-symbols-rounded { font-size: 21px; }
@@ -444,6 +446,7 @@
 }
 
 @media (max-width: 760px) and (max-height: 500px) {
+  .account-menu { top: 54px; bottom: calc(74px + env(safe-area-inset-bottom)); max-height: none; overflow-y: auto; overscroll-behavior: contain; }
   .energy-sidebar { min-height: 54px; padding-block: 7px; }
   .energy-brand .flowtree-mark { width: 28px; height: 28px; font-size: 17px; }
   .sidebar-nav button, .sidebar-profile { width: 36px; min-height: 36px; }
