@@ -41,6 +41,7 @@ export default function TreeCanvas({ layout, mobile, path, profile, driveUser, d
       available={layout.available}
       allocations={layout.allocations}
       expandAll={layout.expandAll}
+      income={layout.income}
       incomeSources={incomeSources}
       path={path}
       tree={tree}

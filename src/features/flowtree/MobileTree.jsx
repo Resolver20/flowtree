@@ -14,6 +14,13 @@ function MobileIncomeSource({ source, onManage }) {
   </div>
 }
 
+function MobileIncomeSummary({ income }) {
+  return <div className="mobile-income-source" aria-label={`Income, ${formatMoney(income)} per month`}>
+    <span className="material-symbols-rounded" aria-hidden="true">payments</span>
+    <span><strong>Income</strong><small>{formatMoney(income)} /mo</small></span>
+  </div>
+}
+
 function MobileNode({ entry, selectedPath, expandAll, onNavigate, onInspect }) {
   const { item, path } = entry
   const funding = entry.funding || EMPTY_FUNDING
@@ -54,11 +61,13 @@ function MobileNode({ entry, selectedPath, expandAll, onNavigate, onInspect }) {
   </div>
 }
 
-export default function MobileTree({ available, allocations, expandAll, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
+export default function MobileTree({ available, allocations, expandAll, income, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
   return <div className="mobile-tree" aria-label="Monthly plan flow">
     <section className="mobile-tree-income" aria-label="Income">
       <span className="mobile-tree-step">Income</span>
-      {incomeSources.map(source => <MobileIncomeSource key={source.id} source={source} onManage={onManageIncomeSource} />)}
+      {incomeSources.length
+        ? incomeSources.map(source => <MobileIncomeSource key={source.id} source={source} onManage={onManageIncomeSource} />)
+        : <MobileIncomeSummary income={income} />}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" />
     <section className="mobile-plan-root" aria-label="Monthly plan">
