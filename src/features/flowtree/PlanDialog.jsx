@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { annualTargetProgress, countBranch, expectedAnnualSavings, findNode, monthlyAllocation, monthlyTotal, NODE_STATUSES, totalChildren } from '../../domain/flowTree'
+import { annualTargetProgress, countBranch, findNode, monthlyAllocation, monthlyTotal, NODE_STATUSES, totalChildren } from '../../domain/flowTree'
 import { formatDate, formatMoney } from '../../lib/money'
 import { colorForNode, iconForNode } from './nodePresentation'
 import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
@@ -142,6 +142,7 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     id: node.id,
     name: node.name,
     amount: node.amount,
+    savedAmount: node.savedAmount ?? 0,
     dueDate: node.dueDate || defaultAnnualTargetDate(),
     status: node.status,
     parentPath,
@@ -159,8 +160,8 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     if (drafts.some(draft => !draft.name.trim())) { setError('Every yearly target needs a name.'); return }
     if (drafts.some(draft => !draft.dueDate || draft.dueDate < tomorrowDate())) { setError('Every target date must be in the future.'); return }
     onSave(drafts.map(draft => {
-      const preview = { ...draft.node, name: draft.name.trim(), amount: Math.max(0, Number(draft.amount) || 0), dueDate: draft.dueDate, status: draft.status }
-      return { id: draft.id, changes: { name: preview.name, amount: preview.amount, dueDate: preview.dueDate, status: preview.status, savedAmount: expectedAnnualSavings(preview) } }
+      const preview = { ...draft.node, name: draft.name.trim(), amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, status: draft.status }
+      return { id: draft.id, changes: { name: preview.name, amount: preview.amount, dueDate: preview.dueDate, status: preview.status, savedAmount: preview.savedAmount } }
     }))
     onClose()
   }
@@ -170,14 +171,15 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     {!drafts.length ? <div className="empty-annual-targets"><strong>No yearly targets yet</strong><span>Change a destination’s frequency to Yearly and it will appear here.</span></div> : <form onSubmit={submit}>
       <div className="annual-target-list">
         {drafts.map(draft => {
-          const preview = { ...draft.node, name: draft.name, amount: Math.max(0, Number(draft.amount) || 0), dueDate: draft.dueDate, status: draft.status }
+          const preview = { ...draft.node, name: draft.name, amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, status: draft.status }
           const progress = annualTargetProgress(preview)
           return <section className="annual-target-row" key={draft.id}>
             <div className="annual-target-heading"><input aria-label="Target name" value={draft.name} onChange={event => changeDraft(draft.id, { name: event.target.value })} /><small>{draft.parentPath || 'Top-level category'}</small></div>
             <label>Annual target (₹)<input type="number" min="0" step="0.01" value={draft.amount} onChange={event => changeDraft(draft.id, { amount: event.target.value })} /></label>
+            <label>Saved so far (₹)<input type="number" min="0" step="0.01" value={draft.savedAmount} onChange={event => changeDraft(draft.id, { savedAmount: event.target.value })} /></label>
             <label>Target date<input type="date" min={tomorrowDate()} value={draft.dueDate} onChange={event => changeDraft(draft.id, { dueDate: event.target.value })} /></label>
             <label>Status<select value={draft.status} onChange={event => changeDraft(draft.id, { status: event.target.value })}>{NODE_STATUSES.map(status => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></label>
-            <div className="annual-target-summary"><span><small>Expected saved</small><strong>{formatMoney(progress.saved)}</strong></span><span><small>Progress</small><strong>{Math.round(progress.ratio * 100)}%</strong></span><span><small>Needed monthly</small><strong>{formatMoney(monthlyAllocation(preview))}</strong></span></div>
+            <div className="annual-target-summary"><span><small>Saved for progress</small><strong>{formatMoney(progress.saved)}</strong></span><span><small>Progress</small><strong>{Math.round(progress.ratio * 100)}%</strong></span><span><small>Needed monthly</small><strong>{formatMoney(monthlyAllocation(preview))}</strong></span></div>
           </section>
         })}
       </div>
@@ -264,6 +266,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   const isEditing = Boolean(node)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [amount, setAmount] = useState(node?.amount ?? '')
+  const [savedAmount, setSavedAmount] = useState(node?.savedAmount ?? '')
   const [period, setPeriod] = useState(node?.period || 'month')
   const initialDueDate = node?.dueDate || (node?.period === 'year' ? defaultAnnualTargetDate() : '')
   const [dueDate, setDueDate] = useState(initialDueDate)
@@ -272,7 +275,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   const [status, setStatus] = useState(node?.status || 'active')
   const [symbol, setSymbol] = useState(node ? iconForNode(node) : 'savings')
   const [error, setError] = useState('')
-  const previewNode = { amount, savedAmount: node?.savedAmount || 0, dueDate, period, status, children: node?.children || [] }
+  const previewNode = { amount, savedAmount: Math.max(0, Number(savedAmount) || 0), dueDate, period, status, children: node?.children || [] }
   const preview = monthlyTotal(previewNode)
   const annualProgress = annualTargetProgress(previewNode)
 
@@ -291,7 +294,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
       parentId: dialog.parentId,
       name,
       amount: Math.max(0, Number(form.get('amount')) || 0),
-      savedAmount: period === 'year' ? annualProgress.saved : 0,
+      savedAmount: period === 'year' ? Math.max(0, Number(savedAmount) || 0) : 0,
       dueDate: period === 'year' ? dueDate : '',
       period: String(form.get('period')),
       status: String(form.get('status')),
@@ -318,7 +321,8 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
       {period === 'year' && <>
         <label>Target date<span className="date-entry"><input name="dueDateText" type="text" inputMode="numeric" placeholder="DD/MM/YYYY" value={dateText} onChange={event => { const text = event.target.value; setDateText(text); setDateError(''); const parsed = parseDateValue(text); if (parsed) setDueDate(parsed) }} aria-invalid={Boolean(dateError)} aria-describedby={dateError ? 'date-error' : undefined} /><input className="date-picker" aria-label="Choose target date from calendar" type="date" min={tomorrowDate()} value={dueDate} onChange={event => { setDueDate(event.target.value); setDateText(displayDateValue(event.target.value)); setDateError('') }} /><button type="button" onClick={() => { const nextDate = defaultAnnualTargetDate(); setDueDate(nextDate); setDateText(displayDateValue(nextDate)); setDateError('') }}>One year from today</button></span></label>
         {dateError && <span id="date-error" role="alert" className="field-error">{dateError}</span>}
-        <div className="calculated-field"><span>Expected saved so far</span><strong>{formatMoney(annualProgress.saved)}</strong><small>Calculated automatically from a 12-month cycle ending on the target date.</small></div>
+        <label>Saved so far (₹)<input name="savedAmount" type="number" min="0" step="0.01" value={savedAmount} onChange={event => setSavedAmount(event.target.value)} /></label>
+        <div className="calculated-field"><span>Expected saved so far</span><strong>{formatMoney(annualProgress.saved)}</strong><small>Progress uses the higher of your saved amount and the planned pace to the target date.</small></div>
         <div className="target-preview" aria-live="polite">
           <div><span>Expected progress</span><strong>{Math.round(annualProgress.ratio * 100)}%</strong></div>
           <progress value={annualProgress.saved} max={annualProgress.target || 1} />
