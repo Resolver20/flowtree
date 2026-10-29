@@ -31,8 +31,10 @@ function LoanDraftSketch({ principal, remainingPrincipal, annualRate, tenureYear
       : <>
         <div className="loan-draft-metrics">
           <div><span>Monthly payment</span><strong>{formatMoney(draft.scheduledPayment)}</strong></div>
+          <div><span>Selected tenure</span><strong>{formatDuration(draft.tenureMonths)}</strong></div>
           <div><span>Draft payoff</span><strong>{formatDuration(draft.payoffMonths)}</strong></div>
-          <div><span>Interest remaining</span><strong>{formatMoney(draft.totalInterest)}</strong></div>
+          <div><span>Total payable</span><strong>{formatMoney(draft.totalPaid)}</strong></div>
+          <div><span>Total interest payable</span><strong>{formatMoney(draft.totalInterest)}</strong></div>
         </div>
         <div className="loan-draft-timeline" aria-label={`Draft payoff in ${formatDuration(draft.payoffMonths)} against a ${formatDuration(draft.tenureMonths)} tenure`}>
           <span>Payoff timeline</span>
