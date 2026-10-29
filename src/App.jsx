@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from './domain/flowDataTransfer'
 import { findNode, organizeSubscriptions, pathToNode } from './domain/flowTree'
 import { loanProjection } from './domain/loan'
-import { driveRestoreMode } from './domain/driveRestoreCandidates'
+import { driveRestoreMode, orderValidDriveRestoreCandidates } from './domain/driveRestoreCandidates'
 import { canAutosaveDrive } from './domain/driveSyncState'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import PlanDialog from './features/flowtree/PlanDialog'
 import { createBlankFlowData, useFlowData } from './hooks/useFlowData'
 import { connectGoogleDrive, downloadFlowtreeBackup, findOrCreateFolder, getDriveUser, listFlowtreeRestoreCandidates, revokeGoogleDriveAccess, uploadFlowtreeBackup } from './lib/googleDriveSync'
 
-const DRIVE_FOLDER_NAME = 'FlowTree'
+const DRIVE_FOLDER_NAME = 'gpt'
 const DRIVE_FILE_NAME = 'flowtree-plan.json'
 const DRIVE_SESSION_KEY = 'flowtree-drive-session-v1'
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -17,14 +17,14 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 function readDriveSession() {
   try {
     const session = JSON.parse(window.sessionStorage.getItem(DRIVE_SESSION_KEY) || 'null')
-    return session?.accessToken && session?.folderId && session?.fileId ? session : null
+    return session?.accessToken && session?.folderId && session?.fileId && session.folderName === DRIVE_FOLDER_NAME ? session : null
   } catch {
     return null
   }
 }
 
 function writeDriveSession(session) {
-  window.sessionStorage.setItem(DRIVE_SESSION_KEY, JSON.stringify(session))
+  window.sessionStorage.setItem(DRIVE_SESSION_KEY, JSON.stringify({ ...session, folderName: DRIVE_FOLDER_NAME }))
 }
 
 function clearDriveSession() {
@@ -62,7 +62,7 @@ function App() {
 
   async function restoreDriveCandidate({ accessToken, user, candidate, candidates = [] }) {
     try {
-      const restoredPlan = parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId: candidate.id }))
+      const restoredPlan = candidate.restoredPlan || parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId: candidate.id }))
       replaceDataRef.current({ ...restoredPlan, tree: organizeSubscriptions(restoredPlan.tree) })
       setPath([])
       writeDriveSession({ accessToken, folderId: candidate.folderId, fileId: candidate.id })
@@ -78,6 +78,18 @@ function App() {
     }
   }
 
+  async function findValidDriveRestoreCandidates(accessToken, candidates) {
+    const checkedCandidates = await Promise.all(candidates.map(async candidate => {
+      try {
+        const restoredPlan = parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId: candidate.id }))
+        return { ...candidate, valid: true, restoredPlan }
+      } catch {
+        return { ...candidate, valid: false }
+      }
+    }))
+    return orderValidDriveRestoreCandidates(checkedCandidates, DRIVE_FOLDER_NAME)
+  }
+
   async function connectDrive({ prompt = 'select_account consent' } = {}) {
     if (!googleClientId) {
       setDrive(previous => ({ ...previous, status: 'unavailable', error: 'Google Drive sign-in has not been configured for this deployment.' }))
@@ -90,17 +102,19 @@ function App() {
         getDriveUser({ accessToken }),
         listFlowtreeRestoreCandidates({ accessToken, folderName: DRIVE_FOLDER_NAME, fileName: DRIVE_FILE_NAME }),
       ])
-      const mode = driveRestoreMode(discovery.candidates)
+      const candidates = await findValidDriveRestoreCandidates(accessToken, discovery.candidates)
+      const mode = driveRestoreMode(candidates)
       if (mode === 'restore') {
-        await restoreDriveCandidate({ accessToken, user, candidate: discovery.candidates[0] })
+        await restoreDriveCandidate({ accessToken, user, candidate: candidates[0] })
         return
       }
       if (mode === 'choose') {
-        setDrive({ status: 'needs-restore-choice', user, error: '', accessToken, folderId: '', fileId: '', restoreCandidates: discovery.candidates })
+        setDrive({ status: 'needs-restore-choice', user, error: '', accessToken, folderId: '', fileId: '', restoreCandidates: candidates })
         setDialog({ type: 'driveSync' })
         return
       }
-      setDrive({ status: 'needs-plan-choice', setupRequired: true, user, error: '', accessToken, folderId: discovery.folders[0]?.id || '', fileId: '' })
+      const error = discovery.candidates.length ? 'No valid FlowTree plan was found in your gpt folder. No data was uploaded.' : ''
+      setDrive({ status: 'needs-plan-choice', setupRequired: true, user, error, accessToken, folderId: discovery.folders[0]?.id || '', fileId: '' })
       setDialog({ type: 'driveSync' })
     } catch (error) {
       setDrive(previous => ({ ...previous, status: 'error', error: error.message || 'Google Drive sign-in failed.' }))

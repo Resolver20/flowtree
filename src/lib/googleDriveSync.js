@@ -82,7 +82,7 @@ export async function findFlowtreeBackup({ accessToken, folderId, fileName = 'fl
   return result.files?.[0] || null
 }
 
-export async function listFlowtreeRestoreCandidates({ accessToken, folderName = 'FlowTree', fileName = 'flowtree-plan.json' }) {
+export async function listFlowtreeRestoreCandidates({ accessToken, folderName = 'gpt', fileName = 'flowtree-plan.json' }) {
   if (!accessToken) throw new Error('A Google Drive access token is required.')
   const folderQuery = encodeURIComponent(`name = '${folderName.replaceAll("'", "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`)
   const folderResult = await driveRequest(`/files?q=${folderQuery}&spaces=drive&fields=files(id,name,modifiedTime,mimeType)&pageSize=100&orderBy=modifiedTime%20desc`, accessToken)
@@ -101,7 +101,7 @@ export async function getDriveUser({ accessToken } = {}) {
   return result.user || {}
 }
 
-export async function findOrCreateFolder({ accessToken, folderName = 'FlowTree' } = {}) {
+export async function findOrCreateFolder({ accessToken, folderName = 'gpt' } = {}) {
   if (!accessToken) throw new Error('A Google Drive access token is required.')
   const query = encodeURIComponent(`name = '${folderName.replaceAll("'", "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`)
   const result = await driveRequest(`/files?q=${query}&spaces=drive&fields=files(id,name,mimeType)&pageSize=10`, accessToken)

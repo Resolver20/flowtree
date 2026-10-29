@@ -140,7 +140,7 @@ Authoring rules:
 
 ## Google Drive sync
 
-Google Drive sign-in is optional. The app asks the user to sign in with their own Google account, creates or uses an app-owned private `FlowTree` folder, restores `flowtree-plan.json` when it exists, and saves later plan changes automatically. No Google credentials are stored in FlowTree data or committed to the repository.
+Google Drive sign-in is optional. The app asks the user to sign in with their own Google account, creates or uses an app-owned private `gpt` folder, restores a valid `flowtree-plan.json` when it exists, and saves later plan changes automatically. If duplicates exist, the newest valid files are shown first for an explicit restore choice. No Google credentials are stored in FlowTree data or committed to the repository.
 
 The public [privacy policy](./public/privacy.html) and [terms](./public/terms.html) describe the limited Google Drive access used by the app.
 

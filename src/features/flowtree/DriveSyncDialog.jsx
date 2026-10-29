@@ -25,11 +25,11 @@ export default function DriveSyncDialog({ status, user, error, configured, setup
     <button type="button" className="close" aria-label="Close" disabled={choiceBusy} onClick={onClose}>×</button>
     <h2 id="drive-dialog-title">{needsRestoreChoice ? 'Choose a FlowTree plan' : needsPlanChoice ? 'Set up Google Drive' : 'Account'}</h2>
     {needsRestoreChoice ? <>
-      <p>Multiple FlowTree plans were found. Choose one to restore; no file will be changed by this selection.</p>
+      <p>Multiple valid FlowTree plans were found in your gpt folder. Choose one to restore; they are listed newest first and no file will be changed by this selection.</p>
       {error && <span role="alert" className="field-error">{error}</span>}
       <div className="dialog-actions">{restoreCandidates.map(candidate => <button key={candidate.id} type="button" disabled={restoreLoading} onClick={() => onChooseRestoreCandidate(candidate.id)}>{candidateLabel(candidate)}</button>)}<button type="button" disabled={restoreLoading} onClick={onClose}>Not now</button></div>
     </> : needsPlanChoice ? <>
-      <p>No FlowTree plan was found for this account. Your current plan will remain unchanged until you choose how to set up Drive.</p>
+      <p>No valid FlowTree plan was found in your gpt folder. Your current plan will remain unchanged until you choose how to set up Drive.</p>
       {error && <span role="alert" className="field-error">{error}</span>}
       <div className="dialog-actions"><button type="button" disabled={setupSaving} onClick={onClose}>Not now</button><button type="button" disabled={setupSaving} onClick={onCreateBlankPlan}>Create empty Drive plan</button><button type="button" className="modal-submit" disabled={setupSaving} onClick={onUseCurrentPlan}>{setupSaving ? 'Saving…' : 'Save current plan to Drive'}</button></div>
     </> : connected ? <>
