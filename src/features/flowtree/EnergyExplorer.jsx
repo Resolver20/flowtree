@@ -117,7 +117,6 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   const demo = false
   const [view, setView] = useState('home')
   const [loanFocusId, setLoanFocusId] = useState(null)
-  const [expandedViews, setExpandedViews] = useState({ home: false, sinking: false })
   const [theme, setTheme] = useState(readTheme)
   const [showDriveSaved, setShowDriveSaved] = useState(false)
   const previousDriveStatus = useRef(driveStatus)
@@ -133,7 +132,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }, [tree])
   const goals = useMemo(() => tree.find(node => node.id === 'goals')?.children || [], [tree])
   const investments = useMemo(() => tree.find(node => node.id === 'growth')?.children || [], [tree])
-  const expandAll = view === 'home' || view === 'sinking' ? expandedViews[view] : false
+  const expandAll = view === 'home' && !path.length
   const visibleTreeExpanded = expandAll
   const showProfileMarker = view === 'home' && (profile.visible || Boolean(driveUser?.photoLink))
 
@@ -230,39 +229,16 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }, [isMobileLayout, viewport.height, viewport.width, viewportRef])
 
   function navigate(nextPath) {
-    if (expandAll) {
-      setExpandedViews(current => ({ ...current, [view]: false }))
-      setPath(nextPath)
-      return
-    }
     setPath(current => nextPath.join('/') === current.join('/') ? current.slice(0, -1) : nextPath)
   }
 
   function returnToRoot() {
     setView('home')
-    setExpandedViews(current => ({ ...current, home: false }))
-    setPath([])
-  }
-
-  function toggleExpandAll() {
-    if (view !== 'home' && view !== 'sinking') {
-      setView('home')
-      setExpandedViews(current => ({ ...current, home: true }))
-      setPath([])
-      return
-    }
-    setExpandedViews(current => ({ ...current, [view]: !current[view] }))
     setPath([])
   }
 
   function showSinkingFunds() {
     setView('sinking')
-    setPath([])
-  }
-
-  function showPlan() {
-    setView('home')
-    setExpandedViews(current => ({ ...current, home: true }))
     setPath([])
   }
 
@@ -309,12 +285,10 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       onEditJson={onEditJson}
       onToggleTheme={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
       onShowSinkingFunds={showSinkingFunds}
-      onShowPlan={showPlan}
       onShowLoans={showLoans}
       onShowGoals={showGoals}
       onShowInvestments={showInvestments}
       onShowGeneralLedger={showGeneralLedger}
-      onToggleExpandAll={toggleExpandAll}
     />
     <DriveSyncStatus status={driveStatus} />
     {view === 'loans' ? <LoansView loans={loans} focusedLoanId={loanFocusId} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">

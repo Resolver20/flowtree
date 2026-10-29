@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onEditJson, onShowPlan, onShowSinkingFunds, onShowLoans, onShowGoals, onShowInvestments, onShowGeneralLedger, onToggleExpandAll, onToggleTheme }) {
-  const homeActive = view === 'home' && !breadcrumbs.length && !expandAll
-  // Full view is a stable toggle. Its selected appearance shows the active state
-  // without adding a second exit action or changing the control's label.
-  const overviewLabel = 'Full view'
+export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onEditJson, onShowSinkingFunds, onShowLoans, onShowGoals, onShowInvestments, onShowGeneralLedger, onToggleTheme }) {
+  const homeActive = view === 'home'
   const [accountOpen, setAccountOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const accountMenuRef = useRef(null)
@@ -107,10 +104,6 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
           <span className="material-symbols-rounded" aria-hidden="true">receipt_long</span>
           <span>General ledger</span>
         </button>
-        <button type="button" className={expandAll ? 'is-active' : ''} onClick={() => closeMenuThen(onToggleExpandAll)} aria-label={overviewLabel}>
-          <span className="material-symbols-rounded" aria-hidden="true">account_tree</span>
-          <span>{overviewLabel}</span>
-        </button>
       </nav>
       <button ref={desktopAccountButtonRef} type="button" className="sidebar-profile" onClick={() => setAccountOpen(open => !open)} aria-expanded={accountOpen} aria-controls="account-menu" aria-label="Open account menu">
         {driveUser?.photoLink
@@ -147,9 +140,6 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
       <button type="button" className={homeActive ? 'is-active' : ''} onClick={() => closeMenuThen(onReturnToRoot)} aria-current={homeActive ? 'page' : undefined}>
         <span className="material-symbols-rounded" aria-hidden="true">home</span><span>Home</span>
       </button>
-      <button type="button" className={view === 'home' && expandAll ? 'is-active' : ''} onClick={() => closeMenuThen(onShowPlan)} aria-current={view === 'home' && expandAll ? 'page' : undefined}>
-        <span className="material-symbols-rounded" aria-hidden="true">account_tree</span><span>Plan</span>
-      </button>
       <button type="button" className={view === 'sinking' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowSinkingFunds)} aria-current={view === 'sinking' ? 'page' : undefined}>
         <span className="material-symbols-rounded" aria-hidden="true">savings</span><span>Sinking</span>
       </button>
@@ -166,7 +156,6 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
         <button type="button" className={view === 'goals' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGoals)}><span className="material-symbols-rounded" aria-hidden="true">flag</span>Goals</button>
         <button type="button" className={view === 'investments' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowInvestments)}><span className="material-symbols-rounded" aria-hidden="true">trending_up</span>Investments</button>
         <button type="button" className={view === 'ledger' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGeneralLedger)}><span className="material-symbols-rounded" aria-hidden="true">receipt_long</span>General ledgers</button>
-        <button type="button" className={expandAll ? 'is-active' : ''} onClick={() => closeMenuThen(onToggleExpandAll)} aria-label={expandAll ? 'Collapse everything in the full tree' : 'Expand everything in the full tree'}><span className="material-symbols-rounded" aria-hidden="true">account_tree</span>{expandAll ? 'Collapse everything' : 'Expand everything'}</button>
         <button type="button" onClick={() => closeMenuThen(onToggleTheme)} aria-pressed={theme === 'dark'}><span className="material-symbols-rounded" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</button>
       </div>
       <div className="mobile-more-account">
