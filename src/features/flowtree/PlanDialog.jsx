@@ -5,6 +5,7 @@ import { colorForNode, iconForNode } from './nodePresentation'
 import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
 import DriveSyncDialog from './DriveSyncDialog'
 import { parseFlowImport, serializeFlowData } from '../../domain/flowDataTransfer'
+import { loanProjection } from '../../domain/loan'
 
 const formatStatus = status => status[0].toUpperCase() + status.slice(1)
 
@@ -260,6 +261,45 @@ function ManageDialog({ node, onClose, onDelete, onRequestEdit, onRequestAdd }) 
   </DialogShell>
 }
 
+function LoanNodeDialog({ node, onClose, onSave }) {
+  const [name, setName] = useState(node.name)
+  const [principal, setPrincipal] = useState(node.loan.principal)
+  const [remainingPrincipal, setRemainingPrincipal] = useState(node.loan.remainingPrincipal)
+  const [annualRate, setAnnualRate] = useState(node.loan.annualRate)
+  const [tenureYears, setTenureYears] = useState(node.loan.tenureMonths / 12)
+  const [extraPayment, setExtraPayment] = useState(node.loan.extraPayment || 0)
+  const [status, setStatus] = useState(node.status)
+  const [error, setError] = useState('')
+  const preview = loanProjection({ principal, remainingPrincipal, annualRate, tenureMonths: Math.round((Number(tenureYears) || 0) * 12), extraPayment })
+
+  function submit(event) {
+    event.preventDefault()
+    const loan = { principal: Math.max(0, Number(principal) || 0), remainingPrincipal: Number(remainingPrincipal), annualRate: Math.max(0, Number(annualRate) || 0), tenureMonths: Math.max(1, Math.round((Number(tenureYears) || 0) * 12)), extraPayment: Math.max(0, Number(extraPayment) || 0) }
+    if (!name.trim() || !loan.principal || !Number.isFinite(loan.remainingPrincipal) || !Number(tenureYears)) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
+    if (loan.remainingPrincipal > loan.principal) { setError('Remaining principal cannot exceed the original principal.'); return }
+    onSave({ nodeId: node.id, name: name.trim(), loan, status })
+    onClose()
+  }
+
+  return <DialogShell title={`Edit ${node.name}`} onClose={onClose}>
+    <p>Update the core loan settings here. The monthly amount in Home updates from this payoff estimate.</p>
+    <form onSubmit={submit}>
+      <label>Loan name<input autoFocus value={name} onChange={event => { setName(event.target.value); setError('') }} maxLength="100" required /></label>
+      <div className="form-grid">
+        <label>Original principal (₹)<input value={principal} onChange={event => { setPrincipal(event.target.value); setError('') }} type="number" min="0" step="0.01" /></label>
+        <label>Principal remaining (₹)<input value={remainingPrincipal} onChange={event => { setRemainingPrincipal(event.target.value); setError('') }} type="number" step="0.01" /></label>
+        <label>Interest rate (% p.a.)<input value={annualRate} onChange={event => setAnnualRate(event.target.value)} type="number" min="0" step="0.01" /></label>
+        <label>Remaining tenure (years)<input value={tenureYears} onChange={event => { setTenureYears(event.target.value); setError('') }} type="number" min="0.01" step="0.01" inputMode="decimal" /></label>
+        <label>Extra principal / month (₹)<input value={extraPayment} onChange={event => setExtraPayment(event.target.value)} type="number" min="0" step="0.01" /></label>
+        <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(value => <option key={value} value={value}>{formatStatus(value)}</option>)}</select></label>
+      </div>
+      {error && <span className="field-error" role="alert">{error}</span>}
+      <div className="amount-preview" aria-live="polite"><span>Updated monthly payment<small>Base EMI plus any extra principal</small></span><strong>{formatMoney(preview.scheduledPayment)}</strong></div>
+      <div className="dialog-actions"><button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">Save loan</button></div>
+    </form>
+  </DialogShell>
+}
+
 function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   const node = dialog.nodeId ? findNode(tree, dialog.nodeId) : null
   const parent = dialog.parentId ? findNode(tree, dialog.parentId) : null
@@ -353,5 +393,6 @@ export default function PlanDialog({ dialog, profile, incomeSources, generalLedg
   if (dialog.type === 'importJson') return <ImportPlanDialog dialog={dialog} onClose={onClose} onImport={onImportData} />
   if (dialog.type === 'buffer') return <BufferDialog buffer={buffer} onClose={onClose} onSave={onSaveBuffer} />
   if (dialog.type === 'manage') return <ManageDialog node={findNode(tree, dialog.nodeId)} onClose={onClose} onDelete={onDeleteNode} onRequestEdit={onRequestEdit} onRequestAdd={onRequestAdd} />
+  if (dialog.type === 'node' && findNode(tree, dialog.nodeId)?.loan) return <LoanNodeDialog node={findNode(tree, dialog.nodeId)} onClose={onClose} onSave={onSaveNode} />
   return <NodeDialog dialog={dialog} tree={tree} onClose={onClose} onSave={onSaveNode} onDelete={onDeleteNode} />
 }

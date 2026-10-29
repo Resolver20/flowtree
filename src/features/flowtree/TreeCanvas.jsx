@@ -26,12 +26,13 @@ function IncomeSourceNode({ source, point, worldWidth, worldHeight, onManage }) 
 }
 
 function FinanceNode({ available, point, worldWidth, worldHeight }) {
+  const label = available < 0 ? 'over-planned after buffer' : 'available after buffer'
   return <div className="energy-source is-finance" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
     <div className="energy-finance-root">
       <span className="energy-root-icon material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
     </div>
     <strong>Monthly plan</strong>
-    <span>{formatMoney(available)} <small>available</small></span>
+    <span>{formatMoney(available)} <small>{label}</small></span>
   </div>
 }
 

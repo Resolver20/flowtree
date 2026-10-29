@@ -19,3 +19,10 @@ test('a 25-year tenure is projected as 300 months', () => {
   assert.equal(projection.tenureMonths, 300)
   assert.equal(projection.payoffMonths, 300)
 })
+
+test('an overpaid loan keeps its signed remaining principal without scheduling another payment', () => {
+  const projection = loanProjection({ principal: 100000, remainingPrincipal: -500, annualRate: 8, tenureMonths: 120, extraPayment: 1000 })
+  assert.equal(projection.remainingPrincipal, -500)
+  assert.equal(projection.scheduledPayment, 0)
+  assert.equal(projection.payoffMonths, 0)
+})

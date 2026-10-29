@@ -12,9 +12,9 @@ function LoanDraftSketch({ principal, remainingPrincipal, annualRate, tenureYear
   const draft = useMemo(() => {
     // Reuse the persisted-loan calculation so a preview cannot disagree with Home after save.
     const tenureMonths = Math.round((Number(tenureYears) || 0) * 12)
-    const openingBalance = Math.max(0, Number(remainingPrincipal) || 0)
+    const openingBalance = Number(remainingPrincipal)
     const originalPrincipal = Math.max(0, Number(principal) || 0)
-    if (!originalPrincipal || !openingBalance || openingBalance > originalPrincipal || !tenureMonths) return null
+    if (!originalPrincipal || !Number.isFinite(openingBalance) || openingBalance > originalPrincipal || !tenureMonths) return null
     return loanProjection({
       principal: originalPrincipal,
       remainingPrincipal: openingBalance,
@@ -57,8 +57,8 @@ function LoanEditor({ loan, onSave, onCancel }) {
 
   function submit(event) {
     event.preventDefault()
-    const data = { principal: Math.max(0, Number(principal) || 0), remainingPrincipal: Math.max(0, Number(remainingPrincipal) || 0), annualRate: Math.max(0, Number(annualRate) || 0), tenureMonths: Math.max(1, Math.round((Number(tenureYears) || 0) * 12)), extraPayment: Math.max(0, Number(extraPayment) || 0) }
-    if (!name.trim() || !data.principal || !data.remainingPrincipal || !data.tenureMonths) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
+    const data = { principal: Math.max(0, Number(principal) || 0), remainingPrincipal: Number(remainingPrincipal), annualRate: Math.max(0, Number(annualRate) || 0), tenureMonths: Math.max(1, Math.round((Number(tenureYears) || 0) * 12)), extraPayment: Math.max(0, Number(extraPayment) || 0) }
+    if (!name.trim() || !data.principal || !Number.isFinite(data.remainingPrincipal) || !data.tenureMonths) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
     if (data.remainingPrincipal > data.principal) { setError('Remaining principal cannot exceed the original principal.'); return }
     onSave({ id: loan?.id, name: name.trim(), loan: data })
   }
@@ -68,7 +68,7 @@ function LoanEditor({ loan, onSave, onCancel }) {
     <div className="loan-form-grid">
       <label>Loan name<input value={name} onChange={event => setName(event.target.value)} maxLength="100" /></label>
       <label>Original principal (₹)<input value={principal} onChange={event => setPrincipal(event.target.value)} type="number" min="0" step="0.01" /></label>
-      <label>Principal remaining (₹)<input value={remainingPrincipal} onChange={event => setRemainingPrincipal(event.target.value)} type="number" min="0" step="0.01" /></label>
+      <label>Principal remaining (₹)<input value={remainingPrincipal} onChange={event => setRemainingPrincipal(event.target.value)} type="number" step="0.01" /></label>
       <label>Interest rate (% p.a.)<input value={annualRate} onChange={event => setAnnualRate(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Loan tenure (years)<input value={tenureYears} onChange={event => setTenureYears(event.target.value)} type="number" min="0.01" step="0.01" inputMode="decimal" aria-describedby="tenure-help" /></label>
       <label>Extra principal / month (₹)<input value={extraPayment} onChange={event => setExtraPayment(event.target.value)} type="number" min="0" step="0.01" /></label>

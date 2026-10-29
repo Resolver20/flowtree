@@ -44,6 +44,12 @@ function amountAt(value, path, fallback) {
   return value
 }
 
+function signedAmountAt(value, path, fallback) {
+  if ((value === undefined || value === null) && fallback !== undefined) return fallback
+  if (typeof value !== 'number' || !Number.isFinite(value)) fail(`${path} must be a number.`)
+  return value
+}
+
 function dateAt(value, path) {
   if (value === undefined || value === null || value === '') return ''
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) fail(`${path} must use YYYY-MM-DD.`)
@@ -57,7 +63,7 @@ function loanAt(value, path) {
   if (value === undefined || value === null) return null
   const loan = objectAt(value, path)
   const principal = amountAt(loan.principal, `${path}.principal`)
-  const remainingPrincipal = amountAt(loan.remainingPrincipal, `${path}.remainingPrincipal`, principal)
+  const remainingPrincipal = signedAmountAt(loan.remainingPrincipal, `${path}.remainingPrincipal`, principal)
   if (remainingPrincipal > principal) fail(`${path}.remainingPrincipal cannot exceed ${path}.principal.`)
   const annualRate = amountAt(loan.annualRate, `${path}.annualRate`)
   const tenureMonths = loan.tenureMonths

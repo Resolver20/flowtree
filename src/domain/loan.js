@@ -4,6 +4,11 @@ function amount(value) {
   return Math.max(0, Number(value) || 0)
 }
 
+function signedAmount(value) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 function rate(value) {
   return Math.max(0, Number(value) || 0)
 }
@@ -45,9 +50,11 @@ export function loanSchedule({ remainingPrincipal, annualRate, tenureMonths, ext
 
 export function loanProjection(loan) {
   const principal = amount(loan?.principal)
-  const remainingPrincipal = Math.min(principal || Infinity, amount(loan?.remainingPrincipal ?? principal))
+  const remainingPrincipal = Math.min(principal || Infinity, signedAmount(loan?.remainingPrincipal ?? principal))
   const tenureMonths = wholeMonths(loan?.tenureMonths)
   const annualRate = rate(loan?.annualRate)
-  const schedule = loanSchedule({ remainingPrincipal, annualRate, tenureMonths, extraPayment: loan?.extraPayment })
+  const schedule = remainingPrincipal <= 0
+    ? { basePayment: 0, scheduledPayment: 0, rows: [], payoffMonths: 0, totalInterest: 0, totalPaid: 0 }
+    : loanSchedule({ remainingPrincipal, annualRate, tenureMonths, extraPayment: loan?.extraPayment })
   return { principal, remainingPrincipal, annualRate, tenureMonths, extraPayment: amount(loan?.extraPayment), ...schedule }
 }

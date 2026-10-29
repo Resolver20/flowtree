@@ -238,7 +238,14 @@ function App() {
   }
 
   function saveNode({ nodeId, parentId, ...changes }) {
-    if (nodeId) { changeNode(nodeId, changes); notify(`${changes.name} updated.`); return }
+    if (nodeId) {
+      const nextChanges = changes.loan
+        ? { ...changes, amount: loanProjection(changes.loan).scheduledPayment, period: 'month' }
+        : changes
+      changeNode(nodeId, nextChanges)
+      notify(`${changes.name} updated.`)
+      return
+    }
     const parent = parentId ? findNode(tree, parentId) : null
     const id = crypto.randomUUID()
     createChild(parentId ?? null, { id, ...changes, tone: parent?.tone || 'blue', note: '', children: [] })

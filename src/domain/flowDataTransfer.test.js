@@ -62,3 +62,11 @@ test('investment metadata round-trips and rejects negative recorded values', () 
   assert.deepEqual(imported.tree[0].children[0].investment, { type: 'Mutual fund', currentValue: 125000 })
   assert.throws(() => parseFlowImport(JSON.stringify({ ...investmentPlan, tree: [{ ...investmentPlan.tree[0], children: [{ ...investmentPlan.tree[0].children[0], investment: { type: 'Mutual fund', currentValue: -1 } }] }] })), /investment.currentValue must be a non-negative number/)
 })
+
+test('loan balances can retain an overpayment credit', () => {
+  const loanPlan = {
+    ...plan,
+    tree: [{ id: 'debt', name: 'Debt', amount: 0, loan: { principal: 100000, remainingPrincipal: -250, annualRate: 8, tenureMonths: 120, extraPayment: 0 }, children: [] }],
+  }
+  assert.equal(parseFlowImport(serializeFlowData(loanPlan)).tree[0].loan.remainingPrincipal, -250)
+})

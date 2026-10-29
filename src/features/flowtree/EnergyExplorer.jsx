@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { allocateEnergy, energyAtPath } from '../../domain/energyFlow'
-import { findNode, findPath, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
+import { findPath, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import TreeCanvas from './TreeCanvas'
 import TreeHeader from './TreeHeader'
@@ -107,7 +107,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
     <div className="mobile-home-totals" aria-label="Monthly plan summary">
       <span><small><span className="material-symbols-rounded" aria-hidden="true">payments</span>Income</small><strong>{formatMoney(income)}</strong></span>
       <span><small><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>Planned</small><strong>{formatMoney(planned)}</strong></span>
-      <span className={available < 0 ? 'is-over' : 'is-available'}><small><span className="material-symbols-rounded" aria-hidden="true">{availableIcon}</span>{availableLabel}</small><strong>{formatMoney(Math.abs(available))}</strong></span>
+      <span className={available < 0 ? 'is-over' : 'is-available'}><small><span className="material-symbols-rounded" aria-hidden="true">{availableIcon}</span>{availableLabel}</small><strong>{formatMoney(available)}</strong></span>
     </div>
     <p className="mobile-home-outlook-health"><span className="material-symbols-rounded" aria-hidden="true">insights</span><span>{health}</span></p>
   </header>
@@ -139,6 +139,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
 
   const income = demo ? Math.round(totalChildren(visibleTree) * .75 + buffer) : salary
   const planned = totalChildren(orderedTree)
+  const monthlyOutcome = income - buffer - planned
   const showMobileHomeOutlook = view === 'home' && !path.length && !expandAll
   const flow = useMemo(() => allocateEnergy(visibleTree, Math.max(0, income - buffer)), [visibleTree, income, buffer])
   const currentNode = findPath(visibleTree, path)
@@ -156,7 +157,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       : 'Every monthly target in this view is filled.'
   const layout = useMemo(() => ({
     ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, viewport, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
-    available: Math.max(0, income - buffer),
+    available: income - buffer,
     income,
     allocations: flow.allocations,
     expandAll: visibleTreeExpanded,
@@ -272,13 +273,6 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }
 
   function inspectNode(nodeId) {
-    const debt = tree.find(node => node.id === 'obligations')
-    if (nodeId === 'obligations' || findNode(debt?.children || [], nodeId)) {
-      setLoanFocusId(nodeId === 'obligations' ? null : nodeId)
-      setView('loans')
-      setPath([])
-      return
-    }
     onManageNode(nodeId)
   }
 
@@ -341,6 +335,6 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
           />
         : <EmptyTreeState sinking={view === 'sinking'} onReturnHome={returnToRoot} />}
     </div>
-    <TreeStatus demo={demo} mobileHome={showMobileHomeOutlook} sinking={view === 'sinking'} flow={flow} available={layout.available} status={status} /></>}
+    <TreeStatus demo={demo} mobileHome={showMobileHomeOutlook} sinking={view === 'sinking'} flow={flow} available={layout.available} monthlyOutcome={monthlyOutcome} planned={planned} status={status} /></>}
   </main>
 }
