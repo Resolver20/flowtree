@@ -17,7 +17,19 @@ const THEME_SESSION_KEY = 'flowtree-theme'
 const MOBILE_BREAKPOINT = 760
 
 function DriveSyncStatus({ status }) {
-  if (!['saving', 'saved', 'error'].includes(status)) return null
+  const [showSaved, setShowSaved] = useState(false)
+  const previousStatus = useRef(status)
+
+  useEffect(() => {
+    const saveCompleted = status === 'saved' && previousStatus.current !== 'saved'
+    previousStatus.current = status
+    if (!saveCompleted) return undefined
+    setShowSaved(true)
+    const timer = window.setTimeout(() => setShowSaved(false), 2400)
+    return () => window.clearTimeout(timer)
+  }, [status])
+
+  if (!['saving', 'error'].includes(status) && !(status === 'saved' && showSaved)) return null
   const content = status === 'saving'
     ? ['sync', 'Saving to Google Drive…']
     : status === 'saved'
@@ -26,6 +38,7 @@ function DriveSyncStatus({ status }) {
   return <div className={`drive-sync-status is-${status}`} role="status">
     <span className="material-symbols-rounded" aria-hidden="true">{content[0]}</span>
     <span>{content[1]}</span>
+    {status === 'saved' && <button type="button" onClick={() => setShowSaved(false)} aria-label="Dismiss Google Drive saved notification">×</button>}
   </div>
 }
 

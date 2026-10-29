@@ -76,7 +76,8 @@
 .account-menu-identity { display: grid; gap: 3px; padding-bottom: 8px; border-bottom: 1px solid #e8ecf2; }
 .account-menu-identity strong { overflow: hidden; color: #344158; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .account-menu-identity small, .account-menu-status { color: #788498; font-size: 10px; line-height: 1.4; }
-.drive-sync-status { position: fixed; z-index: 12; top: 18px; right: 18px; display: inline-flex; min-height: 32px; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid #cde5d5; border-radius: 9px; background: #f3fbf6; color: #2f7650; box-shadow: 0 6px 18px #34466d12; font-size: 11px; }.drive-sync-status .material-symbols-rounded { font-size: 16px; }.drive-sync-status.is-saving { border-color: #d6ddec; background: #f5f7ff; color: #5269ad; }.drive-sync-status.is-error { border-color: #efd0d3; background: #fff7f7; color: #a34048; }
+.drive-sync-status { position: fixed; z-index: 12; top: 18px; right: 18px; display: inline-flex; min-height: 32px; align-items: center; gap: 6px; padding: 7px 8px 7px 10px; border: 1px solid #cde5d5; border-radius: 9px; background: #f3fbf6; color: #2f7650; box-shadow: 0 6px 18px #34466d12; font-size: 11px; animation: drive-sync-enter 180ms ease-out both; }.drive-sync-status .material-symbols-rounded { font-size: 16px; }.drive-sync-status button { display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 0; border-radius: 5px; background: transparent; color: currentColor; font-size: 16px; line-height: 1; }.drive-sync-status button:hover, .drive-sync-status button:focus-visible { background: #2f76501a; }.drive-sync-status.is-saving { border-color: #d6ddec; background: #f5f7ff; color: #5269ad; }.drive-sync-status.is-error { border-color: #efd0d3; background: #fff7f7; color: #a34048; }
+@keyframes drive-sync-enter { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 .account-menu button { min-height: 34px; padding: 7px 9px; border: 1px solid #dbe1eb; border-radius: 8px; background: #f9fafc; color: #46556c; font-size: 11px; text-align: left; }
 .account-menu button:hover, .account-menu button:focus-visible { border-color: #aebbd0; background: #f0f4fb; color: #304e98; }
 .account-menu .account-menu-theme { display: flex; align-items: center; gap: 8px; }
@@ -355,7 +356,7 @@
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
 @media (prefers-reduced-motion: reduce) {
-  .energy-world-frame, .energy-world, .energy-person, .income-source, .energy-source, .energy-destination, .energy-track, .drive-saved-pulse { transition: none !important; animation: none !important; }
+  .energy-world-frame, .energy-world, .energy-person, .income-source, .energy-source, .energy-destination, .energy-track, .drive-saved-pulse, .drive-sync-status { transition: none !important; animation: none !important; }
 }
 
 .dialog-actions button { min-height: 40px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--text); }
