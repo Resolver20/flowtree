@@ -16,7 +16,7 @@ test('Drive restore candidates are newest first and require a choice for duplica
 test('only valid gpt candidates are offered, newest first', () => {
   const candidates = orderValidDriveRestoreCandidates([
     { id: 'invalid-newer', name: 'flowtree-plan.json', folderName: 'gpt', modifiedTime: '2026-10-04T08:00:00.000Z', valid: false },
-    { id: 'valid-older', name: 'flowtree-plan.json', folderName: 'gpt', modifiedTime: '2026-10-01T08:00:00.000Z', valid: true },
+    { id: 'valid-older', name: 'my-plan-export.json', folderName: 'gpt', modifiedTime: '2026-10-01T08:00:00.000Z', valid: true },
     { id: 'valid-newer', name: 'flowtree-plan.json', folderName: 'gpt', modifiedTime: '2026-10-03T08:00:00.000Z', valid: true },
     { id: 'legacy-flowtree', name: 'flowtree-plan.json', folderName: 'FlowTree', modifiedTime: '2026-10-05T08:00:00.000Z', valid: true },
   ], 'gpt')

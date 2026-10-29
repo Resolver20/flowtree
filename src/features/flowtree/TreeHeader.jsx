@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onEditJson, onShowPlan, onShowSinkingFunds, onShowLoans, onShowGoals, onShowInvestments, onShowGeneralLedger, onToggleExpandAll, onToggleTheme }) {
+export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onEditJson, onShowPlan, onShowSinkingFunds, onShowLoans, onShowGoals, onShowInvestments, onShowGeneralLedger, onToggleExpandAll, onToggleTheme }) {
   const homeActive = view === 'home' && !breadcrumbs.length && !expandAll
   // Full view is a stable toggle. Its selected appearance shows the active state
   // without adding a second exit action or changing the control's label.
@@ -137,6 +137,7 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
         <small className="account-menu-status">{driveStatus === 'saving' ? 'Saving to Google Drive…' : driveStatus === 'error' ? 'Google Drive save needs attention.' : driveStatus === 'needs-plan-choice' ? 'Choose how to set up this Google Drive account.' : 'Your plan is stored in this Google Drive account.'}</small>
         <button type="button" onClick={() => closeMenuThen(onEditJson)}>Edit plan JSON</button>
         <button type="button" onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>Add or switch account</button>
+        <button type="button" onClick={() => closeMenuThen(onDisconnectDrive)}>Log out</button>
       </> : <>
         <small id={!driveConfigured ? 'drive-configuration-status' : undefined} className="account-menu-status" role={driveError ? 'alert' : undefined}>{driveError || (!driveConfigured ? 'Google Drive sign-in is unavailable until this app is configured.' : 'Sign in to Google Drive to restore your plan. Your data appears after restore.')}</small>
         <button type="button" className="account-menu-primary" aria-describedby={!driveConfigured ? 'drive-configuration-status' : undefined} disabled={!driveConfigured || driveStatus === 'connecting'} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{driveStatus === 'connecting' ? 'Connecting…' : 'Sign in with Google'}</button>
@@ -173,7 +174,7 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
         <small>{driveUser?.emailAddress || (driveConfigured ? 'Connect Google Drive to restore and save your plan.' : 'Google Drive sign-in is not configured.')}</small>
         <small className="mobile-drive-status" role={driveStatus === 'error' || driveError ? 'alert' : undefined}>{driveError || (connected ? driveStatus === 'saving' ? 'Saving changes to Google Drive…' : driveStatus === 'error' ? 'Google Drive save needs attention.' : 'Your plan is stored in this Google Drive account.' : '')}</small>
         {connected
-          ? <><button type="button" onClick={() => closeMenuThen(onEditJson)}>Edit plan JSON</button><button type="button" onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>Add or switch account</button></>
+          ? <><button type="button" onClick={() => closeMenuThen(onEditJson)}>Edit plan JSON</button><button type="button" onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>Add or switch account</button><button type="button" onClick={() => closeMenuThen(onDisconnectDrive)}>Log out</button></>
           : <button type="button" disabled={!driveConfigured || driveStatus === 'connecting'} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{driveStatus === 'connecting' ? 'Connecting…' : 'Sign in with Google'}</button>}
       </div>
     </section></>}

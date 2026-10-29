@@ -100,7 +100,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
   </header>
 }
 
-export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onEditJson, onManageNode, onSaveLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
+export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onEditJson, onManageNode, onSaveLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const demo = false
   const [view, setView] = useState('home')
   const [expandedViews, setExpandedViews] = useState({ home: false, sinking: false })
@@ -284,6 +284,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       driveConfigured={driveConfigured}
       theme={theme}
       onConnectDrive={onConnectDrive}
+      onDisconnectDrive={onDisconnectDrive}
       onEditJson={onEditJson}
       onToggleTheme={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
       onShowSinkingFunds={showSinkingFunds}

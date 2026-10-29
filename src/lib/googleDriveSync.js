@@ -82,13 +82,16 @@ export async function findFlowtreeBackup({ accessToken, folderId, fileName = 'fl
   return result.files?.[0] || null
 }
 
-export async function listFlowtreeRestoreCandidates({ accessToken, folderName = 'gpt', fileName = 'flowtree-plan.json' }) {
+export async function listFlowtreeRestoreCandidates({ accessToken, folderName = 'gpt' }) {
   if (!accessToken) throw new Error('A Google Drive access token is required.')
   const folderQuery = encodeURIComponent(`name = '${folderName.replaceAll("'", "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`)
   const folderResult = await driveRequest(`/files?q=${folderQuery}&spaces=drive&fields=files(id,name,modifiedTime,mimeType)&pageSize=100&orderBy=modifiedTime%20desc`, accessToken)
   const folders = folderResult.files || []
   const fileResults = await Promise.all(folders.map(async folder => {
-    const fileQuery = encodeURIComponent(`'${folder.id}' in parents and name = '${fileName.replaceAll("'", "\\'")}' and trashed = false`)
+    // Older Flowtree releases did not consistently use the current file name.
+    // Restrict discovery to JSON within the user's dedicated gpt folder, then let
+    // the import parser decide which files are valid Flowtree plans.
+    const fileQuery = encodeURIComponent(`'${folder.id}' in parents and mimeType = 'application/json' and trashed = false`)
     const result = await driveRequest(`/files?q=${fileQuery}&spaces=drive&fields=files(id,name,modifiedTime,mimeType)&pageSize=100&orderBy=modifiedTime%20desc`, accessToken)
     return (result.files || []).map(file => ({ ...file, folderId: folder.id, folderName: folder.name }))
   }))
