@@ -80,11 +80,11 @@ function LoanEditor({ loan, onSave, onCancel }) {
   </form>
 }
 
-export default function LoansView({ loans, onSaveLoan }) {
+export default function LoansView({ loans, focusedLoanId, onSaveLoan }) {
   const [editingId, setEditingId] = useState(null)
   const [adding, setAdding] = useState(false)
   const configuredLoans = loans.filter(loan => loan.loan)
-  const selected = loans.find(loan => loan.id === editingId) || configuredLoans[0] || loans[0] || null
+  const selected = loans.find(loan => loan.id === focusedLoanId) || loans.find(loan => loan.id === editingId) || configuredLoans[0] || loans[0] || null
   const projection = useMemo(() => selected?.loan ? loanProjection(selected.loan) : null, [selected])
 
   function saveLoan(data) {

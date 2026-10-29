@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { allocateEnergy, energyAtPath } from '../../domain/energyFlow'
-import { findPath, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
+import { findNode, findPath, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import TreeCanvas from './TreeCanvas'
 import TreeHeader from './TreeHeader'
@@ -103,6 +103,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
 export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onEditJson, onManageNode, onSaveLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const demo = false
   const [view, setView] = useState('home')
+  const [loanFocusId, setLoanFocusId] = useState(null)
   const [expandedViews, setExpandedViews] = useState({ home: false, sinking: false })
   const [theme, setTheme] = useState(readTheme)
   const [showDriveSaved, setShowDriveSaved] = useState(false)
@@ -114,7 +115,8 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   const visibleTree = view === 'sinking' ? sinkingTree : orderedTree
   const loans = useMemo(() => {
     const debt = tree.find(node => node.id === 'obligations')
-    return (debt?.children || []).filter(node => node.loan || /loan|emi|debt/i.test(node.name))
+    const collectDebtItems = nodes => nodes.flatMap(node => [node, ...collectDebtItems(node.children || [])])
+    return collectDebtItems(debt?.children || [])
   }, [tree])
   const goals = useMemo(() => tree.find(node => node.id === 'goals')?.children || [], [tree])
   const investments = useMemo(() => tree.find(node => node.id === 'growth')?.children || [], [tree])
@@ -251,8 +253,20 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }
 
   function showLoans() {
+    setLoanFocusId(null)
     setView('loans')
     setPath([])
+  }
+
+  function inspectNode(nodeId) {
+    const debt = tree.find(node => node.id === 'obligations')
+    if (nodeId === 'obligations' || findNode(debt?.children || [], nodeId)) {
+      setLoanFocusId(nodeId === 'obligations' ? null : nodeId)
+      setView('loans')
+      setPath([])
+      return
+    }
+    onManageNode(nodeId)
   }
 
   function showGoals() {
@@ -296,7 +310,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       onToggleExpandAll={toggleExpandAll}
     />
     <DriveSyncStatus status={driveStatus} />
-    {view === 'loans' ? <LoansView loans={loans} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
+    {view === 'loans' ? <LoansView loans={loans} focusedLoanId={loanFocusId} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
       {showMobileHomeOutlook && <MobileHomeOutlook profile={profile} driveUser={driveUser} income={income} buffer={buffer} planned={planned} />}
       {visibleTree.length
         ? <TreeCanvas
@@ -310,7 +324,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
             tree={visibleTree}
             onManageIncomeSource={onManageIncomeSource}
             onNavigate={navigate}
-            onInspect={onManageNode}
+            onInspect={inspectNode}
           />
         : <EmptyTreeState sinking={view === 'sinking'} onReturnHome={returnToRoot} />}
     </div>
