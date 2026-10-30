@@ -61,8 +61,8 @@ function MobileNode({ entry, selectedPath, expandAll, onNavigate, onInspect }) {
   </div>
 }
 
-export default function MobileTree({ available, allocations, expandAll, income, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
-  const availableLabel = available < 0 ? 'over-planned after buffer' : 'available after buffer'
+export default function MobileTree({ monthlyOutcome, allocations, expandAll, income, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
+  const availableLabel = monthlyOutcome < 0 ? 'over-planned this month' : 'available this month'
   return <div className="mobile-tree" aria-label="Monthly plan flow">
     <section className="mobile-tree-income" aria-label="Income">
       <span className="mobile-tree-step">Income</span>
@@ -73,7 +73,7 @@ export default function MobileTree({ available, allocations, expandAll, income, 
     <div className="mobile-tree-connector" aria-hidden="true" />
     <section className="mobile-plan-root" aria-label="Monthly plan">
       <span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
-      <span><strong>Monthly plan</strong><small>{formatMoney(available)} {availableLabel}</small></span>
+      <span><strong>Monthly plan</strong><small>{formatMoney(monthlyOutcome)} {availableLabel}</small></span>
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" />
     <section className="mobile-tree-categories" aria-label="Plan categories">

@@ -159,10 +159,11 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   const layout = useMemo(() => ({
     ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, viewport, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
     available: income - buffer,
+    monthlyOutcome,
     income,
     allocations: flow.allocations,
     expandAll: visibleTreeExpanded,
-  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, viewport, income, buffer, incomeSources.length, showProfileMarker])
+  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, viewport, income, buffer, monthlyOutcome, incomeSources.length, showProfileMarker])
   const breadcrumbs = path.map((_, index) => ({ path: path.slice(0, index + 1), node: findPath(visibleTree, path.slice(0, index + 1)) }))
 
   useEffect(() => {

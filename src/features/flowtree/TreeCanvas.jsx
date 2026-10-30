@@ -25,21 +25,21 @@ function IncomeSourceNode({ source, point, worldWidth, worldHeight, onManage }) 
   </div>
 }
 
-function FinanceNode({ available, point, worldWidth, worldHeight }) {
-  const label = available < 0 ? 'over-planned after buffer' : 'available after buffer'
+function FinanceNode({ monthlyOutcome, point, worldWidth, worldHeight }) {
+  const label = monthlyOutcome < 0 ? 'over-planned this month' : 'available this month'
   return <div className="energy-source is-finance" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
     <div className="energy-finance-root">
       <span className="energy-root-icon material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
     </div>
     <strong>Monthly plan</strong>
-    <span>{formatMoney(available)} <small>{label}</small></span>
+    <span>{formatMoney(monthlyOutcome)} <small>{label}</small></span>
   </div>
 }
 
 export default function TreeCanvas({ layout, mobile, path, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect }) {
   if (mobile) {
     return <MobileTree
-      available={layout.available}
+      monthlyOutcome={layout.monthlyOutcome}
       allocations={layout.allocations}
       expandAll={layout.expandAll}
       income={layout.income}
@@ -96,7 +96,7 @@ export default function TreeCanvas({ layout, mobile, path, profile, driveUser, d
       </svg>
       <PersonNode profile={profile} driveUser={driveUser} point={layout.personPoint} worldWidth={layout.worldWidth} worldHeight={layout.height} driveSaved={driveSaved} />
       {incomeSources.map((source, index) => <IncomeSourceNode key={source.id} source={source} point={layout.incomeSourcePoints[index]} worldWidth={layout.worldWidth} worldHeight={layout.height} onManage={onManageIncomeSource} />)}
-      <FinanceNode available={layout.available} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} />
+      <FinanceNode monthlyOutcome={layout.monthlyOutcome} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} />
       {layout.positionedColumns.flatMap((column, columnIndex) => column.items.map(entry => <TreeNodeCard
         key={entry.path.join('/')}
         entry={entry}
