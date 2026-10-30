@@ -5,9 +5,11 @@ import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import { useGoogleDrivePlan } from './hooks/useGoogleDrivePlan'
 import PlanDialog from './features/flowtree/PlanDialog'
 import PlanRestoreScreen from './features/flowtree/PlanRestoreScreen'
+import { useTheme } from './hooks/useTheme'
 import { useFlowData } from './hooks/useFlowData'
 
 function App() {
+  const [theme, toggleTheme] = useTheme()
   const { profile, incomeSources, generalLedgers, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData, undo, redo, canUndo, canRedo } = useFlowData()
   const [dialog, setDialog] = useState(null)
   const [path, setPath] = useState([])
@@ -179,10 +181,12 @@ function App() {
   const monthlyIncome = incomeSources.reduce((sum, source) => sum + Math.max(0, Number(source.amount) || 0), 0)
   const driveUser = drive.user ? { emailAddress: drive.user.emailAddress, displayName: drive.user.displayName, photoLink: drive.user.photoLink } : null
 
-  if (startupState !== 'ready') return <PlanRestoreScreen state={startupState} error={drive.error} onRetry={connectDrive} configured={driveConfigured} />
+  if (startupState !== 'ready') return <PlanRestoreScreen theme={theme} state={startupState} error={drive.error} onRetry={connectDrive} configured={driveConfigured} />
 
-  return <div className="app-shell energy-mode">
+  return <div className={`app-shell energy-mode theme-${theme}`}>
     <EnergyExplorer
+      theme={theme}
+      onToggleTheme={toggleTheme}
       tree={tree}
       view={navigation.view}
       focusedNodeId={navigation.nodeId}

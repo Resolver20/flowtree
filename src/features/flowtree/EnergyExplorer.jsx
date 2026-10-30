@@ -14,7 +14,6 @@ import { createTreeLayout } from './treeLayout'
 import { useElementSize } from './useElementSize'
 import './EnergyExplorer.css'
 
-const THEME_SESSION_KEY = 'flowtree-theme'
 const MOBILE_BREAKPOINT = 760
 
 function DriveSyncStatus({ status }) {
@@ -50,14 +49,6 @@ function EmptyTreeState({ sinking, onReturnHome }) {
     <p>{sinking ? 'Add a yearly target with a future date, then return here to see its monthly set-aside.' : 'Add a category to start building your monthly plan.'}</p>
     <button type="button" onClick={onReturnHome}>Return to Home</button>
   </div>
-}
-
-function readTheme() {
-  try {
-    return window.sessionStorage.getItem(THEME_SESSION_KEY) === 'dark' ? 'dark' : 'light'
-  } catch {
-    return 'light'
-  }
 }
 
 function annualTargetsOnly(nodes) {
@@ -114,10 +105,9 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
   </header>
 }
 
-export default function EnergyExplorer({ view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
+export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const demo = false
   const [collapsedPaths, setCollapsedPaths] = useState(() => new Set())
-  const [theme, setTheme] = useState(readTheme)
   const [showDriveSaved, setShowDriveSaved] = useState(false)
   const previousDriveStatus = useRef(driveStatus)
   const [viewportRef, viewport, hasMeasuredViewport] = useElementSize()
@@ -175,14 +165,6 @@ export default function EnergyExplorer({ view, focusedNodeId, onChangeView, mont
     const timer = window.setTimeout(() => setShowDriveSaved(false), 1800)
     return () => window.clearTimeout(timer)
   }, [driveStatus])
-
-  useEffect(() => {
-    try {
-      window.sessionStorage.setItem(THEME_SESSION_KEY, theme)
-    } catch {
-      // Theme preference is optional and must not block the planner.
-    }
-  }, [theme])
 
   useEffect(() => {
     if (!path.length || viewport.width >= 900 || !viewportRef.current) return
@@ -305,7 +287,7 @@ export default function EnergyExplorer({ view, focusedNodeId, onChangeView, mont
       onDownloadBackup={onDownloadBackup}
       onEditJson={onEditJson}
       onRecoverDriveVersion={onRecoverDriveVersion}
-      onToggleTheme={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
+      onToggleTheme={onToggleTheme}
       onShowSinkingFunds={showSinkingFunds}
       onShowLoans={showLoans}
       onShowGoals={showGoals}

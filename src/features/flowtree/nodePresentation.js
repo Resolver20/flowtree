@@ -55,7 +55,7 @@ export function iconForNode(item) {
   return 'savings'
 }
 
-export function colorForNode(item) {
+function baseColorForNode(item) {
   if (categoryColors[item?.id]) return categoryColors[item.id]
   const identity = identityFor(item)
   if (/google drive/.test(identity)) return '#4285f4'
@@ -80,4 +80,9 @@ export function colorForNode(item) {
   if (/recurring deposit|emergency rd/.test(identity)) return '#059669'
   if (/emergency/.test(identity)) return '#d97706'
   return '#64748b'
+}
+
+// Keep category and brand identities, with lighter accents on dark surfaces.
+export function colorForNode(item) {
+  return `color-mix(in srgb, ${baseColorForNode(item)} var(--node-color-weight, 100%), white)`
 }
