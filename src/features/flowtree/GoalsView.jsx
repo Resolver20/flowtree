@@ -76,10 +76,10 @@ function GoalEditor({ goal, onSave, onCancel }) {
   </form>
 }
 
-export default function GoalsView({ goals, onSaveGoal }) {
+export default function GoalsView({ goals, focusedGoalId, onSaveGoal }) {
   const [editingId, setEditingId] = useState(null)
   const [adding, setAdding] = useState(false)
-  const selected = goals.find(goal => goal.id === editingId) || goals[0] || null
+  const selected = goals.find(goal => goal.id === focusedGoalId) || goals.find(goal => goal.id === editingId) || goals[0] || null
 
   function saveGoal(data) {
     onSaveGoal(data)

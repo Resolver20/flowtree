@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { allocateEnergy, energyAtPath } from '../../domain/energyFlow'
-import { findPath, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
+import { findPath, pathToNode, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import TreeCanvas from './TreeCanvas'
 import TreeHeader from './TreeHeader'
@@ -117,6 +117,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   const demo = false
   const [view, setView] = useState('home')
   const [loanFocusId, setLoanFocusId] = useState(null)
+  const [goalFocusId, setGoalFocusId] = useState(null)
   const [theme, setTheme] = useState(readTheme)
   const [showDriveSaved, setShowDriveSaved] = useState(false)
   const previousDriveStatus = useRef(driveStatus)
@@ -249,10 +250,18 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }
 
   function inspectNode(nodeId) {
+    const nodePath = pathToNode(tree, nodeId)
+    if (nodePath[0] === 'goals') {
+      setGoalFocusId(nodeId === 'goals' ? null : nodeId)
+      setView('goals')
+      setPath([])
+      return
+    }
     onManageNode(nodeId)
   }
 
   function showGoals() {
+    setGoalFocusId(null)
     setView('goals')
     setPath([])
   }
@@ -291,7 +300,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       onShowGeneralLedger={showGeneralLedger}
     />
     <DriveSyncStatus status={driveStatus} />
-    {view === 'loans' ? <LoansView loans={loans} focusedLoanId={loanFocusId} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} onSaveGoal={onSaveGoal} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
+    {view === 'loans' ? <LoansView loans={loans} focusedLoanId={loanFocusId} onSaveLoan={onSaveLoan} /> : view === 'goals' ? <GoalsView goals={goals} focusedGoalId={goalFocusId} onSaveGoal={onSaveGoal} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
       {showMobileHomeOutlook && <MobileHomeOutlook profile={profile} driveUser={driveUser} income={income} buffer={buffer} planned={planned} />}
       {visibleTree.length
         ? <TreeCanvas
