@@ -23,9 +23,11 @@ Keep a single tree record for each loan, goal or investment. Dedicated screens a
 
 The active plan currently lives in React memory. Refreshing restores the connected Drive file; edits must be manually saved first. This describes current behavior, not a new persistence policy.
 
-## Known requirement gap
+## Monthly records
 
-The recurring calendar currently derives scheduled amounts from the active plan. It does not freeze historical paid-month snapshots. Implementing the previously requested month locking requires a separate data-model change and migration; this cleanup deliberately preserves existing calendar behavior.
+Recurring payments use month cards and a monthly list. Saved snapshots preserve names, amounts and payment dates. The current month is captured before plan edits or an explicit Drive save. Future previews use the latest plan; missing past months are not reconstructed. The spending bar counts recorded paid amounts only, and labels the rest as money left to save rather than confirmed savings.
+
+Manual saving remains required. Unsaved drafts trigger a browser leave-page warning; JSON backups can be downloaded from the top controls. Sign-in restores a fresh Undo baseline so Undo cannot accidentally return to the pre-login blank plan.
 
 ## Validation
 

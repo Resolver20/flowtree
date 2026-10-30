@@ -543,3 +543,36 @@
   .mobile-home-totals strong { font-size: 11px; }
   .mobile-home-outlook p { line-height: 1.25; }
 }
+
+/* Manual persistence stays visible across dedicated views and narrow screens. */
+.plan-save-controls { position: fixed; z-index: 12; top: 10px; right: 12px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface, white); color: var(--text); }
+.plan-save-controls > span { font-size: 11px; }
+.plan-save-controls button { min-height: 36px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface, white); color: var(--text); padding: 6px 10px; cursor: pointer; }
+.plan-save-controls button:disabled { opacity: .5; cursor: wait; }
+@media (max-width: 760px) {
+  .plan-save-controls { top: 8px; right: 64px; left: 10px; justify-content: flex-end; }
+  .plan-save-controls > span { margin-right: auto; }
+  .plan-save-controls button { font-size: 11px; padding: 5px; }
+}
+.plan-save-controls .mobile-history-action { display: none; }
+@media (max-width: 760px) {
+  .plan-save-controls { flex-wrap: wrap; gap: 4px; }
+  .plan-save-controls .mobile-history-action { display: grid; place-items: center; min-width: 30px; }
+  .plan-save-controls > span { order: 2; flex-basis: 100%; text-align: right; }
+}
+
+.month-year-navigation { justify-content: flex-end; margin: 0 0 18px; }
+.payment-month-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+.payment-month-card { display: flex; flex-direction: column; gap: 9px; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface, white); color: var(--text); text-align: left; cursor: pointer; }
+.payment-month-card > strong { font-size: 16px; }
+.payment-month-card > small, .month-no-history { color: var(--muted); font-size: 12px; }
+.payment-month-card.is-selected { border-color: #5366c8; outline: 1px solid #5366c8; }
+.month-money-bar { display: flex; height: 10px; width: 100%; border-radius: 6px; overflow: hidden; background: #bbdfcd; }
+.month-money-bar > span { background: #ce8559; height: 100%; }
+.month-money-labels { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; }
+.month-money-labels > span { display: grid; gap: 4px; min-width: 0; }
+.month-money-labels > span:last-child { text-align: right; }
+.month-money-labels strong { font-size: 14px; overflow-wrap: anywhere; }
+@media (max-width: 1000px) { .payment-month-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 400px) { .payment-month-cards { grid-template-columns: 1fr; } }
+.month-money-bar.has-no-income { background: var(--line); }

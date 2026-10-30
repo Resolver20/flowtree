@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { preserveCurrentMonth, recordPayment } from '../domain/monthlyHistory'
 import { addChild, createTreeFromBuckets, organizeSubscriptions, removeNode, updateNode } from '../domain/flowTree'
 
 function localDateValue(date = new Date()) {
@@ -56,19 +57,12 @@ export function useFlowData() {
 
   function record(change) {
     setHistory(previous => {
-      const nextData = change(previous.data)
-      if (nextData === previous.data) return previous
+      const baseline = preserveCurrentMonth(previous.data)
+      const nextData = change(baseline)
+      if (nextData === baseline) return previous
       return { data: nextData, past: [...previous.past, previous.data].slice(-50), future: [] }
     })
   }
-
-  // Plans are intentionally kept only in React memory until a Google Drive
-  // connection is established. Remove old browser-persistent copies as soon
-  // as the app starts so closing the tab leaves no local financial data.
-  useEffect(() => {
-    localStorage.removeItem('flowtree-v2')
-    localStorage.removeItem('flowtree-data')
-  }, [])
 
   function changeProfile(changes) {
     record(previous => ({ ...previous, profile: { ...previous.profile, ...changes } }))
@@ -137,8 +131,18 @@ export function useFlowData() {
     record(previous => ({ ...previous, tree }))
   }
 
-  function replaceData(nextData) {
-    record(() => normalizeData(nextData))
+  function replaceData(nextData, { resetHistory = false } = {}) {
+    const normalized = normalizeData(nextData)
+    if (resetHistory) setHistory({ data: normalized, past: [], future: [] })
+    else record(() => normalized)
+  }
+
+  function captureCurrentMonth() {
+    setHistory(previous => ({ ...previous, data: preserveCurrentMonth(previous.data) }))
+  }
+
+  function markPaymentPaid(month, paymentId, paidDate) {
+    record(previous => recordPayment(previous, month, paymentId, paidDate))
   }
 
   function undo() {
@@ -157,5 +161,5 @@ export function useFlowData() {
     })
   }
 
-  return { ...data, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData, undo, redo, canUndo: history.past.length > 0, canRedo: history.future.length > 0 }
+  return { ...data, captureCurrentMonth, markPaymentPaid, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData, undo, redo, canUndo: history.past.length > 0, canRedo: history.future.length > 0 }
 }

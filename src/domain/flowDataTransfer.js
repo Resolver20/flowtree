@@ -154,6 +154,40 @@ function normalizeNode(node, path, ids, counters, depth) {
   }
 }
 
+function monthlyHistoryAt(value) {
+  const source = objectAt(value, 'data.monthlyHistory')
+  const result = {}
+  const months = Object.entries(source)
+  if (months.length > 1200) fail('Monthly history cannot exceed 1200 months.')
+  for (const [month, raw] of months) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) fail('Invalid month in monthly history.')
+    const snapshot = objectAt(raw, `monthlyHistory.${month}`)
+    const ids = new Set()
+    const payments = arrayAt(snapshot.payments, 'monthly payments')
+    if (payments.length > MAX_NODES) fail('Too many monthly payments.')
+    result[month] = {
+      month,
+      income: amountAt(snapshot.income, 'monthly income'),
+      buffer: amountAt(snapshot.buffer, 'monthly buffer'),
+      planned: amountAt(snapshot.planned, 'monthly planned'),
+      payments: payments.map(rawPayment => {
+        const payment = objectAt(rawPayment, 'monthly payment')
+        const id = textAt(payment.id, 'payment id')
+        if (ids.has(id)) fail('Duplicate monthly payment id.')
+        ids.add(id)
+        const scheduledDate = dateAt(payment.scheduledDate, 'scheduled date')
+        const paidDate = dateAt(payment.paidDate, 'paid date')
+        if (scheduledDate.slice(0, 7) !== month || (paidDate && paidDate.slice(0, 7) !== month)) fail('Payment dates must belong to their snapshot month.')
+        if (!Number.isInteger(payment.dayOfMonth) || payment.dayOfMonth < 1 || payment.dayOfMonth > 31) fail('Invalid payment day.')
+        return { id, name: textAt(payment.name, 'payment name'), symbol: optionalText(payment.symbol, 'payment symbol', 'event_repeat', 64),
+          category: textAt(payment.category, 'payment category'), monthlyAmount: amountAt(payment.monthlyAmount, 'payment amount'),
+          dayOfMonth: payment.dayOfMonth, scheduledDate, paidDate }
+      }),
+    }
+  }
+  return result
+}
+
 function normalizePlan(value) {
   const source = objectAt(value, 'data')
   const profileSource = objectAt(source.profile, 'data.profile')
@@ -191,6 +225,7 @@ function normalizePlan(value) {
     profile,
     incomeSources,
     generalLedgers: generalLedgersAt(source.generalLedgers),
+    ...(source.monthlyHistory === undefined ? {} : { monthlyHistory: monthlyHistoryAt(source.monthlyHistory) }),
     buffer: amountAt(source.buffer, 'data.buffer'),
     tree,
   }

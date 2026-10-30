@@ -17,6 +17,7 @@ function itemsIn(plan) {
     add(`ledger:${ledger.id}`, ledger.name, ledger)
     for (const entry of entries) add(`entry:${ledger.id}:${entry.id}`, `${ledger.name}: ${entry.description || 'Expense'}`, entry)
   }
+  for (const [month, snapshot] of Object.entries(plan.monthlyHistory || {})) add(`month:${month}`, `Monthly payments ${month}`, snapshot)
   add('profile', 'Profile', plan.profile)
   add('buffer', 'Safety buffer', plan.buffer)
   return items

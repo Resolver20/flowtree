@@ -63,7 +63,7 @@ function LoanEditor({ loan, onSave, onCancel }) {
     const data = { principal: Math.max(0, Number(principal) || 0), remainingPrincipal: Number(remainingPrincipal), annualRate: Math.max(0, Number(annualRate) || 0), tenureMonths: Math.max(1, Math.round((Number(tenureYears) || 0) * 12)), extraPayment: Math.max(0, Number(extraPayment) || 0), ...(userMonthlyContribution === '' ? {} : { userMonthlyContribution: Math.max(0, Number(userMonthlyContribution) || 0) }) }
     if (!name.trim() || !data.principal || !Number.isFinite(data.remainingPrincipal) || !data.tenureMonths) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
     if (data.remainingPrincipal > data.principal) { setError('Remaining principal cannot exceed the original principal.'); return }
-    if (data.userMonthlyContribution !== undefined && data.userMonthlyContribution > loanProjection(data).scheduledPayment) { setError('Your monthly contribution cannot exceed the scheduled monthly payment.'); return }
+    if (data.remainingPrincipal > 0 && data.userMonthlyContribution !== undefined && data.userMonthlyContribution > loanProjection(data).scheduledPayment) { setError('Your monthly contribution cannot exceed the scheduled monthly payment.'); return }
     onSave({ id: loan?.id, name: name.trim(), loan: data })
   }
 
@@ -74,7 +74,7 @@ function LoanEditor({ loan, onSave, onCancel }) {
       <label>Original principal (₹)<input value={principal} onChange={event => setPrincipal(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Principal remaining (₹)<input value={remainingPrincipal} onChange={event => setRemainingPrincipal(event.target.value)} type="number" step="0.01" /></label>
       <label>Interest rate (% p.a.)<input value={annualRate} onChange={event => setAnnualRate(event.target.value)} type="number" min="0" step="0.01" /></label>
-      <label>Loan tenure (years)<input value={tenureYears} onChange={event => setTenureYears(event.target.value)} type="number" min="0.01" step="0.01" inputMode="decimal" aria-describedby="tenure-help" /></label>
+      <label>Loan tenure (years)<input value={tenureYears} onChange={event => setTenureYears(event.target.value)} type="number" min="0.01" max="50" step="0.01" inputMode="decimal" aria-describedby="tenure-help" /></label>
       <label>Extra principal / month (₹)<input value={extraPayment} onChange={event => setExtraPayment(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Your contribution / month (₹)<input value={userMonthlyContribution} onChange={event => setUserMonthlyContribution(event.target.value)} type="number" min="0" step="0.01" placeholder="Full payment" /></label>
     </div>

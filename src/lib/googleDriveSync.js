@@ -145,8 +145,16 @@ export async function downloadFlowtreeBackup({ accessToken, fileId } = {}) {
 
 export async function listFlowtreeRevisions({ accessToken, fileId } = {}) {
   if (!accessToken || !fileId) throw new Error('A Google Drive access token and file ID are required.')
-  const result = await driveRequest(`/files/${encodeURIComponent(fileId)}/revisions?fields=revisions(id,modifiedTime,originalFilename,size)&pageSize=100`, accessToken)
-  return (result.revisions || []).sort((left, right) => Date.parse(right.modifiedTime || '') - Date.parse(left.modifiedTime || ''))
+  const revisions = []
+  let pageToken = ''
+  do {
+    const query = new URLSearchParams({ fields: 'nextPageToken,revisions(id,modifiedTime,originalFilename,size)', pageSize: '100' })
+    if (pageToken) query.set('pageToken', pageToken)
+    const result = await driveRequest(`/files/${encodeURIComponent(fileId)}/revisions?${query}`, accessToken)
+    revisions.push(...(result.revisions || []))
+    pageToken = result.nextPageToken || ''
+  } while (pageToken)
+  return revisions.sort((left, right) => Date.parse(right.modifiedTime || '') - Date.parse(left.modifiedTime || ''))
 }
 
 export async function downloadFlowtreeRevision({ accessToken, fileId, revisionId } = {}) {

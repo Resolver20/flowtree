@@ -1,6 +1,6 @@
 import DriveRevisionDialog from './DriveRevisionDialog'
 import { useEffect, useRef, useState } from 'react'
-import { annualTargetProgress, countBranch, findNode, isBuiltInFlowGroup, monthlyAllocation, monthlyTotal, NODE_STATUSES, totalChildren } from '../../domain/flowTree'
+import { pathToNode, annualTargetProgress, countBranch, findNode, isBuiltInFlowGroup, monthlyAllocation, monthlyTotal, NODE_STATUSES, totalChildren } from '../../domain/flowTree'
 import { formatDate, formatMoney } from '../../lib/money'
 import { colorForNode, iconForNode } from './nodePresentation'
 import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
@@ -74,7 +74,8 @@ function ProfileManageDialog({ profile, onClose, onDelete, onRequestEdit, onRequ
 
   return <DialogShell title={profile.name} onClose={onClose}>
     <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">person</span><div><span>Profile marker</span><strong>{profile.name}</strong></div></div>
-    <div className="dialog-actions manage-actions"><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Remove…</button><button type="button" onClick={onRequestAddIncome}>Add income source</button><button type="button" onClick={onRequestSinkingFunds}>Sinking funds</button><button type="button" className="modal-submit" onClick={onRequestEdit}>Edit name</button></div>
+    <div className="dialog-actions manage-actions">
+      {onViewOverview && <button type="button" onClick={() => onViewOverview(node.id)}>View overview</button>}<button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Remove…</button><button type="button" onClick={onRequestAddIncome}>Add income source</button><button type="button" onClick={onRequestSinkingFunds}>Sinking funds</button><button type="button" className="modal-submit" onClick={onRequestEdit}>Edit name</button></div>
   </DialogShell>
 }
 
@@ -97,7 +98,8 @@ function IncomeSourceManageDialog({ source, onClose, onDelete, onRequestEdit }) 
 
   return <DialogShell title={source.name} onClose={onClose}>
     <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">{source.icon || 'payments'}</span><div><span>Monthly income source</span><strong>{formatMoney(source.amount)} <small>/month</small></strong><small>{formatIncomeStart(source.startDate)} · paid on the {source.dayOfMonth || 1}{(source.dayOfMonth || 1) === 1 ? 'st' : (source.dayOfMonth || 1) === 2 ? 'nd' : (source.dayOfMonth || 1) === 3 ? 'rd' : 'th'} of each month</small></div></div>
-    <div className="dialog-actions manage-actions"><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button><button type="button" className="modal-submit" onClick={() => onRequestEdit(source.id)}>Edit details</button></div>
+    <div className="dialog-actions manage-actions">
+      {onViewOverview && <button type="button" onClick={() => onViewOverview(node.id)}>View overview</button>}<button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button><button type="button" className="modal-submit" onClick={() => onRequestEdit(source.id)}>Edit details</button></div>
   </DialogShell>
 }
 
@@ -229,7 +231,7 @@ function JsonEditorDialog({ data, onClose, onSave }) {
   </DialogShell>
 }
 
-function ManageDialog({ node, onClose, onDelete, onRequestEdit, onRequestAdd, canDelete }) {
+function ManageDialog({ onViewOverview, node, onClose, onDelete, onRequestEdit, onRequestAdd, canDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const progress = annualTargetProgress(node)
   const children = node.children || []
@@ -255,6 +257,7 @@ function ManageDialog({ node, onClose, onDelete, onRequestEdit, onRequestAdd, ca
       <div><dt>Direct children</dt><dd>{children.length}</dd></div>
     </dl>
     <div className="dialog-actions manage-actions">
+      {onViewOverview && <button type="button" onClick={() => onViewOverview(node.id)}>View overview</button>}
       {canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button>}
       <button type="button" onClick={() => onRequestAdd(node.id)}>Add child</button>
       <button type="button" className="modal-submit" onClick={() => onRequestEdit(node.id)}>Edit details</button>
@@ -279,7 +282,7 @@ function LoanNodeDialog({ node, onClose, onSave }) {
     const loan = { principal: Math.max(0, Number(principal) || 0), remainingPrincipal: Number(remainingPrincipal), annualRate: Math.max(0, Number(annualRate) || 0), tenureMonths: Math.max(1, Math.round((Number(tenureYears) || 0) * 12)), extraPayment: Math.max(0, Number(extraPayment) || 0), ...(userMonthlyContribution === '' ? {} : { userMonthlyContribution: Math.max(0, Number(userMonthlyContribution) || 0) }) }
     if (!name.trim() || !loan.principal || !Number.isFinite(loan.remainingPrincipal) || !Number(tenureYears)) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
     if (loan.remainingPrincipal > loan.principal) { setError('Remaining principal cannot exceed the original principal.'); return }
-    if (loan.userMonthlyContribution !== undefined && loan.userMonthlyContribution > loanProjection(loan).scheduledPayment) { setError('Your monthly contribution cannot exceed the scheduled monthly payment.'); return }
+    if (loan.remainingPrincipal > 0 && loan.userMonthlyContribution !== undefined && loan.userMonthlyContribution > loanProjection(loan).scheduledPayment) { setError('Your monthly contribution cannot exceed the scheduled monthly payment.'); return }
     onSave({ nodeId: node.id, name: name.trim(), loan, status })
     onClose()
   }
@@ -292,7 +295,7 @@ function LoanNodeDialog({ node, onClose, onSave }) {
         <label>Original principal (₹)<input value={principal} onChange={event => { setPrincipal(event.target.value); setError('') }} type="number" min="0" step="0.01" /></label>
         <label>Principal remaining (₹)<input value={remainingPrincipal} onChange={event => { setRemainingPrincipal(event.target.value); setError('') }} type="number" step="0.01" /></label>
         <label>Interest rate (% p.a.)<input value={annualRate} onChange={event => setAnnualRate(event.target.value)} type="number" min="0" step="0.01" /></label>
-        <label>Remaining tenure (years)<input value={tenureYears} onChange={event => { setTenureYears(event.target.value); setError('') }} type="number" min="0.01" step="0.01" inputMode="decimal" /></label>
+        <label>Remaining tenure (years)<input value={tenureYears} onChange={event => { setTenureYears(event.target.value); setError('') }} type="number" min="0.01" max="50" step="0.01" inputMode="decimal" /></label>
         <label>Extra principal / month (₹)<input value={extraPayment} onChange={event => setExtraPayment(event.target.value)} type="number" min="0" step="0.01" /></label>
         <label>Your contribution / month (₹)<input value={userMonthlyContribution} onChange={event => setUserMonthlyContribution(event.target.value)} type="number" min="0" step="0.01" placeholder="Full payment" /></label>
         <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(value => <option key={value} value={value}>{formatStatus(value)}</option>)}</select></label>
@@ -385,10 +388,10 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   </DialogShell>
 }
 
-export default function PlanDialog({ dialog, profile, incomeSources, generalLedgers, buffer, tree, driveStatus, driveUser, driveError, driveConfigured, driveSetupRequired, driveRestoreCandidates, onClose, onSaveProfile, onDeleteProfile, onSaveIncomeSource, onDeleteIncomeSource, onSaveAnnualTargets, onSaveBuffer, onSaveNode, onDeleteNode, onImportData, onApplyJson, onRequestEdit, onRequestAdd, onRequestEditIncomeSource, onRequestEditProfile, onRequestAddIncomeSource, onRequestSinkingFunds, onConnectDrive, onAddDriveAccount, onUseCurrentDrivePlan, onCreateBlankDrivePlan, onChooseDriveRestoreCandidate, onRecoverDriveVersion, onRestoreDriveRevision }) {
+export default function PlanDialog({ monthlyHistory, onViewOverview, dialog, profile, incomeSources, generalLedgers, buffer, tree, driveStatus, driveUser, driveError, driveConfigured, driveSetupRequired, driveRestoreCandidates, onClose, onSaveProfile, onDeleteProfile, onSaveIncomeSource, onDeleteIncomeSource, onSaveAnnualTargets, onSaveBuffer, onSaveNode, onDeleteNode, onImportData, onApplyJson, onRequestEdit, onRequestAdd, onRequestEditIncomeSource, onRequestEditProfile, onRequestAddIncomeSource, onRequestSinkingFunds, onConnectDrive, onAddDriveAccount, onUseCurrentDrivePlan, onCreateBlankDrivePlan, onChooseDriveRestoreCandidate, onRecoverDriveVersion, onRestoreDriveRevision }) {
   if (!dialog) return null
   if (dialog.type === 'driveSync') return <DriveSyncDialog status={driveStatus} user={driveUser} error={driveError} configured={driveConfigured} setupRequired={driveSetupRequired} restoreCandidates={driveRestoreCandidates} onClose={onClose} onConnect={onConnectDrive} onAddAccount={onAddDriveAccount} onEditJson={() => onApplyJson()} onUseCurrentPlan={onUseCurrentDrivePlan} onCreateBlankPlan={onCreateBlankDrivePlan} onChooseRestoreCandidate={onChooseDriveRestoreCandidate} onRecoverDriveVersion={onRecoverDriveVersion} />
-  if (dialog.type === 'editJson') return <JsonEditorDialog data={{ profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree }} onClose={onClose} onSave={onApplyJson} />
+  if (dialog.type === 'editJson') return <JsonEditorDialog data={{ profile, incomeSources, generalLedgers, monthlyHistory, buffer: Number(buffer) || 0, tree }} onClose={onClose} onSave={onApplyJson} />
   if (dialog.type === 'driveRevisions') return <DriveRevisionDialog revisions={dialog.revisions || []} onClose={onClose} onRestore={onRestoreDriveRevision} />
   if (dialog.type === 'manageProfile') return <ProfileManageDialog profile={profile} onClose={onClose} onDelete={onDeleteProfile} onRequestEdit={onRequestEditProfile} onRequestAddIncome={onRequestAddIncomeSource} onRequestSinkingFunds={() => onRequestSinkingFunds()} />
   if (dialog.type === 'profile') return <ProfileDialog profile={profile} onClose={onClose} onSave={onSaveProfile} />
@@ -398,7 +401,7 @@ export default function PlanDialog({ dialog, profile, incomeSources, generalLedg
   if (dialog.type === 'sinkingFunds') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} title="Sinking funds" description="These are your yearly targets. Flowtree sets aside their monthly equivalents so they are ready when each payment is due." />
   if (dialog.type === 'importJson') return <ImportPlanDialog dialog={dialog} onClose={onClose} onImport={onImportData} />
   if (dialog.type === 'buffer') return <BufferDialog buffer={buffer} onClose={onClose} onSave={onSaveBuffer} />
-  if (dialog.type === 'manage') { const node = findNode(tree, dialog.nodeId); return <ManageDialog node={node} canDelete={!isBuiltInFlowGroup(node?.id)} onClose={onClose} onDelete={onDeleteNode} onRequestEdit={onRequestEdit} onRequestAdd={onRequestAdd} /> }
+  if (dialog.type === 'manage') { const node = findNode(tree, dialog.nodeId); return <ManageDialog onViewOverview={['obligations', 'goals'].includes(pathToNode(tree, node?.id)[0]) ? onViewOverview : null} node={node} canDelete={!isBuiltInFlowGroup(node?.id)} onClose={onClose} onDelete={onDeleteNode} onRequestEdit={onRequestEdit} onRequestAdd={onRequestAdd} /> }
   if (dialog.type === 'node' && findNode(tree, dialog.nodeId)?.loan) return <LoanNodeDialog node={findNode(tree, dialog.nodeId)} onClose={onClose} onSave={onSaveNode} />
   return <NodeDialog dialog={dialog} tree={tree} onClose={onClose} onSave={onSaveNode} onDelete={onDeleteNode} />
 }

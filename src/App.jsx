@@ -7,17 +7,18 @@ import PlanDialog from './features/flowtree/PlanDialog'
 import { useFlowData } from './hooks/useFlowData'
 
 function App() {
-  const { profile, incomeSources, generalLedgers, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData, undo, redo, canUndo, canRedo } = useFlowData()
+  const { profile, incomeSources, generalLedgers, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData, undo, redo, canUndo, canRedo } = useFlowData()
   const [dialog, setDialog] = useState(null)
   const [path, setPath] = useState([])
   const [notice, setNotice] = useState(null)
+  const [navigation, setNavigation] = useState({ view: 'home', nodeId: null })
   function notify(message) {
     setNotice({ message })
   }
 
-  const { drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured } = useGoogleDrivePlan({
-    plan: { profile, incomeSources, generalLedgers, buffer, tree },
-    replaceData, dialog, setDialog, setPath, notify,
+  const { drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured, hasUnsavedChanges, downloadBackup } = useGoogleDrivePlan({
+    plan: { profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree },
+    replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify,
   })
 
   useEffect(() => {
@@ -129,6 +130,7 @@ function App() {
 
   function removeIncomeSource(sourceId) {
     const source = incomeSources.find(item => item.id === sourceId)
+    if (!source) return
     deleteIncomeSource(sourceId)
     setDialog(null)
     notify(`${source.name} deleted.`)
@@ -179,6 +181,13 @@ function App() {
   return <div className="app-shell energy-mode">
     <EnergyExplorer
       tree={tree}
+      view={navigation.view}
+      focusedNodeId={navigation.nodeId}
+      onChangeView={view => setNavigation({ view, nodeId: null })}
+      monthlyHistory={monthlyHistory}
+      onMarkPaymentPaid={markPaymentPaid}
+      hasUnsavedChanges={hasUnsavedChanges}
+      onDownloadBackup={downloadBackup}
       path={path}
       onPathChange={setPath}
       profile={profile}
@@ -213,6 +222,12 @@ function App() {
     />
     {notice && <div className="change-notice" role="status"><span>{notice.message}</span><button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
     <PlanDialog
+      monthlyHistory={monthlyHistory}
+      onViewOverview={nodeId => {
+        const category = pathToNode(tree, nodeId)[0]
+        setNavigation({ nodeId, view: category === 'obligations' ? 'loans' : 'goals' })
+        setDialog(null)
+      }}
       key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'}
       dialog={dialog}
       profile={profile}

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from '../domain/flowDataTransfer'
 import { organizeSubscriptions } from '../domain/flowTree'
+import { preserveCurrentMonth } from '../domain/monthlyHistory'
 import { loadRecoveryVersions } from '../domain/versionRecovery'
 import { driveRestoreMode, orderValidDriveRestoreCandidates } from '../domain/driveRestoreCandidates'
 import { createBlankFlowData } from './useFlowData'
@@ -29,8 +30,32 @@ function clearDriveSession() {
 }
 
 // Owns the Drive connection and explicit save/recovery actions. Plan edits never upload.
-export function useGoogleDrivePlan({ plan, replaceData, dialog, setDialog, setPath, notify }) {
-  const { profile, incomeSources, generalLedgers, buffer, tree } = plan
+export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify }) {
+  const { profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree } = plan
+  const serializedPlan = useMemo(() => serializeFlowData({ profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree }), [profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree])
+  const [savedContents, setSavedContents] = useState(() => serializedPlan)
+  const hasUnsavedChanges = serializedPlan !== savedContents
+  const savingRef = useRef(false)
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined
+    const warnBeforeLeaving = event => { event.preventDefault(); event.returnValue = '' }
+    window.addEventListener('beforeunload', warnBeforeLeaving)
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving)
+  }, [hasUnsavedChanges])
+
+  function downloadBackup() {
+    const url = URL.createObjectURL(new Blob([serializedPlan], { type: 'application/json' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `flowtree-backup-${new Date().toISOString().replaceAll(/[:.]/g, '-')}.json`
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
+  function allowDiscard() {
+    return !hasUnsavedChanges || window.confirm('You have unsaved changes. Download a JSON backup or save to Google Drive first. Continue without saving?')
+  }
   const [drive, setDrive] = useState(() => {
     const session = readDriveSession()
     return session
@@ -45,7 +70,8 @@ export function useGoogleDrivePlan({ plan, replaceData, dialog, setDialog, setPa
   async function restoreDriveCandidate({ accessToken, user, candidate, candidates = [] }) {
     try {
       const restoredPlan = candidate.restoredPlan || parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId: candidate.id }))
-      replaceDataRef.current({ ...restoredPlan, tree: organizeSubscriptions(restoredPlan.tree) })
+      replaceDataRef.current({ ...restoredPlan, tree: organizeSubscriptions(restoredPlan.tree) }, { resetHistory: true })
+      setSavedContents(serializeFlowData(restoredPlan))
       setPath([])
       writeDriveSession({ accessToken, folderId: candidate.folderId, fileId: candidate.id })
       setDrive({ status: 'connected', user, error: '', accessToken, folderId: candidate.folderId, fileId: candidate.id })
@@ -73,6 +99,7 @@ export function useGoogleDrivePlan({ plan, replaceData, dialog, setDialog, setPa
   }
 
   async function connectDrive({ prompt = 'select_account consent' } = {}) {
+    if (!allowDiscard()) return
     if (!googleClientId) {
       setDrive(previous => ({ ...previous, status: 'unavailable', error: 'Google Drive sign-in has not been configured for this deployment.' }))
       return
@@ -114,7 +141,8 @@ export function useGoogleDrivePlan({ plan, replaceData, dialog, setDialog, setPa
           downloadFlowtreeBackup({ accessToken: session.accessToken, fileId: session.fileId }),
         ])
         const plan = parseFlowImport(restoredPlan)
-        replaceDataRef.current({ ...plan, tree: organizeSubscriptions(plan.tree) })
+        replaceDataRef.current({ ...plan, tree: organizeSubscriptions(plan.tree) }, { resetHistory: true })
+        setSavedContents(serializeFlowData(plan))
         setPath([])
         setDrive({ status: 'connected', user, error: '', ...session })
       } catch {
@@ -130,9 +158,12 @@ export function useGoogleDrivePlan({ plan, replaceData, dialog, setDialog, setPa
   }, [drive.accessToken, drive.folderId, drive.fileId])
 
   async function disconnectDrive() {
+    if (!allowDiscard() || savingRef.current) return
     await revokeGoogleDriveAccess(drive.accessToken)
     clearDriveSession()
-    replaceData(createBlankFlowData())
+    const blank = createBlankFlowData()
+    replaceData(blank, { resetHistory: true })
+    setSavedContents(serializeFlowData(blank))
     setPath([])
     setDrive({ status: googleClientId ? 'idle' : 'unavailable', user: null, error: '', accessToken: '', folderId: '', fileId: '' })
     notify('Signed out. This tab no longer holds your plan.')
@@ -140,19 +171,19 @@ export function useGoogleDrivePlan({ plan, replaceData, dialog, setDialog, setPa
 
   async function completeDriveSetup({ useCurrentPlan }) {
     if (!drive.accessToken || drive.status !== 'needs-plan-choice') return
-    const plan = useCurrentPlan
-      ? { profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree }
-      : createBlankFlowData()
+    const setupPlan = useCurrentPlan ? preserveCurrentMonth(plan) : createBlankFlowData()
+    if (useCurrentPlan) captureCurrentMonth()
     setDrive(previous => ({ ...previous, status: 'saving', error: '' }))
     try {
       const folder = drive.folderId ? { id: drive.folderId } : await findOrCreateFolder({ accessToken: drive.accessToken, folderName: DRIVE_FOLDER_NAME })
-      const file = await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: folder.id, fileName: DRIVE_FILE_NAME, contents: serializeFlowData(plan) })
+      const file = await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: folder.id, fileName: DRIVE_FILE_NAME, contents: serializeFlowData(setupPlan) })
       if (!useCurrentPlan) {
-        replaceData(plan)
+        replaceData(setupPlan, { resetHistory: true })
         setPath([])
       }
       writeDriveSession({ accessToken: drive.accessToken, folderId: folder.id, fileId: file.id })
       setDrive(previous => ({ ...previous, status: 'saved', setupRequired: false, error: '', folderId: folder.id, fileId: file.id }))
+      setSavedContents(serializeFlowData(setupPlan))
       setDialog(null)
       notify(useCurrentPlan ? 'Your current plan was saved to Google Drive.' : 'A new private FlowTree plan was created in your Google Drive.')
     } catch (error) {
@@ -199,7 +230,7 @@ export function useGoogleDrivePlan({ plan, replaceData, dialog, setDialog, setPa
 
   function restoreDriveRevision(revisionId) {
     const revision = (dialog?.revisions || []).find(item => item.id === revisionId)
-    if (!revision?.restoredPlan) return
+    if (!revision?.restoredPlan || !allowDiscard()) return
     replaceData({ ...revision.restoredPlan, tree: organizeSubscriptions(revision.restoredPlan.tree) })
     setPath([])
     setDialog(null)
@@ -207,18 +238,23 @@ export function useGoogleDrivePlan({ plan, replaceData, dialog, setDialog, setPa
   }
 
   async function saveDrivePlan() {
-    if (!drive.accessToken || !drive.folderId || !drive.fileId || drive.status === 'saving') return
-    const contents = serializeFlowData({ profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree })
+    if (!drive.accessToken || !drive.folderId || !drive.fileId || savingRef.current) return
+    savingRef.current = true
+    const contents = serializeFlowData(preserveCurrentMonth(plan))
+    captureCurrentMonth()
     setDrive(previous => ({ ...previous, status: 'saving', error: '' }))
     try {
       await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: drive.fileId, fileName: DRIVE_FILE_NAME, contents })
+      setSavedContents(contents)
       setDrive(previous => ({ ...previous, status: 'saved', error: '' }))
       notify('Your plan was saved to Google Drive.')
     } catch (error) {
       setDrive(previous => ({ ...previous, status: 'error', error: error.message || 'Could not save your FlowTree plan to Google Drive.' }))
       notify('Google Drive could not save your plan. Your changes are still open in this tab.')
+    } finally {
+      savingRef.current = false
     }
   }
 
-  return { drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured: Boolean(googleClientId) }
+  return { hasUnsavedChanges, downloadBackup, drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured: Boolean(googleClientId) }
 }

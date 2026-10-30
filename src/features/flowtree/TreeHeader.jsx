@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, canUndo, canRedo, onUndo, onRedo, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onShowSinkingFunds, onShowLoans, onShowGoals, onShowRecurringPayments, onShowInvestments, onShowGeneralLedger, onToggleTheme }) {
+export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, canUndo, canRedo, onUndo, onRedo, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onShowSinkingFunds, onShowLoans, onShowGoals, onShowRecurringPayments, onShowInvestments, onShowGeneralLedger, onToggleTheme }) {
   const homeActive = view === 'home'
   const [accountOpen, setAccountOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -74,6 +74,13 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
   }
 
   return <>
+    <div className="plan-save-controls" aria-label="Plan saving">
+      <button className="mobile-history-action" type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo last plan change"><span className="material-symbols-rounded" aria-hidden="true">undo</span></button>
+      <button className="mobile-history-action" type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo plan change"><span className="material-symbols-rounded" aria-hidden="true">redo</span></button>
+      <span role="status">{hasUnsavedChanges ? 'Unsaved changes' : 'No unsaved changes'}</span>
+      <button type="button" onClick={onDownloadBackup} title="Download JSON backup" aria-label="Download JSON backup"><span className="material-symbols-rounded" aria-hidden="true">download</span></button>
+      {connected && <button type="button" onClick={onSaveDrivePlan} disabled={driveStatus === 'saving' || driveStatus === 'restoring'}>{driveStatus === 'saving' ? 'Saving…' : 'Save to Drive'}</button>}
+    </div>
     <aside className="energy-sidebar" aria-label="FlowTree navigation">
       <header className="sidebar-brand">
         <button className="energy-brand" onClick={() => closeMenuThen(onReturnToRoot)} aria-label="Return to home"><span className="flowtree-mark material-symbols-rounded" aria-hidden="true">account_tree</span><span>FlowTree</span></button>
