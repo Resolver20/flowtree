@@ -544,21 +544,38 @@
   .mobile-home-outlook p { line-height: 1.25; }
 }
 
-/* Manual persistence stays visible across dedicated views and narrow screens. */
-.plan-save-controls { position: fixed; z-index: 12; top: 10px; right: 12px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface, white); color: var(--text); }
-.plan-save-controls > span { font-size: 11px; }
-.plan-save-controls button { min-height: 36px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface, white); color: var(--text); padding: 6px 10px; cursor: pointer; }
-.plan-save-controls button:disabled { opacity: .5; cursor: wait; }
-@media (max-width: 760px) {
-  .plan-save-controls { top: 8px; right: 64px; left: 10px; justify-content: flex-end; }
-  .plan-save-controls > span { margin-right: auto; }
-  .plan-save-controls button { font-size: 11px; padding: 5px; }
-}
+/* A dedicated toolbar keeps saving clear of the plan summary and page content. */
+.plan-save-controls { position: fixed; z-index: 12; inset: 0 0 auto 224px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; height: 56px; padding: 8px 24px; border-bottom: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.plan-save-controls > span { font-size: 11px; color: var(--muted); }
+.plan-save-controls button { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--text); padding: 6px 10px; cursor: pointer; }
+.plan-save-controls button:disabled { opacity: .5; cursor: default; }
+.plan-save-controls .plan-save-button { border-color: #5366c8; background: #5366c8; color: white; font-size: 12px; font-weight: 600; }
+.plan-save-controls .material-symbols-rounded { font-size: 18px; }
+.plan-save-button kbd { border: 1px solid currentColor; border-radius: 4px; padding: 2px 4px; font: inherit; font-size: 10px; opacity: .85; }
+.plan-save-controls .save-state.is-unsaved { color: #94601d; }
 .plan-save-controls .mobile-history-action { display: none; }
+.theme-dark .plan-save-controls .plan-save-button { border-color: var(--accent); background: var(--accent); color: #18223a; }
+.theme-dark .plan-save-controls .save-state.is-unsaved { color: #edbd7b; }
+@media (min-width: 761px) {
+  .energy-status { top: 70px; }
+  .energy-viewport { top: 164px; }
+  .energy-breadcrumbs { top: 68px; }
+  .loans-view, .goals-view, .recurring-view, .ledger-view { top: 56px; }
+}
+@media (min-width: 761px) and (max-width: 900px) {
+  .energy-status { top: auto; }
+}
 @media (max-width: 760px) {
-  .plan-save-controls { flex-wrap: wrap; gap: 4px; }
-  .plan-save-controls .mobile-history-action { display: grid; place-items: center; min-width: 30px; }
-  .plan-save-controls > span { order: 2; flex-basis: 100%; text-align: right; }
+  .plan-save-controls { left: 0; justify-content: flex-end; gap: 6px; padding: 8px 64px 8px 10px; }
+  .plan-save-controls .mobile-history-action { display: grid; place-items: center; min-width: 30px; padding: 5px; }
+  .plan-save-controls button { min-height: 34px; padding: 6px; }
+  .plan-save-controls .save-state { margin-right: auto; font-size: 0; }
+  .save-state::before { content: ''; display: block; width: 7px; height: 7px; border-radius: 50%; background: #668879; }
+  .save-state.is-unsaved::before { background: #c58a40; }
+  .plan-save-button kbd { display: none; }
+  .energy-viewport { top: 68px; }
+  .energy-breadcrumbs { top: 58px; }
+  .loans-view, .goals-view, .recurring-view, .ledger-view { top: 56px; }
 }
 
 .month-year-navigation { justify-content: flex-end; margin: 0 0 18px; }
@@ -606,3 +623,7 @@
 .plan-restore-screen.theme-dark button { background: var(--accent); border-color: var(--accent); color: #18223a; }
 
 .theme-dark .mobile-income-source > .material-symbols-rounded { color: var(--accent); }
+/* Save feedback must leave the toolbar actions reachable. */
+.drive-sync-status { top: 64px; }
+.change-notice { top: auto; bottom: 24px; z-index: 15; }
+@media (max-width: 760px) { .change-notice { bottom: calc(78px + env(safe-area-inset-bottom)); } }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { isSaveShortcut } from '../../domain/saveShortcut'
 
 export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, canUndo, canRedo, onUndo, onRedo, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onShowSinkingFunds, onShowLoans, onShowGoals, onShowRecurringPayments, onShowInvestments, onShowGeneralLedger, onToggleTheme }) {
   const homeActive = view === 'home'
@@ -10,6 +11,20 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
   const mobileMoreRef = useRef(null)
   const mobileMoreButtonRef = useRef(null)
   const connected = Boolean(driveUser)
+  const saving = driveStatus === 'saving' || driveStatus === 'restoring'
+  const saveShortcut = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘S' : 'Ctrl+S'
+
+  useEffect(() => {
+    function saveWithKeyboard(event) {
+      if (!connected || !isSaveShortcut(event)) return
+      event.preventDefault()
+      // A dialog can contain an unsubmitted draft. Finish it before saving the plan.
+      if (event.repeat || saving || document.querySelector('dialog[open]')) return
+      onSaveDrivePlan()
+    }
+    document.addEventListener('keydown', saveWithKeyboard)
+    return () => document.removeEventListener('keydown', saveWithKeyboard)
+  }, [connected, saving, onSaveDrivePlan])
 
   useEffect(() => {
     if (!accountOpen) return undefined
@@ -74,12 +89,12 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
   }
 
   return <>
-    <div className="plan-save-controls" aria-label="Plan saving">
+    <div className="plan-save-controls" role="group" aria-label="Plan saving">
       <button className="mobile-history-action" type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo last plan change"><span className="material-symbols-rounded" aria-hidden="true">undo</span></button>
       <button className="mobile-history-action" type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo plan change"><span className="material-symbols-rounded" aria-hidden="true">redo</span></button>
-      <span role="status">{hasUnsavedChanges ? 'Unsaved changes' : 'No unsaved changes'}</span>
+      <span className={`save-state${hasUnsavedChanges ? ' is-unsaved' : ''}`} role="status" title={hasUnsavedChanges ? 'Unsaved changes' : 'No unsaved changes'}>{hasUnsavedChanges ? 'Unsaved changes' : 'No unsaved changes'}</span>
       <button type="button" onClick={onDownloadBackup} title="Download JSON backup" aria-label="Download JSON backup"><span className="material-symbols-rounded" aria-hidden="true">download</span></button>
-      {connected && <button type="button" onClick={onSaveDrivePlan} disabled={driveStatus === 'saving' || driveStatus === 'restoring'}>{driveStatus === 'saving' ? 'Saving…' : 'Save to Drive'}</button>}
+      {connected && <button className="plan-save-button" type="button" onClick={onSaveDrivePlan} disabled={saving} aria-keyshortcuts="Meta+s Control+s" title={`Save plan to Google Drive (${saveShortcut}). Finish any open editor first.`}><span className="material-symbols-rounded" aria-hidden="true">cloud_upload</span><span>{driveStatus === 'saving' ? 'Saving…' : 'Save'}</span><kbd>{saveShortcut}</kbd></button>}
     </div>
     <aside className="energy-sidebar" aria-label="FlowTree navigation">
       <header className="sidebar-brand">
