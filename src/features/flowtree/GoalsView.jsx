@@ -77,28 +77,43 @@ function GoalEditor({ goal, onSave, onCancel }) {
 }
 
 export default function GoalsView({ goals, focusedGoalId, onSaveGoal }) {
+  const [selectedId, setSelectedId] = useState(focusedGoalId || null)
   const [editingId, setEditingId] = useState(null)
   const [adding, setAdding] = useState(false)
-  const selected = goals.find(goal => goal.id === focusedGoalId) || goals.find(goal => goal.id === editingId) || goals[0] || null
+  const selected = goals.find(goal => goal.id === selectedId) || null
 
   function saveGoal(data) {
     onSaveGoal(data)
+    if (data.id) setSelectedId(data.id)
     setEditingId(null)
     setAdding(false)
   }
 
   return <section className="goals-view" aria-label="Life goals">
-    <header className="goals-header"><div><span className="eyebrow">LIFE GOALS</span><h1>Life goals</h1><p>Create each goal here, then see its monthly requirement flow into the same Home plan as your other priorities.</p></div><button type="button" className="goal-add" onClick={() => { setAdding(true); setEditingId(null) }}><span className="material-symbols-rounded" aria-hidden="true">add</span>Add goal</button></header>
+    <header className="goals-header"><div><span className="eyebrow">LIFE GOALS</span><h1>Life goals</h1><p>Create each goal here, then see its monthly requirement flow into the same Home plan as your other priorities.</p></div><button type="button" className="goal-add" onClick={() => { setAdding(true); setEditingId(null); setSelectedId(null) }}><span className="material-symbols-rounded" aria-hidden="true">add</span>Add goal</button></header>
     {!goals.length && !adding && <div className="goals-empty"><span className="material-symbols-rounded" aria-hidden="true">flag</span><strong>No life goals yet</strong><p>Add a goal to include its monthly target in your Home flow.</p><button type="button" onClick={() => setAdding(true)}>Add your first goal</button></div>}
     {adding && <GoalEditor onSave={saveGoal} onCancel={() => setAdding(false)} />}
     {goals.length > 0 && <div className="goals-workspace">
-      <aside className="goal-list" aria-label="Your life goals">{goals.map(goal => <button type="button" key={goal.id} className={goal.id === selected?.id ? 'is-selected' : ''} aria-pressed={goal.id === selected?.id} onClick={() => { setEditingId(goal.id); setAdding(false) }}><span className="material-symbols-rounded" aria-hidden="true">{goal.symbol || goal.icon || 'flag'}</span><span><strong>{goal.name}</strong><small>{formatMoney(monthlyAllocation(goal))} / month</small></span></button>)}</aside>
-      {selected && editingId === selected.id ? <GoalEditor goal={selected} onSave={saveGoal} onCancel={() => setEditingId(null)} /> : selected && <div className="goal-details">
+      <aside className="goal-list" aria-label="Your life goals">{goals.map(goal => <button type="button" key={goal.id} className={goal.id === selected?.id ? 'is-selected' : ''} aria-pressed={goal.id === selected?.id} onClick={() => { setSelectedId(goal.id); setEditingId(null); setAdding(false) }}><span className="material-symbols-rounded" aria-hidden="true">{goal.symbol || goal.icon || 'flag'}</span><span><strong>{goal.name}</strong><small>{formatMoney(monthlyAllocation(goal))} / month</small></span></button>)}</aside>
+      {selected && editingId === selected.id ? <GoalEditor goal={selected} onSave={saveGoal} onCancel={() => setEditingId(null)} /> : selected ? <div className="goal-details">
         <div className="goal-details-heading"><div><span className="eyebrow">GOAL OVERVIEW</span><h2>{selected.name}</h2></div><button type="button" onClick={() => setEditingId(selected.id)}>Edit goal</button></div>
         <GoalProgress goal={selected} />
         <section className="goal-home-link"><span className="material-symbols-rounded" aria-hidden="true">account_tree</span><div><strong>Included in your Home flow</strong><p>Home adds this goal to Life goals as {formatMoney(monthlyAllocation(selected))} each month.</p></div></section>
-      </div>}
+      </div> : <GoalPortfolioOverview goals={goals} onSelect={setSelectedId} />}
     </div>}
+  </section>
+}
+
+function GoalPortfolioOverview({ goals, onSelect }) {
+  const totals = goals.reduce((total, goal) => {
+    const progress = annualTargetProgress(goal)
+    return { target: total.target + Math.max(0, Number(goal.amount) || 0), saved: total.saved + (progress?.saved || 0), monthly: total.monthly + monthlyAllocation(goal) }
+  }, { target: 0, saved: 0, monthly: 0 })
+
+  return <section className="goal-portfolio" aria-label="Life goals overview">
+    <div><span className="eyebrow">LIFE GOALS OVERVIEW</span><h2>Your goals at a glance</h2><p>Select a goal to view its details or edit it. Home uses the calculated monthly amount for every active goal.</p></div>
+    <div className="goal-stat-grid"><div><span>Total target value</span><strong>{formatMoney(totals.target)}</strong><small>Across {goals.length} goal{goals.length === 1 ? '' : 's'}</small></div><div><span>Planned or accumulated</span><strong>{formatMoney(totals.saved)}</strong><small>Progress recorded against your targets</small></div><div><span>Monthly amount in Home</span><strong>{formatMoney(totals.monthly)}</strong><small>Combined active goal contributions</small></div></div>
+    <div className="goal-portfolio-list">{goals.map(goal => <button type="button" key={goal.id} onClick={() => onSelect(goal.id)}><span><strong>{goal.name}</strong><small>{formatMoney(monthlyAllocation(goal))} / month</small></span><span className="material-symbols-rounded" aria-hidden="true">arrow_forward</span></button>)}</div>
   </section>
 }
 
