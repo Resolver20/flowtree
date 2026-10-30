@@ -3,7 +3,6 @@ import { parseFlowImport, serializeFlowData } from './domain/flowDataTransfer'
 import { findNode, isBuiltInFlowGroup, organizeSubscriptions, pathToNode } from './domain/flowTree'
 import { loanProjection } from './domain/loan'
 import { driveRestoreMode, orderValidDriveRestoreCandidates } from './domain/driveRestoreCandidates'
-import { canAutosaveDrive } from './domain/driveSyncState'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import PlanDialog from './features/flowtree/PlanDialog'
 import { createBlankFlowData, useFlowData } from './hooks/useFlowData'
@@ -44,9 +43,6 @@ function App() {
   })
   const replaceDataRef = useRef(replaceData)
   const hasAttemptedDriveRestore = useRef(false)
-  const driveSaveQueueRef = useRef({ inFlight: false, pending: null })
-  const driveConnectionRef = useRef('')
-  const autosaveReady = canAutosaveDrive(drive)
 
   function notify(message) {
     setNotice({ message })
@@ -147,13 +143,7 @@ function App() {
     if (drive.accessToken && drive.folderId && drive.fileId) writeDriveSession({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: drive.fileId })
   }, [drive.accessToken, drive.folderId, drive.fileId])
 
-  useEffect(() => {
-    driveConnectionRef.current = [drive.accessToken, drive.folderId, drive.fileId].join(':')
-  }, [drive.accessToken, drive.folderId, drive.fileId])
-
   async function disconnectDrive() {
-    driveSaveQueueRef.current.pending = null
-    driveConnectionRef.current = ''
     await revokeGoogleDriveAccess(drive.accessToken)
     clearDriveSession()
     replaceData(createBlankFlowData())
@@ -229,40 +219,22 @@ function App() {
     replaceData({ ...revision.restoredPlan, tree: organizeSubscriptions(revision.restoredPlan.tree) })
     setPath([])
     setDialog(null)
-    notify('Earlier Google Drive version restored. Saving it as your current plan…')
+    notify('Earlier Google Drive version loaded. Press Save to Google Drive to keep it there.')
   }
 
-  useEffect(() => {
-    if (!autosaveReady) return undefined
-    const connectionKey = [drive.accessToken, drive.folderId, drive.fileId].join(':')
-    const snapshot = serializeFlowData({ profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree })
-    // Every planner mutation changes one of these dependencies. Debouncing keeps
-    // rapid form edits from producing a Drive upload for every keystroke.
-    const saveNextSnapshot = async () => {
-      const queue = driveSaveQueueRef.current
-      if (queue.inFlight || !queue.pending) return
-      const next = queue.pending
-      queue.pending = null
-      queue.inFlight = true
-      setDrive(previous => ({ ...previous, status: 'saving', error: '' }))
-      try {
-        await uploadFlowtreeBackup({ ...next, fileName: DRIVE_FILE_NAME })
-        // A newer edit waits in the queue. It must be uploaded before this UI
-        // can report a saved state, preventing an old snapshot from winning.
-        if (!queue.pending && driveConnectionRef.current === next.connectionKey) setDrive(previous => ({ ...previous, status: 'saved' }))
-      } catch (error) {
-        if (driveConnectionRef.current === next.connectionKey) setDrive(previous => ({ ...previous, status: 'error', error: error.message || 'Could not save your FlowTree plan to Google Drive.' }))
-      } finally {
-        queue.inFlight = false
-        if (queue.pending) saveNextSnapshot()
-      }
+  async function saveDrivePlan() {
+    if (!drive.accessToken || !drive.folderId || !drive.fileId || drive.status === 'saving') return
+    const contents = serializeFlowData({ profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree })
+    setDrive(previous => ({ ...previous, status: 'saving', error: '' }))
+    try {
+      await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: drive.fileId, fileName: DRIVE_FILE_NAME, contents })
+      setDrive(previous => ({ ...previous, status: 'saved', error: '' }))
+      notify('Your plan was saved to Google Drive.')
+    } catch (error) {
+      setDrive(previous => ({ ...previous, status: 'error', error: error.message || 'Could not save your FlowTree plan to Google Drive.' }))
+      notify('Google Drive could not save your plan. Your changes are still open in this tab.')
     }
-    const timer = window.setTimeout(() => {
-      driveSaveQueueRef.current.pending = { accessToken: drive.accessToken, folderId: drive.folderId, fileId: drive.fileId, contents: snapshot, connectionKey }
-      saveNextSnapshot()
-    }, 700)
-    return () => window.clearTimeout(timer)
-  }, [autosaveReady, drive.accessToken, drive.folderId, drive.fileId, profile, incomeSources, generalLedgers, buffer, tree])
+  }
 
   function deleteItem(id) {
     const node = findNode(tree, id)
@@ -396,22 +368,12 @@ function App() {
     notify('Plan JSON updated.')
   }
 
-  async function undoPlan() {
+  function undoPlan() {
     if (!canUndo) return
-    if (autosaveReady) {
-      const backupName = `flowtree-backup-${new Date().toISOString().replaceAll(/[:.]/g, '-')}.json`
-      const snapshot = serializeFlowData({ profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree })
-      try {
-        await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: drive.folderId, contents: snapshot, fileName: backupName })
-      } catch {
-        notify('Undo was not applied because FlowTree could not create a Google Drive backup.')
-        return
-      }
-    }
     undo()
     setPath([])
     setDialog(null)
-    notify('Last plan change undone. A separate Google Drive backup was kept first.')
+    notify('Last plan change undone. Google Drive was not changed.')
   }
 
   function redoPlan() {
@@ -425,7 +387,7 @@ function App() {
   const driveUser = drive.user ? { emailAddress: drive.user.emailAddress, displayName: drive.user.displayName, photoLink: drive.user.photoLink } : null
 
   return <div className="app-shell energy-mode">
-    <EnergyExplorer tree={tree} path={path} onPathChange={setPath} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} salary={monthlyIncome} buffer={Number(buffer) || 0} canUndo={canUndo} canRedo={canRedo} onUndo={undoPlan} onRedo={redoPlan} onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })} onConnectDrive={connectDrive} onDisconnectDrive={disconnectDrive} onEditJson={() => setDialog({ type: 'editJson' })} onRecoverDriveVersion={openDriveRevisionRecovery} onManageNode={nodeId => setDialog({ type: 'manage', nodeId })} onSaveLoan={saveLoan} onDeleteLoan={deleteItem} onSaveGoal={saveGoal} onSaveRecurringPaymentDay={saveRecurringPaymentDay} onSaveInvestment={saveInvestment} onSaveGeneralLedger={saveGeneralLedger} onDeleteGeneralLedger={deleteGeneralLedger} onSaveLedgerExpense={saveLedgerExpense} onDeleteLedgerEntry={deleteLedgerEntry} driveUser={driveUser} driveStatus={drive.status} driveError={drive.error} driveConfigured={Boolean(googleClientId)} />
+    <EnergyExplorer tree={tree} path={path} onPathChange={setPath} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} salary={monthlyIncome} buffer={Number(buffer) || 0} canUndo={canUndo} canRedo={canRedo} onUndo={undoPlan} onRedo={redoPlan} onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })} onConnectDrive={connectDrive} onDisconnectDrive={disconnectDrive} onSaveDrivePlan={saveDrivePlan} onEditJson={() => setDialog({ type: 'editJson' })} onRecoverDriveVersion={openDriveRevisionRecovery} onManageNode={nodeId => setDialog({ type: 'manage', nodeId })} onSaveLoan={saveLoan} onDeleteLoan={deleteItem} onSaveGoal={saveGoal} onSaveRecurringPaymentDay={saveRecurringPaymentDay} onSaveInvestment={saveInvestment} onSaveGeneralLedger={saveGeneralLedger} onDeleteGeneralLedger={deleteGeneralLedger} onSaveLedgerExpense={saveLedgerExpense} onDeleteLedgerEntry={deleteLedgerEntry} driveUser={driveUser} driveStatus={drive.status} driveError={drive.error} driveConfigured={Boolean(googleClientId)} />
     {notice && <div className="change-notice" role="status"><span>{notice.message}</span><button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
     <PlanDialog key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'} dialog={dialog} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} buffer={buffer} tree={tree} driveStatus={drive.status} driveUser={driveUser} driveError={drive.error} driveConfigured={Boolean(googleClientId)} driveSetupRequired={Boolean(drive.setupRequired)} driveRestoreCandidates={drive.restoreCandidates || []} onClose={() => dialog?.type === 'driveSync' && (drive.setupRequired || drive.restoreCandidates?.length) ? cancelDriveSetup() : setDialog(null)} onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }} onDeleteProfile={removeProfile} onSaveIncomeSource={saveIncomeSource} onDeleteIncomeSource={removeIncomeSource} onSaveAnnualTargets={updates => { changeNodes(updates); notify(`${updates.length} yearly ${updates.length === 1 ? 'target' : 'targets'} updated.`) }} onSaveBuffer={value => { setBuffer(value); notify('Safety buffer updated.') }} onSaveNode={saveNode} onDeleteNode={deleteItem} onImportData={importJson} onApplyJson={applyJson} onRequestEdit={nodeId => setDialog({ type: 'node', nodeId })} onRequestAdd={parentId => setDialog({ type: 'node', parentId })} onRequestEditIncomeSource={sourceId => setDialog({ type: 'incomeSource', sourceId })} onRequestEditProfile={() => setDialog({ type: 'profile' })} onRequestAddIncomeSource={() => setDialog({ type: 'incomeSource' })} onRequestSinkingFunds={() => setDialog({ type: 'sinkingFunds' })} onConnectDrive={connectDrive} onAddDriveAccount={connectDrive} onSwitchDriveAccount={connectDrive} onDisconnectDrive={disconnectDrive} onUseCurrentDrivePlan={() => completeDriveSetup({ useCurrentPlan: true })} onCreateBlankDrivePlan={() => completeDriveSetup({ useCurrentPlan: false })} onChooseDriveRestoreCandidate={chooseDriveRestoreCandidate} onRecoverDriveVersion={openDriveRevisionRecovery} onRestoreDriveRevision={restoreDriveRevision} />
   </div>

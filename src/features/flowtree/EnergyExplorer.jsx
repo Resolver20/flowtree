@@ -114,7 +114,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
   </header>
 }
 
-export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveRecurringPaymentDay, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
+export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveRecurringPaymentDay, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const demo = false
   const [view, setView] = useState('home')
   const [collapsedPaths, setCollapsedPaths] = useState(() => new Set())
@@ -313,6 +313,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       theme={theme}
       onConnectDrive={onConnectDrive}
       onDisconnectDrive={onDisconnectDrive}
+      onSaveDrivePlan={onSaveDrivePlan}
       onEditJson={onEditJson}
       onRecoverDriveVersion={onRecoverDriveVersion}
       onToggleTheme={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
