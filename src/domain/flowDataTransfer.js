@@ -137,6 +137,11 @@ function normalizeNode(node, path, ids, counters, depth) {
     savedAmount: amountAt(source.savedAmount, `${path}.savedAmount`, 0),
     startDate: dateAt(source.startDate, `${path}.startDate`),
     dueDate: dateAt(source.dueDate, `${path}.dueDate`),
+    dayOfMonth: (() => {
+      const value = source.dayOfMonth ?? 1
+      if (!Number.isInteger(value) || value < 1 || value > 31) fail(`${path}.dayOfMonth must be an integer from 1 to 31.`)
+      return value
+    })(),
     period,
     status,
     icon: optionalText(source.icon, `${path}.icon`, '', 64),

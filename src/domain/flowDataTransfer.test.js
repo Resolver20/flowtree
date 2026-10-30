@@ -8,8 +8,8 @@ const plan = {
   generalLedgers: [{ id: 'home-gl', name: 'Home GL', note: '', symbol: 'home', budget: 5000, entries: [{ id: 'groceries', date: '2026-09-20', description: 'Groceries', amount: 1250 }] }],
   buffer: 5000,
   tree: [{
-    id: 'needs', name: 'Cash Flow', amount: 0, savedAmount: 0, startDate: '', dueDate: '', period: 'month', status: 'active', icon: 'wallet', symbol: '', tone: 'blue', note: '',
-    children: [{ id: 'tax', name: 'Property tax', amount: 12000, savedAmount: 3000, startDate: '2026-09-20', dueDate: '2027-09-20', period: 'year', status: 'active', icon: 'receipt_long', symbol: '', tone: 'blue', note: '', children: [] }],
+    id: 'needs', name: 'Cash Flow', amount: 0, savedAmount: 0, startDate: '', dueDate: '', dayOfMonth: 1, period: 'month', status: 'active', icon: 'wallet', symbol: '', tone: 'blue', note: '',
+    children: [{ id: 'tax', name: 'Property tax', amount: 12000, savedAmount: 3000, startDate: '2026-09-20', dueDate: '2027-09-20', dayOfMonth: 1, period: 'year', status: 'active', icon: 'receipt_long', symbol: '', tone: 'blue', note: '', children: [] }],
   }],
 }
 
@@ -35,6 +35,7 @@ test('manual raw JSON plans are accepted and normalized', () => {
   assert.deepEqual(imported.generalLedgers, [])
   assert.equal(imported.tree[0].period, 'month')
   assert.equal(imported.tree[0].status, 'active')
+  assert.equal(imported.tree[0].dayOfMonth, 1)
 })
 
 test('general ledger budgets preserve valid amounts and safely migrate older plans', () => {
