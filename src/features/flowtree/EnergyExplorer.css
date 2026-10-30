@@ -115,7 +115,7 @@
 .energy-source strong { position: absolute; top: -46px; color: #303640; font-size: 13px; font-weight: 500; white-space: nowrap; }
 .energy-source > span { position: absolute; top: -26px; color: var(--muted); font-size: 12px; white-space: nowrap; }
 .energy-source small { font-size: 10px; }
-.energy-destination { position: absolute; width: 196px; height: 56px; transform: translate(-50%, -50%); }
+.energy-destination { position: absolute; width: 196px; height: 56px; transform: translate(-50%, -50%); transition: left 160ms ease, top 160ms ease; }
 .amount-node { display: flex; align-items: center; gap: 12px; width: 100%; height: 100%; padding: 9px 12px; border: 1px solid #dce1e8; border-radius: 12px; background: var(--surface); color: #303640; text-align: left; }
 .has-children:not(.is-expanded) .amount-node { padding-right: 28px; cursor: pointer; }
 .has-children.is-expanded .amount-node { cursor: pointer; }
@@ -272,7 +272,7 @@
   .mobile-tree-icon { flex: 0 0 26px; font-size: 24px; text-align: center; }
   .mobile-tree-copy { display: grid; min-width: 0; gap: 4px; }
   .mobile-tree-cue { margin-left: auto; color: var(--muted); font-size: 21px; }
-  .mobile-tree-children { display: grid; gap: 10px; margin-left: 20px; padding-left: 15px; border-left: 1px solid #c8ced8; }
+  .mobile-tree-children { display: grid; gap: 10px; margin-left: 20px; padding-left: 15px; border-left: 1px solid #c8ced8; animation: mobile-branch-in 160ms ease-out; }
   .theme-dark .mobile-bottom-nav { border-color: #34445a; background: #151f2e; box-shadow: 0 -6px 20px #0509124d; }
   .theme-dark .mobile-account-trigger { border-color: #40516b; background: #1b2636; color: #a9bfff; box-shadow: 0 3px 10px #0509124d; }
   .theme-dark .mobile-bottom-nav button.is-active, .theme-dark .mobile-more-actions button.is-active { border-color: #6076a8; background: #243652; color: #f4f7fb; }
@@ -285,6 +285,8 @@
   .theme-dark .mobile-tree-connector, .theme-dark .mobile-tree-children { border-color: #62718a; background-color: #62718a; }
   .theme-dark .mobile-tree-children { background-color: transparent; }
 }
+@keyframes mobile-branch-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .energy-destination, .mobile-tree-children { animation: none; transition: none; } }
 @media (max-width: 760px) { .drive-login { padding: 24px 20px; } .drive-login-shell { grid-template-columns: 1fr; grid-template-rows: auto; gap: 26px; min-height: auto; } .drive-login-brand, .drive-login-preview { grid-column: auto; } .drive-login-intro { padding: 20px 0 0; } .drive-login h1 { font-size: clamp(36px, 11vw, 52px); letter-spacing: -1.8px; } .drive-login-card { width: 100%; } .drive-login-preview { padding-top: 24px; } .drive-preview-income { left: 5%; } .drive-preview-plan { left: 37%; } .drive-preview-cash, .drive-preview-goals { right: 3%; } .drive-preview-line-one { left: 29%; width: 12%; } .drive-preview-line-two { left: 51%; width: 16%; } }
 .energy-viewport { scrollbar-width: thin; scrollbar-color: #c7cfdb transparent; }
 .loans-view { position: absolute; inset: 0 0 0 224px; overflow: auto; padding: 46px clamp(24px, 5vw, 76px) 48px; background: #f7f8fa; color: #303640; }

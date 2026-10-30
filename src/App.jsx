@@ -210,7 +210,7 @@ function App() {
           return { ...revision, valid: false }
         }
       }))
-      const validRevisions = checkedRevisions.filter(revision => revision.valid)
+      const validRevisions = checkedRevisions.filter(revision => revision.valid).slice(0, 5)
       setDrive(previous => ({ ...previous, status: 'connected', error: '' }))
       if (!validRevisions.length) {
         notify('No earlier valid FlowTree versions were found in Google Drive.')

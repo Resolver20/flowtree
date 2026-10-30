@@ -36,12 +36,13 @@ function FinanceNode({ monthlyOutcome, point, worldWidth, worldHeight }) {
   </div>
 }
 
-export default function TreeCanvas({ layout, mobile, path, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect }) {
+export default function TreeCanvas({ layout, mobile, path, collapsedPaths, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect }) {
   if (mobile) {
     return <MobileTree
       monthlyOutcome={layout.monthlyOutcome}
       allocations={layout.allocations}
       expandAll={layout.expandAll}
+      collapsedPaths={collapsedPaths}
       income={layout.income}
       incomeSources={incomeSources}
       path={path}
@@ -100,7 +101,7 @@ export default function TreeCanvas({ layout, mobile, path, profile, driveUser, d
       {layout.positionedColumns.flatMap((column, columnIndex) => column.items.map(entry => <TreeNodeCard
         key={entry.path.join('/')}
         entry={entry}
-        isExpanded={entry.path.every((id, index) => path[index] === id) && entry.path.length <= path.length}
+        isExpanded={layout.expandAll ? !collapsedPaths.has(entry.path.join('/')) : entry.path.every((id, index) => path[index] === id) && entry.path.length <= path.length}
         isSelected={entry.path.join('/') === path.join('/')}
         isCategory={columnIndex === 0}
         worldWidth={layout.worldWidth}

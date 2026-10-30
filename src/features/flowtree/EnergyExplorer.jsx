@@ -117,6 +117,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
 export default function EnergyExplorer({ tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveRecurringPaymentDay, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const demo = false
   const [view, setView] = useState('home')
+  const [collapsedPaths, setCollapsedPaths] = useState(() => new Set())
   const [loanFocusId, setLoanFocusId] = useState(null)
   const [goalFocusId, setGoalFocusId] = useState(null)
   const [theme, setTheme] = useState(readTheme)
@@ -157,13 +158,13 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
       ? `Next: ${nextName} needs ${formatMoney(nextFunding.target - nextFunding.allocated)}.`
       : 'Every monthly target in this view is filled.'
   const layout = useMemo(() => ({
-    ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, viewport, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
+    ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, collapsedPaths, viewport, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
     available: income - buffer,
     monthlyOutcome,
     income,
     allocations: flow.allocations,
     expandAll: visibleTreeExpanded,
-  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, viewport, income, buffer, monthlyOutcome, incomeSources.length, showProfileMarker])
+  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, collapsedPaths, viewport, income, buffer, monthlyOutcome, incomeSources.length, showProfileMarker])
   const breadcrumbs = path.map((_, index) => ({ path: path.slice(0, index + 1), node: findPath(visibleTree, path.slice(0, index + 1)) }))
 
   useEffect(() => {
@@ -232,6 +233,16 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
   }, [isMobileLayout, viewport.height, viewport.width, viewportRef])
 
   function navigate(nextPath) {
+    if (view === 'home' && !path.length) {
+      const key = nextPath.join('/')
+      setCollapsedPaths(current => {
+        const next = new Set(current)
+        if (next.has(key)) next.delete(key)
+        else next.add(key)
+        return next
+      })
+      return
+    }
     setPath(current => nextPath.join('/') === current.join('/') ? current.slice(0, -1) : nextPath)
   }
 
@@ -323,6 +334,7 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
         ? <TreeCanvas
             layout={layout}
             mobile={isMobileLayout}
+            collapsedPaths={collapsedPaths}
             path={path}
             profile={showProfileMarker ? profile : { ...profile, visible: false }}
             driveUser={driveUser}

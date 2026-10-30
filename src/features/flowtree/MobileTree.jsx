@@ -21,12 +21,12 @@ function MobileIncomeSummary({ income }) {
   </div>
 }
 
-function MobileNode({ entry, selectedPath, expandAll, onNavigate, onInspect }) {
+function MobileNode({ entry, selectedPath, expandAll, collapsedPaths, onNavigate, onInspect }) {
   const { item, path } = entry
   const funding = entry.funding || EMPTY_FUNDING
   const hasChildren = Boolean(item.children?.length)
   const isSelected = path.join('/') === selectedPath.join('/')
-  const showChildren = hasChildren && (expandAll || path.every((id, index) => selectedPath[index] === id))
+  const showChildren = hasChildren && (expandAll ? !collapsedPaths.has(path.join('/')) : path.every((id, index) => selectedPath[index] === id))
   const annualProgress = annualTargetProgress(item)
   const color = colorForNode(item)
   const targetText = annualProgress
@@ -54,6 +54,7 @@ function MobileNode({ entry, selectedPath, expandAll, onNavigate, onInspect }) {
         entry={{ item: child, path: [...path, child.id], funding: funding.children?.[index] || EMPTY_FUNDING }}
         selectedPath={selectedPath}
         expandAll={expandAll}
+        collapsedPaths={collapsedPaths}
         onNavigate={onNavigate}
         onInspect={onInspect}
       />)}
@@ -61,7 +62,7 @@ function MobileNode({ entry, selectedPath, expandAll, onNavigate, onInspect }) {
   </div>
 }
 
-export default function MobileTree({ monthlyOutcome, allocations, expandAll, income, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
+export default function MobileTree({ monthlyOutcome, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
   const availableLabel = monthlyOutcome < 0 ? 'over-planned this month' : 'available this month'
   return <div className="mobile-tree" aria-label="Monthly plan flow">
     <section className="mobile-tree-income" aria-label="Income">
@@ -83,6 +84,7 @@ export default function MobileTree({ monthlyOutcome, allocations, expandAll, inc
         entry={{ item, path: [item.id], funding: allocations[index] || EMPTY_FUNDING }}
         selectedPath={path}
         expandAll={expandAll}
+        collapsedPaths={collapsedPaths}
         onNavigate={onNavigate}
         onInspect={onInspect}
       />)}

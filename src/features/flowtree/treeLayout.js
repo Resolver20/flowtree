@@ -46,7 +46,7 @@ function createBranchY(tree) {
   return { positions, leafEnd: cursor }
 }
 
-function createColumns(tree, path, allocations, expandAll) {
+function createColumns(tree, path, allocations, expandAll, collapsedPaths) {
   const rootEntries = tree.map((item, index) => ({
     item,
     path: [item.id],
@@ -58,7 +58,7 @@ function createColumns(tree, path, allocations, expandAll) {
   if (expandAll) {
     let currentLevel = rootEntries
     while (currentLevel.some(entry => entry.item.children?.length)) {
-      const nextLevel = currentLevel.flatMap(entry => (entry.item.children || []).map(child => {
+      const nextLevel = currentLevel.flatMap(entry => (collapsedPaths.has(pathKey(entry.path)) ? [] : (entry.item.children || []).map(child => {
         const childPath = [...entry.path, child.id]
         return {
           item: child,
@@ -66,7 +66,7 @@ function createColumns(tree, path, allocations, expandAll) {
           parentPath: entry.path,
           funding: energyAtPath(allocations, childPath) || EMPTY_FUNDING,
         }
-      }))
+      })))
       if (!nextLevel.length) break
       columns.push(nextLevel)
       currentLevel = nextLevel
@@ -95,8 +95,8 @@ function rowY(count, index, height) {
   return EDGE_INSET + (height - EDGE_INSET * 2) * index / (count - 1)
 }
 
-export function createTreeLayout({ tree, path, allocations, expandAll, viewport, incomeSourceCount = 1, showPerson = true }) {
-  const columns = createColumns(tree, path, allocations, expandAll)
+export function createTreeLayout({ tree, path, allocations, expandAll, collapsedPaths = new Set(), viewport, incomeSourceCount = 1, showPerson = true }) {
+  const columns = createColumns(tree, path, allocations, expandAll, collapsedPaths)
   const depthCounts = countNodesByDepth(tree)
   const branchY = createBranchY(tree)
   const height = expandAll
