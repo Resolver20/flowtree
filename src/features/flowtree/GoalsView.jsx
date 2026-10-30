@@ -3,14 +3,30 @@ import { annualTargetProgress, monthlyAllocation, NODE_STATUSES } from '../../do
 import { formatDate, formatMoney } from '../../lib/money'
 import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
 
-function futureDate() {
+function dateValue(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function dateAfterYears(years) {
   const date = new Date()
-  date.setFullYear(date.getFullYear() + 1)
-  return date.toISOString().slice(0, 10)
+  date.setFullYear(date.getFullYear() + years)
+  return dateValue(date)
 }
 
 function todayDate() {
-  return new Date().toISOString().slice(0, 10)
+  return dateValue(new Date())
+}
+
+function yearsUntil(dateText) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateText || '')
+  if (!match) return 1
+  const [, year, month] = match.map(Number)
+  const today = new Date()
+  const months = (year - today.getFullYear()) * 12 + (month - 1 - today.getMonth())
+  return Math.max(1, Math.round(months / 12))
 }
 
 function GoalEditor({ goal, onSave, onCancel }) {
@@ -18,8 +34,9 @@ function GoalEditor({ goal, onSave, onCancel }) {
   const [amount, setAmount] = useState(goal?.amount ?? '')
   const [symbol, setSymbol] = useState(goal?.symbol || goal?.icon || 'flag')
   const [period, setPeriod] = useState(goal?.period || 'year')
-  const [startDate, setStartDate] = useState(goal?.startDate || todayDate())
-  const [dueDate, setDueDate] = useState(goal?.dueDate || futureDate())
+  const [startDate] = useState(goal?.startDate || todayDate())
+  const [years, setYears] = useState(() => yearsUntil(goal?.dueDate))
+  const [dueDate, setDueDate] = useState(goal?.dueDate || dateAfterYears(yearsUntil(goal?.dueDate)))
   const [savedAmount, setSavedAmount] = useState(goal?.savedAmount ?? '')
   const [status, setStatus] = useState(goal?.status || 'active')
   const [error, setError] = useState('')
@@ -37,17 +54,23 @@ function GoalEditor({ goal, onSave, onCancel }) {
     onSave({ id: goal?.id, name: name.trim(), amount: nextAmount, savedAmount: period === 'year' ? nextSavedAmount : 0, startDate: period === 'year' ? startDate : '', period, dueDate: period === 'year' ? dueDate : '', status, symbol })
   }
 
+  function updateYears(value) {
+    const nextYears = Math.max(1, Math.round(Number(value) || 0))
+    setYears(nextYears)
+    setDueDate(dateAfterYears(nextYears))
+  }
+
   return <form className="goal-editor" onSubmit={submit}>
-    <div className="goal-editor-heading"><div><strong>{goal ? `Edit ${goal.name}` : 'Add a life goal'}</strong><span>Life goals are planning targets. Their monthly requirement appears in your Home money flow.</span></div><button type="button" onClick={onCancel}>Cancel</button></div>
+    <div className="goal-editor-heading"><div><strong>{goal ? `Edit ${goal.name}` : 'Add a life goal'}</strong><span>For example, set an EV car target and choose how many years you want to reach it. Its monthly requirement appears in Home.</span></div><button type="button" onClick={onCancel}>Cancel</button></div>
     <div className="goal-form-grid">
       <label>Goal name<input value={name} onChange={event => setName(event.target.value)} maxLength="100" /></label>
       <label>{period === 'year' ? 'Target amount (₹)' : 'Monthly target (₹)'}<input value={amount} onChange={event => setAmount(event.target.value)} type="number" min="0" step="0.01" /></label>
-      <label>Planning frequency<select value={period} onChange={event => setPeriod(event.target.value)}><option value="year">Goal target by end date</option><option value="month">Monthly, ongoing</option></select></label>
+      <label>Planning frequency<select value={period} onChange={event => setPeriod(event.target.value)}><option value="year">Goal target by timeline</option><option value="month">Monthly, ongoing</option></select></label>
       <label>Goal icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={`goal-${group.label}`} label={group.label}>{group.options.map(([value, label]) => <option key={`goal-${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label>
-      {period === 'year' && <><label>Goal starts on<input value={startDate} onChange={event => setStartDate(event.target.value)} type="date" /></label><label>End date<input value={dueDate} onChange={event => setDueDate(event.target.value)} type="date" min={startDate || todayDate()} /></label><label>Already accumulated (₹)<input value={savedAmount} onChange={event => setSavedAmount(event.target.value)} type="number" min="0" step="0.01" /></label></>}
+      {period === 'year' && <><label>Reach this goal in (years)<input value={years} onChange={event => updateYears(event.target.value)} type="number" min="1" step="1" inputMode="numeric" /></label><label>Target date<output>{formatDate(dueDate)}</output></label><label>Already accumulated (₹)<input value={savedAmount} onChange={event => setSavedAmount(event.target.value)} type="number" min="0" step="0.01" /></label></>}
       <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(item => <option key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</option>)}</select></label>
     </div>
-    <div className="goal-preview"><span>Monthly amount reflected in Home</span><strong>{formatMoney(preview)}</strong>{progress && <><span>Progress to end date</span><strong>{Math.round(progress.ratio * 100)}%</strong></>}<small>{period === 'year' ? `${formatMoney(progress.saved)} planned or accumulated toward ${formatMoney(progress.target)} by ${formatDate(dueDate)}.` : 'This is added to the Life goals branch every month.'}</small></div>
+    <div className="goal-preview"><span>Monthly amount reflected in Home</span><strong>{formatMoney(preview)}</strong>{progress && <><span>Progress to end date</span><strong>{Math.round(progress.ratio * 100)}%</strong></>}<small>{period === 'year' ? `${formatMoney(progress.saved)} planned or accumulated toward ${formatMoney(progress.target)} over ${years} year${Number(years) === 1 ? '' : 's'}, by ${formatDate(dueDate)}.` : 'This is added to the Life goals branch every month.'}</small></div>
     {error && <span className="field-error" role="alert">{error}</span>}
     <div className="goal-editor-actions"><button className="goal-save" type="submit">Save life goal</button></div>
   </form>
