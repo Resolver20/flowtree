@@ -56,5 +56,6 @@ export function loanProjection(loan) {
   const schedule = remainingPrincipal <= 0
     ? { basePayment: 0, scheduledPayment: 0, rows: [], payoffMonths: 0, totalInterest: 0, totalPaid: 0 }
     : loanSchedule({ remainingPrincipal, annualRate, tenureMonths, extraPayment: loan?.extraPayment })
-  return { principal, remainingPrincipal, annualRate, tenureMonths, extraPayment: amount(loan?.extraPayment), ...schedule }
+  const userMonthlyContribution = Math.min(schedule.scheduledPayment, amount(loan?.userMonthlyContribution ?? schedule.scheduledPayment))
+  return { principal, remainingPrincipal, annualRate, tenureMonths, extraPayment: amount(loan?.extraPayment), userMonthlyContribution, ...schedule }
 }

@@ -268,15 +268,17 @@ function LoanNodeDialog({ node, onClose, onSave }) {
   const [annualRate, setAnnualRate] = useState(node.loan.annualRate)
   const [tenureYears, setTenureYears] = useState(node.loan.tenureMonths / 12)
   const [extraPayment, setExtraPayment] = useState(node.loan.extraPayment || 0)
+  const [userMonthlyContribution, setUserMonthlyContribution] = useState(node.loan.userMonthlyContribution ?? '')
   const [status, setStatus] = useState(node.status)
   const [error, setError] = useState('')
-  const preview = loanProjection({ principal, remainingPrincipal, annualRate, tenureMonths: Math.round((Number(tenureYears) || 0) * 12), extraPayment })
+  const preview = loanProjection({ principal, remainingPrincipal, annualRate, tenureMonths: Math.round((Number(tenureYears) || 0) * 12), extraPayment, ...(userMonthlyContribution === '' ? {} : { userMonthlyContribution }) })
 
   function submit(event) {
     event.preventDefault()
-    const loan = { principal: Math.max(0, Number(principal) || 0), remainingPrincipal: Number(remainingPrincipal), annualRate: Math.max(0, Number(annualRate) || 0), tenureMonths: Math.max(1, Math.round((Number(tenureYears) || 0) * 12)), extraPayment: Math.max(0, Number(extraPayment) || 0) }
+    const loan = { principal: Math.max(0, Number(principal) || 0), remainingPrincipal: Number(remainingPrincipal), annualRate: Math.max(0, Number(annualRate) || 0), tenureMonths: Math.max(1, Math.round((Number(tenureYears) || 0) * 12)), extraPayment: Math.max(0, Number(extraPayment) || 0), ...(userMonthlyContribution === '' ? {} : { userMonthlyContribution: Math.max(0, Number(userMonthlyContribution) || 0) }) }
     if (!name.trim() || !loan.principal || !Number.isFinite(loan.remainingPrincipal) || !Number(tenureYears)) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
     if (loan.remainingPrincipal > loan.principal) { setError('Remaining principal cannot exceed the original principal.'); return }
+    if (loan.userMonthlyContribution !== undefined && loan.userMonthlyContribution > loanProjection(loan).scheduledPayment) { setError('Your monthly contribution cannot exceed the scheduled monthly payment.'); return }
     onSave({ nodeId: node.id, name: name.trim(), loan, status })
     onClose()
   }
@@ -291,10 +293,11 @@ function LoanNodeDialog({ node, onClose, onSave }) {
         <label>Interest rate (% p.a.)<input value={annualRate} onChange={event => setAnnualRate(event.target.value)} type="number" min="0" step="0.01" /></label>
         <label>Remaining tenure (years)<input value={tenureYears} onChange={event => { setTenureYears(event.target.value); setError('') }} type="number" min="0.01" step="0.01" inputMode="decimal" /></label>
         <label>Extra principal / month (₹)<input value={extraPayment} onChange={event => setExtraPayment(event.target.value)} type="number" min="0" step="0.01" /></label>
+        <label>Your contribution / month (₹)<input value={userMonthlyContribution} onChange={event => setUserMonthlyContribution(event.target.value)} type="number" min="0" step="0.01" placeholder="Full payment" /></label>
         <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(value => <option key={value} value={value}>{formatStatus(value)}</option>)}</select></label>
       </div>
       {error && <span className="field-error" role="alert">{error}</span>}
-      <div className="amount-preview" aria-live="polite"><span>Updated monthly payment<small>Base EMI plus any extra principal</small></span><strong>{formatMoney(preview.scheduledPayment)}</strong></div>
+      <div className="amount-preview" aria-live="polite"><span>Your amount reflected in Home<small>Scheduled EMI: {formatMoney(preview.scheduledPayment)}</small></span><strong>{formatMoney(preview.userMonthlyContribution)}</strong></div>
       <div className="dialog-actions"><button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">Save loan</button></div>
     </form>
   </DialogShell>

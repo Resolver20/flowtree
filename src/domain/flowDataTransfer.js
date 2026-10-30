@@ -68,7 +68,11 @@ function loanAt(value, path) {
   const annualRate = amountAt(loan.annualRate, `${path}.annualRate`)
   const tenureMonths = loan.tenureMonths
   if (!Number.isInteger(tenureMonths) || tenureMonths < 1 || tenureMonths > 600) fail(`${path}.tenureMonths must be an integer from 1 to 600.`)
-  return { principal, remainingPrincipal, annualRate, tenureMonths, extraPayment: amountAt(loan.extraPayment, `${path}.extraPayment`, 0) }
+  const extraPayment = amountAt(loan.extraPayment, `${path}.extraPayment`, 0)
+  const userMonthlyContribution = loan.userMonthlyContribution === undefined
+    ? undefined
+    : amountAt(loan.userMonthlyContribution, `${path}.userMonthlyContribution`)
+  return { principal, remainingPrincipal, annualRate, tenureMonths, extraPayment, ...(userMonthlyContribution === undefined ? {} : { userMonthlyContribution }) }
 }
 
 function investmentAt(value, path) {

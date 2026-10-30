@@ -70,3 +70,11 @@ test('loan balances can retain an overpayment credit', () => {
   }
   assert.equal(parseFlowImport(serializeFlowData(loanPlan)).tree[0].loan.remainingPrincipal, -250)
 })
+
+test('loan plans preserve a user monthly contribution', () => {
+  const loanPlan = {
+    ...plan,
+    tree: [{ id: 'debt', name: 'Debt', amount: 4000, loan: { principal: 1200000, remainingPrincipal: 1200000, annualRate: 0, tenureMonths: 120, extraPayment: 0, userMonthlyContribution: 4000 }, children: [] }],
+  }
+  assert.equal(parseFlowImport(serializeFlowData(loanPlan)).tree[0].loan.userMonthlyContribution, 4000)
+})

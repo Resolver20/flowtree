@@ -239,8 +239,9 @@ function App() {
 
   function saveNode({ nodeId, parentId, ...changes }) {
     if (nodeId) {
-      const nextChanges = changes.loan
-        ? { ...changes, amount: loanProjection(changes.loan).scheduledPayment, period: 'month' }
+      const projection = changes.loan ? loanProjection(changes.loan) : null
+      const nextChanges = projection
+        ? { ...changes, loan: { ...changes.loan, userMonthlyContribution: projection.userMonthlyContribution }, amount: projection.userMonthlyContribution, period: 'month' }
         : changes
       changeNode(nodeId, nextChanges)
       notify(`${changes.name} updated.`)
@@ -258,17 +259,18 @@ function App() {
   }
 
   function saveLoan({ id, name, loan }) {
-    const { scheduledPayment } = loanProjection(loan)
+    const projection = loanProjection(loan)
+    const savedLoan = { ...loan, userMonthlyContribution: projection.userMonthlyContribution }
     const destination = drive.accessToken && drive.folderId && drive.fileId
       ? 'Home updated. Saving to Google Drive…'
       : 'Home updated. Sign in to Google Drive to save this plan there.'
     if (id) {
-      changeNode(id, { name, loan, amount: scheduledPayment, period: 'month' })
+      changeNode(id, { name, loan: savedLoan, amount: projection.userMonthlyContribution, period: 'month' })
       notify(`${name} loan details updated. ${destination}`)
       return
     }
     const debt = findNode(tree, 'obligations')
-    createChild('obligations', { id: crypto.randomUUID(), name, amount: scheduledPayment, savedAmount: 0, period: 'month', status: 'active', icon: 'account_balance', symbol: 'account_balance', tone: debt?.tone || 'coral', note: '', loan, children: [] })
+    createChild('obligations', { id: crypto.randomUUID(), name, amount: projection.userMonthlyContribution, savedAmount: 0, period: 'month', status: 'active', icon: 'account_balance', symbol: 'account_balance', tone: debt?.tone || 'coral', note: '', loan: savedLoan, children: [] })
     notify(`${name} added to Debt Commitments. ${destination}`)
   }
 

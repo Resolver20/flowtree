@@ -26,3 +26,9 @@ test('an overpaid loan keeps its signed remaining principal without scheduling a
   assert.equal(projection.scheduledPayment, 0)
   assert.equal(projection.payoffMonths, 0)
 })
+
+test('a joint loan can reserve only the user contribution in the monthly plan', () => {
+  const projection = loanProjection({ principal: 1200000, remainingPrincipal: 1200000, annualRate: 0, tenureMonths: 120, userMonthlyContribution: 4000 })
+  assert.equal(projection.scheduledPayment, 10000)
+  assert.equal(projection.userMonthlyContribution, 4000)
+})
