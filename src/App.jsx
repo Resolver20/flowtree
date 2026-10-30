@@ -32,7 +32,7 @@ function clearDriveSession() {
 }
 
 function App() {
-  const { profile, incomeSources, generalLedgers, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData } = useFlowData()
+  const { profile, incomeSources, generalLedgers, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData, undo, redo, canUndo, canRedo } = useFlowData()
   const [dialog, setDialog] = useState(null)
   const [path, setPath] = useState([])
   const [notice, setNotice] = useState(null)
@@ -237,7 +237,7 @@ function App() {
       setDialog(null)
       return
     }
-    setNotice({ message: `${node.name} deleted.`, tree, path })
+    notify(`${node.name} deleted.`)
     deleteNode(id)
     if (path.includes(id)) setPath(path.slice(0, path.indexOf(id)))
     setDialog(null)
@@ -332,24 +332,22 @@ function App() {
 
   function removeIncomeSource(sourceId) {
     const source = incomeSources.find(item => item.id === sourceId)
-    const previous = incomeSources
     deleteIncomeSource(sourceId)
     setDialog(null)
-    setNotice({ message: `${source.name} deleted.`, undo: () => restoreIncomeSources(previous) })
+    notify(`${source.name} deleted.`)
   }
 
   function removeProfile() {
     changeProfile({ visible: false })
     setDialog(null)
-    setNotice({ message: 'Profile marker removed.', undo: () => changeProfile({ visible: true }) })
+    notify('Profile marker removed.')
   }
 
   function importJson(data) {
-    const previous = { profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree }
     replaceData(data)
     setPath([])
     setDialog(null)
-    setNotice({ message: 'JSON plan imported.', undo: () => replaceData(previous) })
+    notify('JSON plan imported.')
   }
 
   function applyJson(data) {
@@ -357,19 +355,32 @@ function App() {
       setDialog({ type: 'editJson' })
       return
     }
-    const previous = { profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree }
     replaceData(data)
     setPath([])
     setDialog(null)
-    setNotice({ message: 'Plan JSON updated.', undo: () => replaceData(previous) })
+    notify('Plan JSON updated.')
+  }
+
+  function undoPlan() {
+    undo()
+    setPath([])
+    setDialog(null)
+    notify('Last plan change undone.')
+  }
+
+  function redoPlan() {
+    redo()
+    setPath([])
+    setDialog(null)
+    notify('Plan change restored.')
   }
 
   const monthlyIncome = incomeSources.reduce((sum, source) => sum + Math.max(0, Number(source.amount) || 0), 0)
   const driveUser = drive.user ? { emailAddress: drive.user.emailAddress, displayName: drive.user.displayName, photoLink: drive.user.photoLink } : null
 
   return <div className="app-shell energy-mode">
-    <EnergyExplorer tree={tree} path={path} onPathChange={setPath} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} salary={monthlyIncome} buffer={Number(buffer) || 0} onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })} onConnectDrive={connectDrive} onDisconnectDrive={disconnectDrive} onEditJson={() => setDialog({ type: 'editJson' })} onManageNode={nodeId => setDialog({ type: 'manage', nodeId })} onSaveLoan={saveLoan} onSaveGoal={saveGoal} onSaveRecurringPaymentDay={saveRecurringPaymentDay} onSaveInvestment={saveInvestment} onSaveGeneralLedger={saveGeneralLedger} onDeleteGeneralLedger={deleteGeneralLedger} onSaveLedgerExpense={saveLedgerExpense} onDeleteLedgerEntry={deleteLedgerEntry} driveUser={driveUser} driveStatus={drive.status} driveError={drive.error} driveConfigured={Boolean(googleClientId)} />
-    {notice && <div className="change-notice" role="status"><span>{notice.message}</span>{(notice.tree || notice.undo) && <button onClick={() => { if (notice.tree) { restoreTree(notice.tree); setPath(notice.path) } else { notice.undo() } notify('Deletion undone.') }}>Undo</button>}<button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
+    <EnergyExplorer tree={tree} path={path} onPathChange={setPath} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} salary={monthlyIncome} buffer={Number(buffer) || 0} canUndo={canUndo} canRedo={canRedo} onUndo={undoPlan} onRedo={redoPlan} onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })} onConnectDrive={connectDrive} onDisconnectDrive={disconnectDrive} onEditJson={() => setDialog({ type: 'editJson' })} onManageNode={nodeId => setDialog({ type: 'manage', nodeId })} onSaveLoan={saveLoan} onSaveGoal={saveGoal} onSaveRecurringPaymentDay={saveRecurringPaymentDay} onSaveInvestment={saveInvestment} onSaveGeneralLedger={saveGeneralLedger} onDeleteGeneralLedger={deleteGeneralLedger} onSaveLedgerExpense={saveLedgerExpense} onDeleteLedgerEntry={deleteLedgerEntry} driveUser={driveUser} driveStatus={drive.status} driveError={drive.error} driveConfigured={Boolean(googleClientId)} />
+    {notice && <div className="change-notice" role="status"><span>{notice.message}</span><button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
     <PlanDialog key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'} dialog={dialog} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} buffer={buffer} tree={tree} driveStatus={drive.status} driveUser={driveUser} driveError={drive.error} driveConfigured={Boolean(googleClientId)} driveSetupRequired={Boolean(drive.setupRequired)} driveRestoreCandidates={drive.restoreCandidates || []} onClose={() => dialog?.type === 'driveSync' && (drive.setupRequired || drive.restoreCandidates?.length) ? cancelDriveSetup() : setDialog(null)} onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }} onDeleteProfile={removeProfile} onSaveIncomeSource={saveIncomeSource} onDeleteIncomeSource={removeIncomeSource} onSaveAnnualTargets={updates => { changeNodes(updates); notify(`${updates.length} yearly ${updates.length === 1 ? 'target' : 'targets'} updated.`) }} onSaveBuffer={value => { setBuffer(value); notify('Safety buffer updated.') }} onSaveNode={saveNode} onDeleteNode={deleteItem} onImportData={importJson} onApplyJson={applyJson} onRequestEdit={nodeId => setDialog({ type: 'node', nodeId })} onRequestAdd={parentId => setDialog({ type: 'node', parentId })} onRequestEditIncomeSource={sourceId => setDialog({ type: 'incomeSource', sourceId })} onRequestEditProfile={() => setDialog({ type: 'profile' })} onRequestAddIncomeSource={() => setDialog({ type: 'incomeSource' })} onRequestSinkingFunds={() => setDialog({ type: 'sinkingFunds' })} onConnectDrive={connectDrive} onAddDriveAccount={connectDrive} onSwitchDriveAccount={connectDrive} onDisconnectDrive={disconnectDrive} onUseCurrentDrivePlan={() => completeDriveSetup({ useCurrentPlan: true })} onCreateBlankDrivePlan={() => completeDriveSetup({ useCurrentPlan: false })} onChooseDriveRestoreCandidate={chooseDriveRestoreCandidate} />
   </div>
 }

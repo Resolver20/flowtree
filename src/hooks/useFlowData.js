@@ -51,7 +51,16 @@ export function createBlankFlowData() {
 }
 
 export function useFlowData() {
-  const [data, setData] = useState(createBlankFlowData)
+  const [history, setHistory] = useState(() => ({ data: createBlankFlowData(), past: [], future: [] }))
+  const data = history.data
+
+  function record(change) {
+    setHistory(previous => {
+      const nextData = change(previous.data)
+      if (nextData === previous.data) return previous
+      return { data: nextData, past: [...previous.past, previous.data].slice(-50), future: [] }
+    })
+  }
 
   // Plans are intentionally kept only in React memory until a Google Drive
   // connection is established. Remove old browser-persistent copies as soon
@@ -62,75 +71,91 @@ export function useFlowData() {
   }, [])
 
   function changeProfile(changes) {
-    setData(previous => ({ ...previous, profile: { ...previous.profile, ...changes } }))
+    record(previous => ({ ...previous, profile: { ...previous.profile, ...changes } }))
   }
 
   function changeIncomeSource(id, changes) {
-    setData(previous => ({ ...previous, incomeSources: previous.incomeSources.map(source => source.id === id ? normalizeIncomeSource({ ...source, ...changes }) : source) }))
+    record(previous => ({ ...previous, incomeSources: previous.incomeSources.map(source => source.id === id ? normalizeIncomeSource({ ...source, ...changes }) : source) }))
   }
 
   function createIncomeSource(source) {
-    setData(previous => ({ ...previous, incomeSources: [...previous.incomeSources, normalizeIncomeSource(source)] }))
+    record(previous => ({ ...previous, incomeSources: [...previous.incomeSources, normalizeIncomeSource(source)] }))
   }
 
   function deleteIncomeSource(id) {
-    setData(previous => ({ ...previous, incomeSources: previous.incomeSources.filter(source => source.id !== id) }))
+    record(previous => ({ ...previous, incomeSources: previous.incomeSources.filter(source => source.id !== id) }))
   }
 
   function restoreIncomeSources(incomeSources) {
-    setData(previous => ({ ...previous, incomeSources: incomeSources.map(normalizeIncomeSource) }))
+    record(previous => ({ ...previous, incomeSources: incomeSources.map(normalizeIncomeSource) }))
   }
 
   function setBuffer(buffer) {
-    setData(previous => ({ ...previous, buffer }))
+    record(previous => ({ ...previous, buffer }))
   }
 
   function createGeneralLedger(ledger) {
-    setData(previous => ({ ...previous, generalLedgers: [...previous.generalLedgers, ledger] }))
+    record(previous => ({ ...previous, generalLedgers: [...previous.generalLedgers, ledger] }))
   }
 
   function updateGeneralLedger(id, changes) {
-    setData(previous => ({ ...previous, generalLedgers: previous.generalLedgers.map(ledger => ledger.id === id ? { ...ledger, ...changes } : ledger) }))
+    record(previous => ({ ...previous, generalLedgers: previous.generalLedgers.map(ledger => ledger.id === id ? { ...ledger, ...changes } : ledger) }))
   }
 
   function deleteGeneralLedger(id) {
-    setData(previous => ({ ...previous, generalLedgers: previous.generalLedgers.filter(ledger => ledger.id !== id) }))
+    record(previous => ({ ...previous, generalLedgers: previous.generalLedgers.filter(ledger => ledger.id !== id) }))
   }
 
   function createLedgerEntry(ledgerId, entry) {
-    setData(previous => ({ ...previous, generalLedgers: previous.generalLedgers.map(ledger => ledger.id === ledgerId ? { ...ledger, entries: [...ledger.entries, entry] } : ledger) }))
+    record(previous => ({ ...previous, generalLedgers: previous.generalLedgers.map(ledger => ledger.id === ledgerId ? { ...ledger, entries: [...ledger.entries, entry] } : ledger) }))
   }
 
   function deleteLedgerEntry(ledgerId, entryId) {
-    setData(previous => ({ ...previous, generalLedgers: previous.generalLedgers.map(ledger => ledger.id === ledgerId ? { ...ledger, entries: ledger.entries.filter(entry => entry.id !== entryId) } : ledger) }))
+    record(previous => ({ ...previous, generalLedgers: previous.generalLedgers.map(ledger => ledger.id === ledgerId ? { ...ledger, entries: ledger.entries.filter(entry => entry.id !== entryId) } : ledger) }))
   }
 
   function changeNode(id, changes) {
-    setData(previous => ({ ...previous, tree: updateNode(previous.tree, id, changes) }))
+    record(previous => ({ ...previous, tree: updateNode(previous.tree, id, changes) }))
   }
 
   function changeNodes(updates) {
-    setData(previous => ({
+    record(previous => ({
       ...previous,
       tree: updates.reduce((nextTree, update) => updateNode(nextTree, update.id, update.changes), previous.tree),
     }))
   }
 
   function createChild(parentId, child) {
-    setData(previous => ({ ...previous, tree: addChild(previous.tree, parentId, child) }))
+    record(previous => ({ ...previous, tree: addChild(previous.tree, parentId, child) }))
   }
 
   function deleteNode(id) {
-    setData(previous => ({ ...previous, tree: removeNode(previous.tree, id) }))
+    record(previous => ({ ...previous, tree: removeNode(previous.tree, id) }))
   }
 
   function restoreTree(tree) {
-    setData(previous => ({ ...previous, tree }))
+    record(previous => ({ ...previous, tree }))
   }
 
   function replaceData(nextData) {
-    setData(normalizeData(nextData))
+    record(() => normalizeData(nextData))
   }
 
-  return { ...data, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData }
+  function undo() {
+    setHistory(previous => {
+      const previousData = previous.past.at(-1)
+      if (!previousData) return previous
+      return { data: previousData, past: previous.past.slice(0, -1), future: [previous.data, ...previous.future].slice(0, 50) }
+    })
+  }
+
+  function redo() {
+    setHistory(previous => {
+      const nextData = previous.future[0]
+      if (!nextData) return previous
+      return { data: nextData, past: [...previous.past, previous.data].slice(-50), future: previous.future.slice(1) }
+    })
+  }
+
+  return { ...data, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData, undo, redo, canUndo: history.past.length > 0, canRedo: history.future.length > 0 }
 }
