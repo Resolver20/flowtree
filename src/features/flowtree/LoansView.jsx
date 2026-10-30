@@ -85,32 +85,60 @@ function LoanEditor({ loan, onSave, onCancel }) {
   </form>
 }
 
+function LoanPortfolioOverview({ loans, onSelect }) {
+  const configuredLoans = loans.filter(loan => loan.loan)
+  const totals = configuredLoans.reduce((total, loan) => {
+    const projection = loanProjection(loan.loan)
+    return {
+      remainingPrincipal: total.remainingPrincipal + projection.remainingPrincipal,
+      scheduledPayment: total.scheduledPayment + projection.scheduledPayment,
+      userMonthlyContribution: total.userMonthlyContribution + projection.userMonthlyContribution,
+    }
+  }, { remainingPrincipal: 0, scheduledPayment: 0, userMonthlyContribution: 0 })
+
+  return <section className="loan-portfolio" aria-label="Loan overview">
+    <div><span className="eyebrow">LOAN OVERVIEW</span><h2>Your loans at a glance</h2><p>Select a loan to see its details. The repayment schedule stays separate, so this page starts with the amounts that matter for your plan.</p></div>
+    <div className="loan-stat-grid">
+      <div><span>Total principal remaining</span><strong>{formatMoney(totals.remainingPrincipal)}</strong><small>Across {configuredLoans.length} configured loan{configuredLoans.length === 1 ? '' : 's'}</small></div>
+      <div><span>Total scheduled payment</span><strong>{formatMoney(totals.scheduledPayment)}</strong><small>The combined lender payment each month</small></div>
+      <div><span>Your amount in Home</span><strong>{formatMoney(totals.userMonthlyContribution)}</strong><small>Your combined monthly contributions</small></div>
+    </div>
+    <div className="loan-portfolio-list">
+      {loans.map(loan => <button type="button" key={loan.id} onClick={() => onSelect(loan.id)}><span><strong>{loan.name}</strong><small>{loan.loan ? `${formatMoney(loanProjection(loan.loan).remainingPrincipal)} remaining` : 'Add loan details'}</small></span><span className="material-symbols-rounded" aria-hidden="true">arrow_forward</span></button>)}
+    </div>
+  </section>
+}
+
 export default function LoansView({ loans, focusedLoanId, onSaveLoan }) {
+  const [selectedId, setSelectedId] = useState(focusedLoanId || null)
   const [editingId, setEditingId] = useState(null)
   const [adding, setAdding] = useState(false)
-  const configuredLoans = loans.filter(loan => loan.loan)
-  const selected = loans.find(loan => loan.id === focusedLoanId) || loans.find(loan => loan.id === editingId) || configuredLoans[0] || loans[0] || null
+  const [scheduleLoanId, setScheduleLoanId] = useState(null)
+  const selected = loans.find(loan => loan.id === selectedId) || null
   const projection = useMemo(() => selected?.loan ? loanProjection(selected.loan) : null, [selected])
+  const showSchedule = scheduleLoanId === selected?.id
 
   function saveLoan(data) {
     onSaveLoan(data)
+    if (data.id) setSelectedId(data.id)
+    setScheduleLoanId(null)
     setEditingId(null)
     setAdding(false)
   }
 
   return <section className="loans-view" aria-label="Loans">
-    <header className="loans-header"><div><span className="eyebrow">DEBT COMMITMENTS</span><h1>Loans</h1><p>See the monthly split between interest and principal, then model an extra payment to understand a faster payoff.</p></div><button type="button" className="loan-add" onClick={() => { setAdding(true); setEditingId(null) }}><span className="material-symbols-rounded" aria-hidden="true">add</span>Add loan</button></header>
+    <header className="loans-header"><div><span className="eyebrow">DEBT COMMITMENTS</span><h1>Loans</h1><p>Review your total loan commitments, then open a loan when you want its full overview or repayment schedule.</p></div><button type="button" className="loan-add" onClick={() => { setAdding(true); setEditingId(null); setSelectedId(null); setScheduleLoanId(null) }}><span className="material-symbols-rounded" aria-hidden="true">add</span>Add loan</button></header>
     {!loans.length && !adding && <div className="loans-empty"><span className="material-symbols-rounded" aria-hidden="true">account_balance</span><strong>No loans in Debt Commitments</strong><p>Add a loan to create a payoff schedule and keep its monthly payment in your plan.</p><button type="button" onClick={() => setAdding(true)}>Add your first loan</button></div>}
     {adding && <LoanEditor onSave={saveLoan} onCancel={() => setAdding(false)} />}
     {loans.length > 0 && <div className="loan-workspace">
-      <aside className="loan-list" aria-label="Your loans">{loans.map(loan => <button type="button" key={loan.id} className={loan.id === selected?.id ? 'is-selected' : ''} aria-pressed={loan.id === selected?.id} onClick={() => { setEditingId(loan.id); setAdding(false) }}><span className="material-symbols-rounded" aria-hidden="true">account_balance</span><span><strong>{loan.name}</strong><small>{loan.loan ? `${formatMoney(loanProjection(loan.loan).userMonthlyContribution)} in Home / month` : 'Add loan details'}</small></span></button>)}</aside>
-      {selected && (editingId === selected.id || !selected.loan) ? <LoanEditor loan={selected} onSave={saveLoan} onCancel={() => setEditingId(null)} /> : projection && <div className="loan-details">
+      <aside className="loan-list" aria-label="Your loans">{loans.map(loan => <button type="button" key={loan.id} className={loan.id === selected?.id ? 'is-selected' : ''} aria-pressed={loan.id === selected?.id} onClick={() => { setSelectedId(loan.id); setScheduleLoanId(null); setEditingId(null); setAdding(false) }}><span className="material-symbols-rounded" aria-hidden="true">account_balance</span><span><strong>{loan.name}</strong><small>{loan.loan ? `${formatMoney(loanProjection(loan.loan).userMonthlyContribution)} in Home / month` : 'Add loan details'}</small></span></button>)}</aside>
+      {!selected ? <LoanPortfolioOverview loans={loans} onSelect={setSelectedId} /> : (editingId === selected.id || !selected.loan) ? <LoanEditor loan={selected} onSave={saveLoan} onCancel={() => setEditingId(null)} /> : projection && <div className="loan-details">
         <div className="loan-details-heading"><div><span className="eyebrow">LOAN OVERVIEW</span><h2>{selected.name}</h2></div><button type="button" onClick={() => setEditingId(selected.id)}>Edit loan</button></div>
         <div className="loan-stat-grid">
           <div><span>Original principal</span><strong>{formatMoney(projection.principal)}</strong></div><div><span>Principal remaining</span><strong>{formatMoney(projection.remainingPrincipal)}</strong></div><div><span>Rate of interest</span><strong>{projection.annualRate}% p.a.</strong></div><div><span>Selected tenure</span><strong>{formatDuration(projection.tenureMonths)}</strong><small>Remaining term entered for this loan</small></div><div><span>Clearance timeline</span><strong>{formatDuration(projection.payoffMonths)}</strong><small>{projection.payoffMonths < projection.tenureMonths ? `${formatDuration(projection.tenureMonths - projection.payoffMonths)} faster with extra payment` : 'Based on remaining tenure'}</small></div>
         </div>
         <div className="loan-payment-summary"><div><span>Scheduled monthly payment</span><strong>{formatMoney(projection.scheduledPayment)}</strong><small>Base EMI {formatMoney(projection.basePayment)}{projection.extraPayment ? ` + ${formatMoney(projection.extraPayment)} extra principal` : ''}</small></div><div><span>Your amount in Home</span><strong>{formatMoney(projection.userMonthlyContribution)}</strong><small>Only your contribution is included in the monthly plan</small></div><div><span>Projected interest remaining</span><strong>{formatMoney(projection.totalInterest)}</strong><small>Estimate at the current rate</small></div></div>
-        <section className="loan-schedule"><div><h3>Repayment schedule</h3><p>Each row shows how your payment moves from interest to principal and lowers the remaining balance.</p></div><div className="loan-table-wrap"><table><thead><tr><th>Month</th><th>Payment</th><th>Interest</th><th>Principal</th><th>Principal remaining</th></tr></thead><tbody>{projection.rows.map(row => <tr key={row.month}><td>{row.month}</td><td>{formatMoney(row.payment)}</td><td>{formatMoney(row.interest)}</td><td>{formatMoney(row.principal)}</td><td>{formatMoney(row.balance)}</td></tr>)}</tbody></table></div></section>
+        <section className="loan-schedule"><div><h3>Repayment schedule</h3><p>View the complete month-by-month projection when you need the detailed lender schedule.</p><button type="button" className="loan-schedule-toggle" onClick={() => setScheduleLoanId(showSchedule ? null : selected.id)} aria-expanded={showSchedule}>{showSchedule ? 'Hide full repayment schedule' : 'View full repayment schedule'}</button></div>{showSchedule && <div className="loan-table-wrap"><table><thead><tr><th>Month</th><th>Payment</th><th>Interest</th><th>Principal</th><th>Principal remaining</th></tr></thead><tbody>{projection.rows.map(row => <tr key={row.month}><td>{row.month}</td><td>{formatMoney(row.payment)}</td><td>{formatMoney(row.interest)}</td><td>{formatMoney(row.principal)}</td><td>{formatMoney(row.balance)}</td></tr>)}</tbody></table></div>}</section>
       </div>}
     </div>}
   </section>

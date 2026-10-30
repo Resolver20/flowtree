@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { allocateEnergy, energyAtPath } from '../../domain/energyFlow'
-import { findPath, pathToNode, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
+import { findNode, findPath, pathToNode, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import TreeCanvas from './TreeCanvas'
 import TreeHeader from './TreeHeader'
@@ -251,6 +251,13 @@ export default function EnergyExplorer({ tree, path, onPathChange: setPath, prof
 
   function inspectNode(nodeId) {
     const nodePath = pathToNode(tree, nodeId)
+    const node = findNode(tree, nodeId)
+    if (nodePath[0] === 'obligations') {
+      setLoanFocusId(node?.loan ? nodeId : null)
+      setView('loans')
+      setPath([])
+      return
+    }
     if (nodePath[0] === 'goals') {
       setGoalFocusId(nodeId === 'goals' ? null : nodeId)
       setView('goals')
