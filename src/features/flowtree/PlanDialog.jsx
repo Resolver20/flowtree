@@ -239,11 +239,14 @@ function DriveRevisionDialog({ revisions, onClose, onRestore }) {
   return <dialog ref={ref} className="modal" aria-labelledby="drive-revisions-title" onCancel={event => { event.preventDefault(); onClose() }}>
     <button type="button" className="close" aria-label="Close" onClick={onClose}>×</button>
     <h2 id="drive-revisions-title">Recover an earlier Drive version</h2>
-    <p>Choose the version from before the accidental undo. Restoring it replaces the current plan and saves that version back to your Google Drive file.</p>
-    <div className="dialog-actions">{revisions.map(revision => {
+    <p>Changes are compared with the preceding available saved version. Restoring replaces the open plan; use Save to Google Drive when you want to save it.</p>
+    <div className="dialog-actions drive-version-list">{revisions.map(revision => {
       const modified = new Date(revision.modifiedTime)
       const label = Number.isNaN(modified.getTime()) ? 'Date unavailable' : modified.toLocaleString()
-      return <button type="button" key={revision.id} onClick={() => onRestore(revision.id)}>Restore version from {label}</button>
+      return <button type="button" key={revision.id} onClick={() => onRestore(revision.id)}>
+        <strong>Restore version from {label}</strong>
+        <span>{(revision.changes || ['Change details unavailable']).join(' · ')}</span>
+      </button>
     })}</div>
   </dialog>
 }

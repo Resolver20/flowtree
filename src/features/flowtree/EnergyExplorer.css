@@ -375,6 +375,9 @@
 .dialog-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dialog-actions .modal-submit { margin: 0; border-color: #5366c8; background: #5366c8; color: white; }
 .dialog-actions .delete-link { margin-right: auto; border-color: transparent; color: #b42332; }
+.drive-version-list { display: grid; width: 100%; }
+.drive-version-list button { display: grid; gap: 6px; width: 100%; text-align: left; overflow-wrap: anywhere; }
+.drive-version-list button span { font-size: 12px; line-height: 1.5; }
 .dialog-actions .danger-button { border-color: #b42332; background: #b42332; color: white; }
 .modal form > small, .amount-preview small { font-size: 11px; line-height: 1.5; color: #647086; }
 .modal h2 { overflow-wrap: anywhere; padding-right: 15px; }

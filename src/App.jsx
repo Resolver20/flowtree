@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from './domain/flowDataTransfer'
 import { findNode, isBuiltInFlowGroup, organizeSubscriptions, pathToNode } from './domain/flowTree'
 import { loanProjection } from './domain/loan'
+import { planVersionChanges } from './domain/planVersionChanges'
 import { driveRestoreMode, orderValidDriveRestoreCandidates } from './domain/driveRestoreCandidates'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import PlanDialog from './features/flowtree/PlanDialog'
@@ -200,7 +201,11 @@ function App() {
           return { ...revision, valid: false }
         }
       }))
-      const validRevisions = checkedRevisions.filter(revision => revision.valid).slice(0, 5)
+      const availableRevisions = checkedRevisions.filter(revision => revision.valid)
+      const validRevisions = availableRevisions.slice(0, 5).map((revision, index) => ({
+        ...revision,
+        changes: planVersionChanges(availableRevisions[index + 1]?.restoredPlan, revision.restoredPlan),
+      }))
       setDrive(previous => ({ ...previous, status: 'connected', error: '' }))
       if (!validRevisions.length) {
         notify('No earlier valid FlowTree versions were found in Google Drive.')
