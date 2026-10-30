@@ -54,8 +54,8 @@ npm run build
 - Options contains only plan-level controls such as income, buffer, top-level categories, expansion, and sample mode.
 - The footer explains the next unfunded target or the amount left after targets and buffer.
 - Options allow income and buffer editing, destination creation, full-tree expansion, and a temporary sample flow.
-- The profile menu contains Google Drive sign-in, JSON editing for connected accounts, account switching, and the light/dark appearance control. A connected user's Google profile photo also appears on the Home flow. A connected user’s Drive plan is restored and later changes are saved automatically.
-- Loans include a live **Draft payoff sketch** so a proposed rate, tenure, or extra principal amount can be reviewed before it is saved. Saving a loan updates its monthly payment in Home and queues the connected Drive plan for upload.
+- The profile menu contains Google Drive sign-in, JSON editing for connected accounts, account switching, and the light/dark appearance control. A connected user's Google profile photo also appears on the Home flow. A connected user’s Drive plan is restored and later changes are saved only with **Save to Google Drive**.
+- Loans include a live **Draft payoff sketch** so a proposed rate, tenure, or extra principal amount can be reviewed before it is saved. Saving a loan updates its monthly payment in Home and stays in the open plan until you choose **Save to Google Drive**.
 - **Investments** keeps Long-Term Growth entries together. Record an investment type, a manually entered current value, and its monthly contribution; the contribution appears in Home, while the value is never treated as live market data or allocatable money.
 - **General ledger** keeps named expense records such as Home GL separate from monthly planning. Each ledger records its assigned amount, total expenses, and remaining amount; creating a GL or adding an expense is included in the same Drive JSON sync.
 - Financial plan data is kept only in active React memory while the page is open. Old browser-local plan copies are removed.
@@ -98,7 +98,7 @@ Show a positive result as **Available** or **Unassigned**. If the result is nega
 
 ## JSON backup and import
 
-Use **Account → Edit plan JSON** to open the current plan in Flowtree. You can edit it directly; Flowtree validates the JSON before replacing the active plan, then saves the validated version to Google Drive.
+Use **Account → Edit plan JSON** to open the current plan in Flowtree. You can edit it directly; Flowtree validates the JSON before replacing the active plan, then lets you save the validated version using **Save to Google Drive**.
 
 Import replaces the current plan. Export the current plan first when you may want to restore it later. An immediate **Undo** is available until the next plan change or page reload. Files larger than 2 MB, duplicate IDs, negative amounts, invalid dates, unknown statuses, excessive nesting, and unsupported export versions are rejected before any saved data changes.
 
@@ -140,7 +140,7 @@ Authoring rules:
 
 ## Google Drive sync
 
-Google Drive sign-in is optional. The app asks the user to sign in with their own Google account, creates or uses an app-owned private `gpt` folder, restores a valid `flowtree-plan.json` when it exists, and saves later plan changes automatically. If duplicates exist, the newest valid files are shown first for an explicit restore choice. No Google credentials are stored in FlowTree data or committed to the repository.
+Google Drive sign-in is optional. The app asks the user to sign in with their own Google account, creates or uses an app-owned private `gpt` folder, restores a valid `flowtree-plan.json` when it exists, and saves later plan changes only when you choose **Save to Google Drive**. If duplicates exist, the newest valid files are shown first for an explicit restore choice. No Google credentials are stored in FlowTree data or committed to the repository.
 
 The public [privacy policy](./public/privacy.html) and [terms](./public/terms.html) describe the limited Google Drive access used by the app.
 
