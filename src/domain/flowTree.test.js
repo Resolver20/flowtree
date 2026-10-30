@@ -51,6 +51,14 @@ test('deleting a recurring payment preserves its parent category and every other
   assert.equal(findPath(deleted, ['needs']).name, 'Cash Flow')
 })
 
+test('deleting a loan preserves Debt Commitments and unrelated plan data', () => {
+  const tree = addChild(createTreeFromBuckets([]), 'obligations', { id: 'home-loan', name: 'House loan', amount: 10000, period: 'month', status: 'active', loan: { principal: 1200000, remainingPrincipal: 1200000, annualRate: 8, tenureMonths: 240, extraPayment: 0 }, children: [] })
+  const deleted = removeNode(tree, 'home-loan')
+  assert.equal(findPath(deleted, ['obligations']).name, 'Debt Commitments')
+  assert.equal(findPath(deleted, ['obligations', 'home-loan']), null)
+  assert.equal(findPath(deleted, ['needs']).name, 'Cash Flow')
+})
+
 test('yearly targets keep saved progress separate from monthly planning', () => {
   const node = { amount: 12000, savedAmount: 3000, period: 'year', status: 'active', children: [] }
   assert.equal(monthlyTotal(node), 750)
