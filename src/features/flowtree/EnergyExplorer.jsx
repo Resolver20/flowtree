@@ -151,13 +151,13 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
       ? `Next: ${nextName} needs ${formatMoney(nextFunding.target - nextFunding.allocated)}.`
       : 'Every monthly target in this view is filled.'
   const layout = useMemo(() => ({
-    ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, collapsedPaths, viewport, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
+    ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, collapsedPaths, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
     available: income - buffer,
     monthlyOutcome,
     income,
     allocations: flow.allocations,
     expandAll: visibleTreeExpanded,
-  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, collapsedPaths, viewport, income, buffer, monthlyOutcome, incomeSources.length, showProfileMarker])
+  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, collapsedPaths, income, buffer, monthlyOutcome, incomeSources.length, showProfileMarker])
   const breadcrumbs = path.map((_, index) => ({ path: path.slice(0, index + 1), node: findPath(visibleTree, path.slice(0, index + 1)) }))
 
   useEffect(() => {

@@ -144,8 +144,8 @@ available = income - safety buffer - total monthly targets
 ## Responsive behavior
 
 - Preserve the same information hierarchy on desktop, tablet, and mobile.
-- Scale the world uniformly when necessary so cards and connectors stay aligned.
-- Keep card text readable; if a very large tree becomes too small in full view, progressive disclosure remains the primary detailed view.
+- Keep the tree at its authored size so card text remains readable. Allow contained horizontal and vertical scrolling when the complete tree exceeds the canvas; cards and connectors share the same coordinates.
+- Do not shrink the complete tree into a thumbnail on smaller screens. Progressive disclosure and contained scrolling keep every destination reachable.
 - Keep corner controls inside safe viewport gutters.
 - Mobile controls must remain at least 24 by 24 CSS pixels or have enough separation to satisfy [WCAG 2.2 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html).
 - Test the smallest supported width of `320px`, landscape mobile, a normal laptop viewport, and a large desktop viewport.

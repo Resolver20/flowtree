@@ -552,10 +552,10 @@
 .plan-save-controls .plan-save-button { border-color: #5366c8; background: #5366c8; color: white; font-size: 12px; font-weight: 600; }
 .plan-save-controls .material-symbols-rounded { font-size: 18px; }
 .plan-save-button kbd { border: 1px solid currentColor; border-radius: 4px; padding: 2px 4px; font: inherit; font-size: 10px; opacity: .85; }
-.plan-save-controls .save-state.is-unsaved { color: #94601d; }
+.plan-save-controls .save-state .is-unsaved { color: #94601d; }
 .plan-save-controls .mobile-history-action { display: none; }
 .theme-dark .plan-save-controls .plan-save-button { border-color: var(--accent); background: var(--accent); color: #18223a; }
-.theme-dark .plan-save-controls .save-state.is-unsaved { color: #edbd7b; }
+.theme-dark .plan-save-controls .save-state .is-unsaved { color: #edbd7b; }
 @media (min-width: 761px) {
   .energy-status { top: 70px; }
   .energy-viewport { top: 164px; }
@@ -570,8 +570,7 @@
   .plan-save-controls .mobile-history-action { display: grid; place-items: center; min-width: 30px; padding: 5px; }
   .plan-save-controls button { min-height: 34px; padding: 6px; }
   .plan-save-controls .save-state { margin-right: auto; font-size: 0; }
-  .save-state::before { content: ''; display: block; width: 7px; height: 7px; border-radius: 50%; background: #668879; }
-  .save-state.is-unsaved::before { background: #c58a40; }
+  .save-state .is-unsaved::before { content: ''; display: block; width: 7px; height: 7px; border-radius: 50%; background: #c58a40; }
   .plan-save-button kbd { display: none; }
   .energy-viewport { top: 68px; }
   .energy-breadcrumbs { top: 58px; }
@@ -642,3 +641,17 @@
 .modal .version-comparison-note { margin-bottom: 16px; color: var(--muted); font-size: 11px; }
 .theme-dark .modal .drive-version-option.is-selected { background: var(--surface-raised); }
 .drive-recovery-dialog > .dialog-actions { position: sticky; bottom: 0; z-index: 1; padding: 12px 0 0; border-top: 1px solid var(--line); background: var(--surface); }
+.plan-save-controls .offline-test-label { margin-right: auto; }
+@media (max-width: 760px) { .plan-save-controls .offline-test-label { display: none; } }
+
+/* Readability takes priority over squeezing the entire tree onto one screen. */
+@media (min-width: 761px) {
+  .energy-viewport { display: grid; place-items: safe center; overflow: auto; padding: 16px; }
+  .energy-world-frame { justify-self: safe center; margin: 0; }
+}
+.amount-copy strong, .income-source strong { font-size: 13px; }
+.target-meta { font-size: 10px; }
+@media (max-width: 760px) {
+  .mobile-income-source strong, .mobile-plan-root strong, .mobile-tree-copy strong { font-size: 14px; }
+  .mobile-income-source small, .mobile-plan-root small, .mobile-tree-copy small { font-size: 12px; }
+}

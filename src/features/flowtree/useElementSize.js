@@ -9,6 +9,8 @@ export function useElementSize(initialSize = { width: 1200, height: 700 }) {
     const element = ref.current
     if (!element) return undefined
     const observer = new ResizeObserver(([entry]) => {
+      // A hidden side panel can briefly report zero. Keep the last usable size.
+      if (entry.contentRect.width <= 0 || entry.contentRect.height <= 0) return
       setSize({ width: entry.contentRect.width, height: entry.contentRect.height })
       setHasMeasured(true)
     })

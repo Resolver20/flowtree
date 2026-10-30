@@ -95,7 +95,7 @@ function rowY(count, index, height) {
   return EDGE_INSET + (height - EDGE_INSET * 2) * index / (count - 1)
 }
 
-export function createTreeLayout({ tree, path, allocations, expandAll, collapsedPaths = new Set(), viewport, incomeSourceCount = 1, showPerson = true }) {
+export function createTreeLayout({ tree, path, allocations, expandAll, collapsedPaths = new Set(), incomeSourceCount = 1, showPerson = true }) {
   const columns = createColumns(tree, path, allocations, expandAll, collapsedPaths)
   const depthCounts = countNodesByDepth(tree)
   const branchY = createBranchY(tree)
@@ -106,23 +106,14 @@ export function createTreeLayout({ tree, path, allocations, expandAll, collapsed
     ? (height - (Math.min(...branchY.positions.values()) + Math.max(...branchY.positions.values()))) / 2
     : 0
   const worldWidth = Math.max(1180, COLUMN_START + Math.max(0, depthCounts.length - 1) * COLUMN_GAP + 120)
-  const isNarrowViewport = viewport.width < 900
-  const isShortViewport = !isNarrowViewport && viewport.height < 680
-  // Preserve card readability on narrow or short-aspect viewports. A plan
-  // squeezed into the available height becomes illegible, so the canvas gets
-  // a contained scroll surface at those sizes instead of shrinking forever.
-  const scale = isNarrowViewport
-    ? Math.min(.82, Math.max(.72, viewport.width / worldWidth))
-    : isShortViewport
-      ? .72
-    : Math.min(1, viewport.width / worldWidth, viewport.height / height)
+  // Keep text at its authored size. The canvas scrolls when the tree is larger
+  // than the available space instead of reducing cards to unreadable thumbnails.
+  const scale = 1
   const leftEdge = showPerson ? PERSON_X - 36 : incomeSourceCount ? INCOME_SOURCE_X - 98 : SOURCE_X - 36
   const rightEdge = COLUMN_START + Math.max(0, columns.length - 1) * COLUMN_GAP + 98
   const centeredOffset = (worldWidth - leftEdge - rightEdge) / 2
-  // Start narrow screens at the person and income sources. The later branches remain
-  // available through the canvas's horizontal scroll instead of hiding the plan's start.
-  const narrowOffset = isNarrowViewport ? -140 : 0
-  const horizontalOffset = centeredOffset + narrowOffset
+  // Keep the first visible node inside the world even when the canvas scrolls.
+  const horizontalOffset = centeredOffset
   const personPoint = { x: PERSON_X + horizontalOffset, y: height / 2 }
   const incomeSourcePoints = Array.from({ length: incomeSourceCount }, (_, index) => ({
     x: INCOME_SOURCE_X + horizontalOffset,

@@ -11,12 +11,13 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
   const mobileMoreRef = useRef(null)
   const mobileMoreButtonRef = useRef(null)
   const connected = Boolean(driveUser)
+  const offline = driveStatus === 'offline'
   const saving = driveStatus === 'saving' || driveStatus === 'restoring'
   const saveShortcut = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘S' : 'Ctrl+S'
 
   useEffect(() => {
     function saveWithKeyboard(event) {
-      if (!connected || !isSaveShortcut(event)) return
+      if ((!connected && !offline) || !isSaveShortcut(event)) return
       event.preventDefault()
       // A dialog can contain an unsubmitted draft. Finish it before saving the plan.
       if (event.repeat || saving || document.querySelector('dialog[open]')) return
@@ -24,7 +25,7 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
     }
     document.addEventListener('keydown', saveWithKeyboard)
     return () => document.removeEventListener('keydown', saveWithKeyboard)
-  }, [connected, saving, onSaveDrivePlan])
+  }, [connected, offline, saving, onSaveDrivePlan])
 
   useEffect(() => {
     if (!accountOpen) return undefined
@@ -90,11 +91,12 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
 
   return <>
     <div className="plan-save-controls" role="group" aria-label="Plan saving">
+      {offline && <span className="offline-test-label">Offline test copy</span>}
       <button className="mobile-history-action" type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo last plan change"><span className="material-symbols-rounded" aria-hidden="true">undo</span></button>
       <button className="mobile-history-action" type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo plan change"><span className="material-symbols-rounded" aria-hidden="true">redo</span></button>
-      <span className={`save-state${hasUnsavedChanges ? ' is-unsaved' : ''}`} role="status" title={hasUnsavedChanges ? 'Unsaved changes' : 'No unsaved changes'}>{hasUnsavedChanges ? 'Unsaved changes' : 'No unsaved changes'}</span>
+      <span className="save-state" role="status">{hasUnsavedChanges && <span className="is-unsaved" title="Changes waiting to be saved">Unsaved changes</span>}</span>
       <button type="button" onClick={onDownloadBackup} title="Download JSON backup" aria-label="Download JSON backup"><span className="material-symbols-rounded" aria-hidden="true">download</span></button>
-      {connected && <button className="plan-save-button" type="button" onClick={onSaveDrivePlan} disabled={saving} aria-keyshortcuts="Meta+s Control+s" title={`Save plan to Google Drive (${saveShortcut}). Finish any open editor first.`}><span className="material-symbols-rounded" aria-hidden="true">cloud_upload</span><span>{driveStatus === 'saving' ? 'Saving…' : 'Save'}</span><kbd>{saveShortcut}</kbd></button>}
+      {(connected || offline) && <button className="plan-save-button" type="button" onClick={onSaveDrivePlan} disabled={saving} aria-keyshortcuts="Meta+s Control+s" title={`Save ${offline ? 'offline copy in this browser' : 'plan to Google Drive'} (${saveShortcut}). Finish any open editor first.`}><span className="material-symbols-rounded" aria-hidden="true">{offline ? 'save' : 'cloud_upload'}</span><span>{driveStatus === 'saving' ? 'Saving…' : 'Save'}</span><kbd>{saveShortcut}</kbd></button>}
     </div>
     <aside className="energy-sidebar" aria-label="FlowTree navigation">
       <header className="sidebar-brand">
@@ -139,10 +141,10 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
         {driveUser?.photoLink
           ? <img className="sidebar-avatar-image" src={driveUser.photoLink} alt="" />
           : <span className="sidebar-avatar material-symbols-rounded" aria-hidden="true">person</span>}
-        <span><strong>{driveUser?.displayName || profile.name}</strong><small>{driveUser?.emailAddress || 'Sign in to Google Drive'}</small></span>
+        <span><strong>{driveUser?.displayName || profile.name}</strong><small>{offline ? 'Offline test copy' : driveUser?.emailAddress || 'Sign in to Google Drive'}</small></span>
       </button>
     </aside>
-    <button ref={mobileAccountButtonRef} type="button" className="mobile-account-trigger" onClick={() => setAccountOpen(open => !open)} aria-expanded={accountOpen} aria-controls="account-menu" aria-label={connected ? 'Open account menu' : 'Sign in to Google Drive'}>
+    <button ref={mobileAccountButtonRef} type="button" className="mobile-account-trigger" onClick={() => setAccountOpen(open => !open)} aria-expanded={accountOpen} aria-controls="account-menu" aria-label={connected || offline ? 'Open account menu' : 'Sign in to Google Drive'}>
       {driveUser?.photoLink
         ? <img className="sidebar-avatar-image" src={driveUser.photoLink} alt="" />
         : <span className="sidebar-avatar material-symbols-rounded" aria-hidden="true">person</span>}
@@ -150,13 +152,13 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
     {accountOpen && <section ref={accountMenuRef} id="account-menu" className="account-menu" aria-label="Account">
       <div className="account-menu-identity">
         <strong>{driveUser?.displayName || profile.name}</strong>
-        <small>{driveUser?.emailAddress || 'Your plan is not connected to Google Drive yet.'}</small>
+        <small>{offline ? 'Offline test copy' : driveUser?.emailAddress || 'Your plan is not connected to Google Drive yet.'}</small>
       </div>
       <button type="button" className="account-menu-theme" onClick={() => closeMenuThen(onToggleTheme)} aria-pressed={theme === 'dark'}>
         <span className="material-symbols-rounded" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
         <span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</span>
       </button>
-      {connected ? <>
+      {offline ? <small className="account-menu-status">Test edits save only in this browser. Google Drive is disconnected.</small> : connected ? <>
         <small className="account-menu-status">{driveStatus === 'saving' ? 'Saving to Google Drive…' : driveStatus === 'error' ? 'Google Drive save needs attention.' : driveStatus === 'needs-plan-choice' ? 'Choose how to set up this Google Drive account.' : 'Changes stay in this tab until you save them to Google Drive.'}</small>
         <button type="button" className="account-menu-primary" disabled={driveStatus === 'saving'} onClick={() => closeMenuThen(onSaveDrivePlan)}>{driveStatus === 'saving' ? 'Saving…' : 'Save to Google Drive'}</button>
         <button type="button" onClick={() => closeMenuThen(onRecoverDriveVersion)}>Recover earlier version</button>
@@ -193,9 +195,9 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
       </div>
       <div className="mobile-more-account">
         <strong>{driveUser?.displayName || profile.name}</strong>
-        <small>{driveUser?.emailAddress || (driveConfigured ? 'Connect Google Drive to restore and save your plan.' : 'Google Drive sign-in is not configured.')}</small>
+        <small>{offline ? 'Offline test copy · saves stay in this browser.' : driveUser?.emailAddress || (driveConfigured ? 'Connect Google Drive to restore and save your plan.' : 'Google Drive sign-in is not configured.')}</small>
         <small className="mobile-drive-status" role={driveStatus === 'error' || driveError ? 'alert' : undefined}>{driveError || (connected ? driveStatus === 'saving' ? 'Saving changes to Google Drive…' : driveStatus === 'error' ? 'Google Drive save needs attention.' : 'Changes stay in this tab until you save them to Google Drive.' : '')}</small>
-        {connected
+        {offline ? null : connected
           ? <><button type="button" disabled={driveStatus === 'saving'} onClick={() => closeMenuThen(onSaveDrivePlan)}>{driveStatus === 'saving' ? 'Saving…' : 'Save to Google Drive'}</button><button type="button" onClick={() => closeMenuThen(onRecoverDriveVersion)}>Recover earlier version</button><button type="button" onClick={() => closeMenuThen(onEditJson)}>Edit plan JSON</button><button type="button" onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>Add or switch account</button><button type="button" onClick={() => closeMenuThen(onDisconnectDrive)}>Log out</button></>
           : <button type="button" disabled={!driveConfigured || driveStatus === 'connecting'} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{driveStatus === 'connecting' ? 'Connecting…' : 'Sign in with Google'}</button>}
       </div>

@@ -31,7 +31,7 @@ function clearDriveSession() {
 }
 
 // Owns the Drive connection and explicit save/recovery actions. Plan edits never upload.
-export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify }) {
+export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify }) {
   const { profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree } = plan
   const serializedPlan = useMemo(() => serializeFlowData({ profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree }), [profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree])
   const [savedContents, setSavedContents] = useState(() => serializedPlan)
@@ -60,6 +60,7 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
     return !hasUnsavedChanges || window.confirm('You have unsaved changes. Download a JSON backup or save to Google Drive first. Continue without saving?')
   }
   const [drive, setDrive] = useState(() => {
+    if (offline) return { status: 'offline', user: null, error: '', accessToken: '', folderId: '', fileId: '' }
     const session = readDriveSession()
     return session
       ? { ...session, status: 'restoring', user: session.user || null, error: '' }
@@ -105,6 +106,7 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
   }
 
   async function connectDrive({ prompt = 'select_account consent' } = {}) {
+    if (offline) return
     if (!allowDiscard()) return
     if (!googleClientId) {
       setDrive(previous => ({ ...previous, status: 'unavailable', error: 'Google Drive sign-in has not been configured for this deployment.' }))
@@ -140,6 +142,7 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
   }
 
   useEffect(() => {
+    if (offline) return
     const session = readDriveSession()
     if (hasAttemptedDriveRestore.current || !session) return
     hasAttemptedDriveRestore.current = true
@@ -166,7 +169,7 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
       }
     }
     restore()
-  }, [setPath])
+  }, [setPath, offline])
 
   useEffect(() => {
     if (drive.accessToken && drive.folderId && drive.fileId) writeDriveSession({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: drive.fileId, user: drive.user?.emailAddress ? drive.user : undefined })
@@ -250,6 +253,18 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
   }
 
   async function saveDrivePlan() {
+    if (offline) {
+      try {
+        const contents = serializeFlowData(preserveCurrentMonth(plan))
+        await onSaveOfflinePlan(contents)
+        captureCurrentMonth()
+        setSavedContents(contents)
+        notify('Offline test copy saved in this browser.')
+      } catch {
+        notify('Could not save the offline copy. Download a JSON backup to keep your edits.')
+      }
+      return
+    }
     if (!drive.accessToken || !drive.folderId || !drive.fileId || savingRef.current) return
     savingRef.current = true
     const contents = serializeFlowData(preserveCurrentMonth(plan))

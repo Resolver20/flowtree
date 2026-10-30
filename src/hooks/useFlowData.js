@@ -51,8 +51,8 @@ export function createBlankFlowData() {
   })
 }
 
-export function useFlowData() {
-  const [history, setHistory] = useState(() => ({ data: createBlankFlowData(), past: [], future: [] }))
+export function useFlowData(initialData) {
+  const [history, setHistory] = useState(() => ({ data: initialData ? normalizeFlowData(initialData) : createBlankFlowData(), past: [], future: [] }))
   const data = history.data
 
   function record(change) {

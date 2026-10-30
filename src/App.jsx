@@ -9,9 +9,10 @@ import { useTheme } from './hooks/useTheme'
 import { useSessionState } from './hooks/useSessionState'
 import { useFlowData } from './hooks/useFlowData'
 
-function App() {
+function App({ offlinePlan, onSaveOfflinePlan } = {}) {
   const [theme, toggleTheme] = useTheme()
-  const { profile, incomeSources, generalLedgers, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData, undo, redo, canUndo, canRedo } = useFlowData()
+  const offline = import.meta.env.DEV && Boolean(offlinePlan)
+  const { profile, incomeSources, generalLedgers, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData, undo, redo, canUndo, canRedo } = useFlowData(offline ? offlinePlan : undefined)
   const [dialog, setDialog] = useState(null)
   const [path, setPath] = useState([])
   const [notice, setNotice] = useState(null)
@@ -22,6 +23,7 @@ function App() {
   }
 
   const { drive, startupState, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured, hasUnsavedChanges, downloadBackup } = useGoogleDrivePlan({
+    offline, onSaveOfflinePlan,
     plan: { profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree },
     replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify,
   })

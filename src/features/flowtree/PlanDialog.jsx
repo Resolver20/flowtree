@@ -49,8 +49,13 @@ function parseDateValue(value) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-function DialogShell({ title, children, onClose, wide = false }) {
+function DialogShell({ title, children, onClose, wide = false, dismissOnOutside = false }) {
   const ref = useRef(null)
+  const pressedOutside = useRef(false)
+  function isOutside(event) {
+    const rect = event.currentTarget.getBoundingClientRect()
+    return event.target === event.currentTarget && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)
+  }
   useEffect(() => {
     const opener = document.activeElement
     const element = ref.current
@@ -58,7 +63,7 @@ function DialogShell({ title, children, onClose, wide = false }) {
     element.querySelector('input, select, textarea')?.focus()
     return () => { element.close(); if (opener?.isConnected) opener.focus() }
   }, [])
-  return <dialog ref={ref} className={`modal ${wide ? 'is-wide' : ''}`} aria-labelledby="dialog-title" onCancel={event => { event.preventDefault(); onClose() }}>
+  return <dialog ref={ref} className={`modal ${wide ? 'is-wide' : ''}`} aria-labelledby="dialog-title" onPointerDown={event => { pressedOutside.current = dismissOnOutside && isOutside(event) }} onClick={event => { if (pressedOutside.current && isOutside(event)) onClose(); pressedOutside.current = false }} onCancel={event => { event.preventDefault(); onClose() }}>
       <button type="button" className="close" aria-label="Close" onClick={onClose}>×</button>
       <h2 id="dialog-title">{title}</h2>
       {children}
@@ -241,7 +246,7 @@ function ManageDialog({ onViewOverview, node, onClose, onDelete, onRequestEdit, 
     <div className="dialog-actions"><button autoFocus type="button" onClick={() => setConfirmDelete(false)}>Keep item</button><button type="button" className="danger-button" onClick={() => onDelete(node.id)}>Delete {countBranch(node) > 1 ? 'branch' : 'item'}</button></div>
   </DialogShell>
 
-  return <DialogShell title={node.name} onClose={onClose}>
+  return <DialogShell title={node.name} onClose={onClose} dismissOnOutside={Boolean(node.loan)}>
     <div className="card-overview">
       <span className="overview-icon material-symbols-rounded" style={{ color: colorForNode(node) }} aria-hidden="true">{iconForNode(node)}</span>
       <div><span>{formatStatus(node.status)} · {node.period === 'year' ? 'Yearly target' : 'Monthly target'}</span><strong>{formatMoney(node.amount || 0)} <small>/{node.period === 'year' ? 'year' : 'month'}</small></strong></div>
