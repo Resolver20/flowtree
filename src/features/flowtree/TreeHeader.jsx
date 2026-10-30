@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, canUndo, canRedo, onUndo, onRedo, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onEditJson, onShowSinkingFunds, onShowLoans, onShowGoals, onShowRecurringPayments, onShowInvestments, onShowGeneralLedger, onToggleTheme }) {
+export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, canUndo, canRedo, onUndo, onRedo, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onEditJson, onRecoverDriveVersion, onShowSinkingFunds, onShowLoans, onShowGoals, onShowRecurringPayments, onShowInvestments, onShowGeneralLedger, onToggleTheme }) {
   const homeActive = view === 'home'
   const [accountOpen, setAccountOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -136,6 +136,7 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
       </button>
       {connected ? <>
         <small className="account-menu-status">{driveStatus === 'saving' ? 'Saving to Google Drive…' : driveStatus === 'error' ? 'Google Drive save needs attention.' : driveStatus === 'needs-plan-choice' ? 'Choose how to set up this Google Drive account.' : 'Your plan is stored in this Google Drive account.'}</small>
+        <button type="button" onClick={() => closeMenuThen(onRecoverDriveVersion)}>Recover earlier version</button>
         <button type="button" onClick={() => closeMenuThen(onEditJson)}>Edit plan JSON</button>
         <button type="button" onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>Add or switch account</button>
         <button type="button" onClick={() => closeMenuThen(onDisconnectDrive)}>Log out</button>
