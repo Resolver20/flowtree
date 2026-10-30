@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { toggleBranch } from './treeExpansion.js'
-import { createTreeLayout } from '../features/flowtree/treeLayout.js'
+import { toggleBranch } from '../../src/domain/treeExpansion.js'
+import { createTreeLayout } from '../../src/features/flowtree/treeLayout.js'
 
 const tree = [
   { id: 'parent', children: [

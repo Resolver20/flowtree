@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { recurringPaymentSummary } from './recurringPayments.js'
+import { recurringPaymentSummary } from '../../src/domain/recurringPayments.js'
 
 test('calendar groups direct monthly payments without counting child totals twice', () => {
   const tree = [{ id: 'home', name: 'Home', period: 'month', amount: 100, status: 'active', children: [

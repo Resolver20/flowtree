@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loanProjection, monthlyPayment } from './loan.js'
+import { loanProjection, monthlyPayment } from '../../src/domain/loan.js'
 
 test('monthly payment handles interest-free loans', () => {
   assert.equal(monthlyPayment(120000, 0, 12), 10000)

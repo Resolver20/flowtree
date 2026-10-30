@@ -168,7 +168,7 @@ Pushing to `main` runs the included GitHub Pages workflow. It builds the Vite ap
 | `src/domain/energyFlow.js` | Pure plan-allocation algorithm |
 | `src/domain/loan.js` | Pure monthly-payment and payoff schedule calculation |
 | `src/hooks/useFlowData.js` | In-memory plan state and mutations |
-| `src/domain/*.test.js` | Domain tests |
+| `tests/domain/*.test.js` | Domain tests |
 
 The earlier prototype screens, styles, and unused assets were removed. The active home screen is fully contained in `src/features/flowtree/`.
 

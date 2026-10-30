@@ -18,7 +18,7 @@ import {
   expectedAnnualSavings,
   totalExpectedAnnualSavings,
   sortTreeByMonthlyTotal,
-} from './flowTree.js'
+} from '../../src/domain/flowTree.js'
 
 test('CRUD supports nested creation, editing, branch deletion and immutable undo', () => {
   const original = createTreeFromBuckets()

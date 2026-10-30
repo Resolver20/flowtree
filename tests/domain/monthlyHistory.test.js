@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createMonthSnapshot, preserveCurrentMonth, recordPayment } from './monthlyHistory.js'
-import { parseFlowImport, serializeFlowData } from './flowDataTransfer.js'
+import { createMonthSnapshot, preserveCurrentMonth, recordPayment } from '../../src/domain/monthlyHistory.js'
+import { parseFlowImport, serializeFlowData } from '../../src/domain/flowDataTransfer.js'
 
 const plan = { profile: { name: 'Test' }, incomeSources: [{ id: 'salary', name: 'Salary', amount: 100 }], buffer: 10, tree: [{ id: 'loan', name: 'House loan', amount: 120, period: 'month', status: 'active', dayOfMonth: 31, children: [] }] }
 

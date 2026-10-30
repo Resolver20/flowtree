@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { driveRestoreMode, orderDriveRestoreCandidates, orderValidDriveRestoreCandidates } from './driveRestoreCandidates.js'
+import { driveRestoreMode, orderDriveRestoreCandidates, orderValidDriveRestoreCandidates } from '../../src/domain/driveRestoreCandidates.js'
 
 test('Drive restore candidates are newest first and require a choice for duplicates', () => {
   const candidates = orderDriveRestoreCandidates([

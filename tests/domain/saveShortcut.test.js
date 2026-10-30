@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { isSaveShortcut } from './saveShortcut.js'
+import { isSaveShortcut } from '../../src/domain/saveShortcut.js'
 
 test('save accepts Command+S and Control+S without taking other shortcuts', () => {
   assert.equal(isSaveShortcut({ key: 's', metaKey: true }), true)

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createTreeLayout } from '../features/flowtree/treeLayout.js'
+import { createTreeLayout } from '../../src/features/flowtree/treeLayout.js'
 
 const tree = [{ id: 'root', children: [{ id: 'child', children: [{ id: 'leaf', children: [] }] }] }]
 const makeLayout = (browserSize, viewport) => createTreeLayout({ tree, path: [], allocations: [], expandAll: true, browserSize, viewport })

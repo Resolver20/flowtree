@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { allocateEnergy, energyAtPath } from './energyFlow.js'
+import { allocateEnergy, energyAtPath } from '../../src/domain/energyFlow.js'
 const node = (id, amount, children = []) => ({ id, amount, period: 'month', status: 'active', children })
 test('priority fills targets without creating money or funding later nodes early', () => {
   const flow = allocateEnergy([node('bills', 4000), node('insurance', 1000), node('subscriptions', 2000)], 4500)

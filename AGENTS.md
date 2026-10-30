@@ -31,7 +31,7 @@ Do not revive older visual experiments from unused files unless the user asks fo
 | `src/domain/flowTree.js` | Tree model, monthly equivalents, totals, immutable tree updates, and migration |
 | `src/domain/energyFlow.js` | Pure ordered allocation preview |
 | `src/hooks/useFlowData.js` | Local storage boundary and persistent mutations |
-| `src/domain/*.test.js` | Domain behavior tests |
+| `tests/domain/*.test.js` | Domain behavior tests |
 
 The earlier prototype screens and styles were removed. Confirm imports before editing any file.
 

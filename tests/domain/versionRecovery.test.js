@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loadCachedRevision, loadRecoveryVersions } from './versionRecovery.js'
+import { loadCachedRevision, loadRecoveryVersions } from '../../src/domain/versionRecovery.js'
 
 test('reopening recovery reuses snapshots and shares downloads already in flight', async () => {
   const cache = new Map()

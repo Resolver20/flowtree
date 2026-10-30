@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createFlowExport, parseFlowImport, serializeFlowData, summarizeFlowData } from './flowDataTransfer.js'
+import { createFlowExport, parseFlowImport, serializeFlowData, summarizeFlowData } from '../../src/domain/flowDataTransfer.js'
 
 const plan = {
   profile: { name: 'You', visible: true },

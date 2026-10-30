@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { restoreDriveSession } from './restoreDriveSession.js'
+import { restoreDriveSession } from '../../src/domain/restoreDriveSession.js'
 
 test('a slow profile request does not block the saved plan', async () => {
   let resolveProfile

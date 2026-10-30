@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { planVersionChanges } from './planVersionChanges.js'
+import { planVersionChanges } from '../../src/domain/planVersionChanges.js'
 
 test('version labels identify edits, renames, additions and deletions without marking parents changed', () => {
   const previous = { tree: [{ id: 'parent', name: 'Loans', children: [
