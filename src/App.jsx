@@ -7,7 +7,7 @@ import { canAutosaveDrive } from './domain/driveSyncState'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import PlanDialog from './features/flowtree/PlanDialog'
 import { createBlankFlowData, useFlowData } from './hooks/useFlowData'
-import { connectGoogleDrive, downloadFlowtreeBackup, findOrCreateFolder, getDriveUser, listFlowtreeRestoreCandidates, revokeGoogleDriveAccess, uploadFlowtreeBackup } from './lib/googleDriveSync'
+import { connectGoogleDrive, downloadFlowtreeBackup, downloadFlowtreeRevision, findOrCreateFolder, getDriveUser, listFlowtreeRestoreCandidates, listFlowtreeRevisions, revokeGoogleDriveAccess, uploadFlowtreeBackup } from './lib/googleDriveSync'
 
 const DRIVE_FOLDER_NAME = 'gpt'
 const DRIVE_FILE_NAME = 'flowtree-plan.json'
@@ -197,6 +197,41 @@ function App() {
     restoreDriveCandidate({ accessToken: drive.accessToken, user: drive.user, candidate, candidates: drive.restoreCandidates })
   }
 
+  async function openDriveRevisionRecovery() {
+    if (!drive.accessToken || !drive.fileId) return
+    setDrive(previous => ({ ...previous, status: 'restoring', error: '' }))
+    try {
+      const revisions = await listFlowtreeRevisions({ accessToken: drive.accessToken, fileId: drive.fileId })
+      const checkedRevisions = await Promise.all(revisions.map(async revision => {
+        try {
+          const restoredPlan = parseFlowImport(await downloadFlowtreeRevision({ accessToken: drive.accessToken, fileId: drive.fileId, revisionId: revision.id }))
+          return { ...revision, restoredPlan, valid: true }
+        } catch {
+          return { ...revision, valid: false }
+        }
+      }))
+      const validRevisions = checkedRevisions.filter(revision => revision.valid)
+      setDrive(previous => ({ ...previous, status: 'connected', error: '' }))
+      if (!validRevisions.length) {
+        notify('No earlier valid FlowTree versions were found in Google Drive.')
+        return
+      }
+      setDialog({ type: 'driveRevisions', revisions: validRevisions })
+    } catch (error) {
+      setDrive(previous => ({ ...previous, status: 'connected', error: error.message || 'Could not read earlier Google Drive versions.' }))
+      notify('Could not read earlier Google Drive versions.')
+    }
+  }
+
+  function restoreDriveRevision(revisionId) {
+    const revision = (dialog?.revisions || []).find(item => item.id === revisionId)
+    if (!revision?.restoredPlan) return
+    replaceData({ ...revision.restoredPlan, tree: organizeSubscriptions(revision.restoredPlan.tree) })
+    setPath([])
+    setDialog(null)
+    notify('Earlier Google Drive version restored. Saving it as your current plan…')
+  }
+
   useEffect(() => {
     if (!autosaveReady) return undefined
     const connectionKey = [drive.accessToken, drive.folderId, drive.fileId].join(':')
@@ -361,11 +396,22 @@ function App() {
     notify('Plan JSON updated.')
   }
 
-  function undoPlan() {
+  async function undoPlan() {
+    if (!canUndo) return
+    if (autosaveReady) {
+      const backupName = `flowtree-backup-${new Date().toISOString().replaceAll(/[:.]/g, '-')}.json`
+      const snapshot = serializeFlowData({ profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree })
+      try {
+        await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: drive.folderId, contents: snapshot, fileName: backupName })
+      } catch {
+        notify('Undo was not applied because FlowTree could not create a Google Drive backup.')
+        return
+      }
+    }
     undo()
     setPath([])
     setDialog(null)
-    notify('Last plan change undone.')
+    notify('Last plan change undone. A separate Google Drive backup was kept first.')
   }
 
   function redoPlan() {
@@ -381,7 +427,7 @@ function App() {
   return <div className="app-shell energy-mode">
     <EnergyExplorer tree={tree} path={path} onPathChange={setPath} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} salary={monthlyIncome} buffer={Number(buffer) || 0} canUndo={canUndo} canRedo={canRedo} onUndo={undoPlan} onRedo={redoPlan} onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })} onConnectDrive={connectDrive} onDisconnectDrive={disconnectDrive} onEditJson={() => setDialog({ type: 'editJson' })} onManageNode={nodeId => setDialog({ type: 'manage', nodeId })} onSaveLoan={saveLoan} onDeleteLoan={deleteItem} onSaveGoal={saveGoal} onSaveRecurringPaymentDay={saveRecurringPaymentDay} onSaveInvestment={saveInvestment} onSaveGeneralLedger={saveGeneralLedger} onDeleteGeneralLedger={deleteGeneralLedger} onSaveLedgerExpense={saveLedgerExpense} onDeleteLedgerEntry={deleteLedgerEntry} driveUser={driveUser} driveStatus={drive.status} driveError={drive.error} driveConfigured={Boolean(googleClientId)} />
     {notice && <div className="change-notice" role="status"><span>{notice.message}</span><button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
-    <PlanDialog key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'} dialog={dialog} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} buffer={buffer} tree={tree} driveStatus={drive.status} driveUser={driveUser} driveError={drive.error} driveConfigured={Boolean(googleClientId)} driveSetupRequired={Boolean(drive.setupRequired)} driveRestoreCandidates={drive.restoreCandidates || []} onClose={() => dialog?.type === 'driveSync' && (drive.setupRequired || drive.restoreCandidates?.length) ? cancelDriveSetup() : setDialog(null)} onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }} onDeleteProfile={removeProfile} onSaveIncomeSource={saveIncomeSource} onDeleteIncomeSource={removeIncomeSource} onSaveAnnualTargets={updates => { changeNodes(updates); notify(`${updates.length} yearly ${updates.length === 1 ? 'target' : 'targets'} updated.`) }} onSaveBuffer={value => { setBuffer(value); notify('Safety buffer updated.') }} onSaveNode={saveNode} onDeleteNode={deleteItem} onImportData={importJson} onApplyJson={applyJson} onRequestEdit={nodeId => setDialog({ type: 'node', nodeId })} onRequestAdd={parentId => setDialog({ type: 'node', parentId })} onRequestEditIncomeSource={sourceId => setDialog({ type: 'incomeSource', sourceId })} onRequestEditProfile={() => setDialog({ type: 'profile' })} onRequestAddIncomeSource={() => setDialog({ type: 'incomeSource' })} onRequestSinkingFunds={() => setDialog({ type: 'sinkingFunds' })} onConnectDrive={connectDrive} onAddDriveAccount={connectDrive} onSwitchDriveAccount={connectDrive} onDisconnectDrive={disconnectDrive} onUseCurrentDrivePlan={() => completeDriveSetup({ useCurrentPlan: true })} onCreateBlankDrivePlan={() => completeDriveSetup({ useCurrentPlan: false })} onChooseDriveRestoreCandidate={chooseDriveRestoreCandidate} />
+    <PlanDialog key={dialog ? `${dialog.type}-${dialog.nodeId || dialog.sourceId || dialog.parentId || 'root'}` : 'closed'} dialog={dialog} profile={profile} incomeSources={incomeSources} generalLedgers={generalLedgers} buffer={buffer} tree={tree} driveStatus={drive.status} driveUser={driveUser} driveError={drive.error} driveConfigured={Boolean(googleClientId)} driveSetupRequired={Boolean(drive.setupRequired)} driveRestoreCandidates={drive.restoreCandidates || []} onClose={() => dialog?.type === 'driveSync' && (drive.setupRequired || drive.restoreCandidates?.length) ? cancelDriveSetup() : setDialog(null)} onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }} onDeleteProfile={removeProfile} onSaveIncomeSource={saveIncomeSource} onDeleteIncomeSource={removeIncomeSource} onSaveAnnualTargets={updates => { changeNodes(updates); notify(`${updates.length} yearly ${updates.length === 1 ? 'target' : 'targets'} updated.`) }} onSaveBuffer={value => { setBuffer(value); notify('Safety buffer updated.') }} onSaveNode={saveNode} onDeleteNode={deleteItem} onImportData={importJson} onApplyJson={applyJson} onRequestEdit={nodeId => setDialog({ type: 'node', nodeId })} onRequestAdd={parentId => setDialog({ type: 'node', parentId })} onRequestEditIncomeSource={sourceId => setDialog({ type: 'incomeSource', sourceId })} onRequestEditProfile={() => setDialog({ type: 'profile' })} onRequestAddIncomeSource={() => setDialog({ type: 'incomeSource' })} onRequestSinkingFunds={() => setDialog({ type: 'sinkingFunds' })} onConnectDrive={connectDrive} onAddDriveAccount={connectDrive} onSwitchDriveAccount={connectDrive} onDisconnectDrive={disconnectDrive} onUseCurrentDrivePlan={() => completeDriveSetup({ useCurrentPlan: true })} onCreateBlankDrivePlan={() => completeDriveSetup({ useCurrentPlan: false })} onChooseDriveRestoreCandidate={chooseDriveRestoreCandidate} onRecoverDriveVersion={openDriveRevisionRecovery} onRestoreDriveRevision={restoreDriveRevision} />
   </div>
 }
 

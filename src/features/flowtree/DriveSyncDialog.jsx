@@ -6,7 +6,7 @@ function candidateLabel(candidate) {
   return `${candidate.name} in ${candidate.folderName} — ${modifiedText}`
 }
 
-export default function DriveSyncDialog({ status, user, error, configured, setupRequired, restoreCandidates = [], onClose, onConnect, onAddAccount, onEditJson, onUseCurrentPlan, onCreateBlankPlan, onChooseRestoreCandidate }) {
+export default function DriveSyncDialog({ status, user, error, configured, setupRequired, restoreCandidates = [], onClose, onConnect, onAddAccount, onEditJson, onUseCurrentPlan, onCreateBlankPlan, onChooseRestoreCandidate, onRecoverDriveVersion }) {
   const ref = useRef(null)
   useEffect(() => {
     const opener = document.activeElement
@@ -37,7 +37,7 @@ export default function DriveSyncDialog({ status, user, error, configured, setup
         {user?.photoLink ? <img src={user.photoLink} alt="" /> : <span className="overview-icon material-symbols-rounded" aria-hidden="true">account_circle</span>}
         <div><strong>{user?.displayName || 'Google account'}</strong><small>{user?.emailAddress || 'Signed in'}</small></div>
       </div>
-      <div className="dialog-actions"><button type="button" onClick={onClose}>Done</button><button type="button" onClick={onEditJson}>Edit plan JSON</button><button type="button" className="modal-submit" onClick={onAddAccount}>Add or switch account</button></div>
+      <div className="dialog-actions"><button type="button" onClick={onClose}>Done</button><button type="button" onClick={onRecoverDriveVersion}>Recover earlier version</button><button type="button" onClick={onEditJson}>Edit plan JSON</button><button type="button" className="modal-submit" onClick={onAddAccount}>Add or switch account</button></div>
     </> : <>
       <p>Sign in with Google to open your FlowTree plan from your Google Drive.</p>
       {error && <span role="alert" className="field-error">{error}</span>}

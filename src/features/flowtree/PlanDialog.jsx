@@ -228,6 +228,26 @@ function JsonEditorDialog({ data, onClose, onSave }) {
   </DialogShell>
 }
 
+function DriveRevisionDialog({ revisions, onClose, onRestore }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const element = ref.current
+    element.showModal()
+    return () => element.close()
+  }, [])
+
+  return <dialog ref={ref} className="modal" aria-labelledby="drive-revisions-title" onCancel={event => { event.preventDefault(); onClose() }}>
+    <button type="button" className="close" aria-label="Close" onClick={onClose}>×</button>
+    <h2 id="drive-revisions-title">Recover an earlier Drive version</h2>
+    <p>Choose the version from before the accidental undo. Restoring it replaces the current plan and saves that version back to your Google Drive file.</p>
+    <div className="dialog-actions">{revisions.map(revision => {
+      const modified = new Date(revision.modifiedTime)
+      const label = Number.isNaN(modified.getTime()) ? 'Date unavailable' : modified.toLocaleString()
+      return <button type="button" key={revision.id} onClick={() => onRestore(revision.id)}>Restore version from {label}</button>
+    })}</div>
+  </dialog>
+}
+
 function ManageDialog({ node, onClose, onDelete, onRequestEdit, onRequestAdd, canDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const progress = annualTargetProgress(node)
@@ -384,10 +404,11 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   </DialogShell>
 }
 
-export default function PlanDialog({ dialog, profile, incomeSources, generalLedgers, buffer, tree, driveStatus, driveUser, driveError, driveConfigured, driveSetupRequired, driveRestoreCandidates, onClose, onSaveProfile, onDeleteProfile, onSaveIncomeSource, onDeleteIncomeSource, onSaveAnnualTargets, onSaveBuffer, onSaveNode, onDeleteNode, onImportData, onApplyJson, onRequestEdit, onRequestAdd, onRequestEditIncomeSource, onRequestEditProfile, onRequestAddIncomeSource, onRequestSinkingFunds, onConnectDrive, onAddDriveAccount, onUseCurrentDrivePlan, onCreateBlankDrivePlan, onChooseDriveRestoreCandidate }) {
+export default function PlanDialog({ dialog, profile, incomeSources, generalLedgers, buffer, tree, driveStatus, driveUser, driveError, driveConfigured, driveSetupRequired, driveRestoreCandidates, onClose, onSaveProfile, onDeleteProfile, onSaveIncomeSource, onDeleteIncomeSource, onSaveAnnualTargets, onSaveBuffer, onSaveNode, onDeleteNode, onImportData, onApplyJson, onRequestEdit, onRequestAdd, onRequestEditIncomeSource, onRequestEditProfile, onRequestAddIncomeSource, onRequestSinkingFunds, onConnectDrive, onAddDriveAccount, onUseCurrentDrivePlan, onCreateBlankDrivePlan, onChooseDriveRestoreCandidate, onRecoverDriveVersion, onRestoreDriveRevision }) {
   if (!dialog) return null
-  if (dialog.type === 'driveSync') return <DriveSyncDialog status={driveStatus} user={driveUser} error={driveError} configured={driveConfigured} setupRequired={driveSetupRequired} restoreCandidates={driveRestoreCandidates} onClose={onClose} onConnect={onConnectDrive} onAddAccount={onAddDriveAccount} onEditJson={() => onApplyJson()} onUseCurrentPlan={onUseCurrentDrivePlan} onCreateBlankPlan={onCreateBlankDrivePlan} onChooseRestoreCandidate={onChooseDriveRestoreCandidate} />
+  if (dialog.type === 'driveSync') return <DriveSyncDialog status={driveStatus} user={driveUser} error={driveError} configured={driveConfigured} setupRequired={driveSetupRequired} restoreCandidates={driveRestoreCandidates} onClose={onClose} onConnect={onConnectDrive} onAddAccount={onAddDriveAccount} onEditJson={() => onApplyJson()} onUseCurrentPlan={onUseCurrentDrivePlan} onCreateBlankPlan={onCreateBlankDrivePlan} onChooseRestoreCandidate={onChooseDriveRestoreCandidate} onRecoverDriveVersion={onRecoverDriveVersion} />
   if (dialog.type === 'editJson') return <JsonEditorDialog data={{ profile, incomeSources, generalLedgers, buffer: Number(buffer) || 0, tree }} onClose={onClose} onSave={onApplyJson} />
+  if (dialog.type === 'driveRevisions') return <DriveRevisionDialog revisions={dialog.revisions || []} onClose={onClose} onRestore={onRestoreDriveRevision} />
   if (dialog.type === 'manageProfile') return <ProfileManageDialog profile={profile} onClose={onClose} onDelete={onDeleteProfile} onRequestEdit={onRequestEditProfile} onRequestAddIncome={onRequestAddIncomeSource} onRequestSinkingFunds={() => onRequestSinkingFunds()} />
   if (dialog.type === 'profile') return <ProfileDialog profile={profile} onClose={onClose} onSave={onSaveProfile} />
   if (dialog.type === 'manageIncomeSource') return <IncomeSourceManageDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onDelete={onDeleteIncomeSource} onRequestEdit={onRequestEditIncomeSource} />

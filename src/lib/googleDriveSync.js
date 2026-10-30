@@ -143,6 +143,19 @@ export async function downloadFlowtreeBackup({ accessToken, fileId } = {}) {
   return response.text()
 }
 
+export async function listFlowtreeRevisions({ accessToken, fileId } = {}) {
+  if (!accessToken || !fileId) throw new Error('A Google Drive access token and file ID are required.')
+  const result = await driveRequest(`/files/${encodeURIComponent(fileId)}/revisions?fields=revisions(id,modifiedTime,originalFilename,size)&pageSize=100`, accessToken)
+  return (result.revisions || []).sort((left, right) => Date.parse(right.modifiedTime || '') - Date.parse(left.modifiedTime || ''))
+}
+
+export async function downloadFlowtreeRevision({ accessToken, fileId, revisionId } = {}) {
+  if (!accessToken || !fileId || !revisionId) throw new Error('A Google Drive access token, file ID, and revision ID are required.')
+  const response = await fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}/revisions/${encodeURIComponent(revisionId)}?alt=media`, { headers: { Authorization: `Bearer ${accessToken}` } })
+  if (!response.ok) throw new Error(`Google Drive revision download failed (${response.status}).`)
+  return response.text()
+}
+
 export function revokeGoogleDriveAccess(accessToken) {
   if (!accessToken || !window.google?.accounts?.oauth2) return Promise.resolve()
   return new Promise(resolve => window.google.accounts.oauth2.revoke(accessToken, resolve))
