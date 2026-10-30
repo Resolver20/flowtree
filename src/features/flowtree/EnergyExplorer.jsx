@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { allocateEnergy, energyAtPath } from '../../domain/energyFlow'
+import { toggleBranch } from '../../domain/treeExpansion'
 import { findPath, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import TreeCanvas from './TreeCanvas'
@@ -218,13 +219,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
 
   function navigate(nextPath) {
     if (view === 'home' && !path.length) {
-      const key = nextPath.join('/')
-      setCollapsedPaths(current => {
-        const next = new Set(current)
-        if (next.has(key)) next.delete(key)
-        else next.add(key)
-        return next
-      })
+      setCollapsedPaths(current => toggleBranch(visibleTree, current, nextPath))
       return
     }
     setPath(current => nextPath.join('/') === current.join('/') ? current.slice(0, -1) : nextPath)

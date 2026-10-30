@@ -1,5 +1,5 @@
-import { energyAtPath } from '../../domain/energyFlow'
-import { findPath } from '../../domain/flowTree'
+import { energyAtPath } from '../../domain/energyFlow.js'
+import { findPath } from '../../domain/flowTree.js'
 
 const EMPTY_FUNDING = { allocated: 0, target: 0, ratio: 0 }
 const LEAF_GAP = 72
