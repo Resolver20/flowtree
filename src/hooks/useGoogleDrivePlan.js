@@ -3,7 +3,7 @@ import { parseFlowImport, serializeFlowData } from '../domain/flowDataTransfer'
 import { organizeSubscriptions } from '../domain/flowTree'
 import { restoreDriveSession } from '../domain/restoreDriveSession'
 import { preserveCurrentMonth } from '../domain/monthlyHistory'
-import { loadRecoveryVersions } from '../domain/versionRecovery'
+import { loadCachedRevision, loadRecoveryVersions } from '../domain/versionRecovery'
 import { driveRestoreMode, orderValidDriveRestoreCandidates } from '../domain/driveRestoreCandidates'
 import { createBlankFlowData, normalizeFlowData } from './useFlowData'
 import { connectGoogleDrive, downloadFlowtreeBackup, downloadFlowtreeRevision, findOrCreateFolder, getDriveUser, listFlowtreeRestoreCandidates, listFlowtreeRevisions, revokeGoogleDriveAccess, uploadFlowtreeBackup } from '../lib/googleDriveSync'
@@ -37,6 +37,8 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
   const [savedContents, setSavedContents] = useState(() => serializedPlan)
   const hasUnsavedChanges = serializedPlan !== savedContents
   const savingRef = useRef(false)
+  const recoveryCache = useRef(new Map())
+  const recoveryRequest = useRef(0)
 
   useEffect(() => {
     if (!hasUnsavedChanges) return undefined
@@ -219,25 +221,22 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
 
   async function openDriveRevisionRecovery() {
     if (!drive.accessToken || !drive.fileId) return
-    setDrive(previous => ({ ...previous, status: 'restoring', error: '' }))
+    const requestId = ++recoveryRequest.current
+    setDialog({ type: 'driveRevisions', requestId, loading: true, revisions: [] })
+    const updateRecovery = changes => setDialog(current => current?.type === 'driveRevisions' && current.requestId === requestId ? { ...current, ...changes } : current)
     try {
       const revisions = await listFlowtreeRevisions({ accessToken: drive.accessToken, fileId: drive.fileId })
-      const validRevisions = await loadRecoveryVersions(revisions, async revision =>
-        parseFlowImport(await downloadFlowtreeRevision({
+      const validRevisions = await loadRecoveryVersions(revisions, async revision => {
+        const key = `${drive.fileId}:${revision.id}:${revision.modifiedTime}`
+        return loadCachedRevision(recoveryCache.current, key, async () => parseFlowImport(await downloadFlowtreeRevision({
           accessToken: drive.accessToken,
           fileId: drive.fileId,
           revisionId: revision.id,
-        })),
-      )
-      setDrive(previous => ({ ...previous, status: 'connected', error: '' }))
-      if (!validRevisions.length) {
-        notify('No earlier valid FlowTree versions were found in Google Drive.')
-        return
-      }
-      setDialog({ type: 'driveRevisions', revisions: validRevisions })
+        })))
+      })
+      updateRecovery({ loading: false, revisions: validRevisions })
     } catch (error) {
-      setDrive(previous => ({ ...previous, status: 'connected', error: error.message || 'Could not read earlier Google Drive versions.' }))
-      notify('Could not read earlier Google Drive versions.')
+      updateRecovery({ loading: false, error: error.message || 'Could not read earlier Google Drive versions.' })
     }
   }
 
