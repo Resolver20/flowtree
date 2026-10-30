@@ -77,6 +77,10 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
     <aside className="energy-sidebar" aria-label="FlowTree navigation">
       <header className="sidebar-brand">
         <button className="energy-brand" onClick={() => closeMenuThen(onReturnToRoot)} aria-label="Return to home"><span className="flowtree-mark material-symbols-rounded" aria-hidden="true">account_tree</span><span>FlowTree</span></button>
+        <div className="sidebar-history" aria-label="Plan history">
+          <button type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo last plan change" title="Undo last plan change"><span className="material-symbols-rounded" aria-hidden="true">undo</span></button>
+          <button type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo plan change" title="Redo plan change"><span className="material-symbols-rounded" aria-hidden="true">redo</span></button>
+        </div>
       </header>
       <nav className="sidebar-nav" aria-label="Plan sections">
         <span className="sidebar-section-label">PLAN</span>
@@ -109,10 +113,6 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
           <span>General ledger</span>
         </button>
       </nav>
-      <div className="sidebar-history" aria-label="Plan history">
-        <button type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo last plan change" title="Undo last plan change"><span className="material-symbols-rounded" aria-hidden="true">undo</span><span>Undo</span></button>
-        <button type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo plan change" title="Redo plan change"><span className="material-symbols-rounded" aria-hidden="true">redo</span><span>Redo</span></button>
-      </div>
       <button ref={desktopAccountButtonRef} type="button" className="sidebar-profile" onClick={() => setAccountOpen(open => !open)} aria-expanded={accountOpen} aria-controls="account-menu" aria-label="Open account menu">
         {driveUser?.photoLink
           ? <img className="sidebar-avatar-image" src={driveUser.photoLink} alt="" />
@@ -165,8 +165,6 @@ export default function TreeHeader({ breadcrumbs, expandAll, view, profile, driv
         <button type="button" className={view === 'investments' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowInvestments)}><span className="material-symbols-rounded" aria-hidden="true">trending_up</span>Investments</button>
         <button type="button" className={view === 'ledger' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGeneralLedger)}><span className="material-symbols-rounded" aria-hidden="true">receipt_long</span>General ledgers</button>
         <button type="button" className={view === 'recurring' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowRecurringPayments)}><span className="material-symbols-rounded" aria-hidden="true">event_repeat</span>Recurring payments</button>
-        <button type="button" onClick={onUndo} disabled={!canUndo}><span className="material-symbols-rounded" aria-hidden="true">undo</span>Undo</button>
-        <button type="button" onClick={onRedo} disabled={!canRedo}><span className="material-symbols-rounded" aria-hidden="true">redo</span>Redo</button>
         <button type="button" onClick={() => closeMenuThen(onToggleTheme)} aria-pressed={theme === 'dark'}><span className="material-symbols-rounded" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</button>
       </div>
       <div className="mobile-more-account">

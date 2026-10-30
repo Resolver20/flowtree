@@ -46,7 +46,7 @@
 .drive-preview-line-two { top: 62px; left: 54%; width: 18%; transform: rotate(-17deg); box-shadow: 0 39px #cbd2dc; }
 .energy-home { position: relative; min-height: 540px; height: 100dvh; overflow: hidden; background: var(--canvas); }
 .energy-sidebar { position: absolute; z-index: 6; inset: 0 auto 0 0; display: flex; width: 224px; flex-direction: column; padding: 22px 14px 14px; border-right: 1px solid #dfe4eb; background: #fbfcfe; }
-.sidebar-brand { display: grid; gap: 7px; padding: 0 10px; }
+.sidebar-brand { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 10px; }
 .energy-brand { display: inline-flex; align-items: center; gap: 8px; width: max-content; padding: 0; border: 0; background: transparent; color: #4d63c9; font-size: 26px; text-align: left; }
 .energy-brand span { font-size: 18px; font-weight: 600; letter-spacing: -.6px; }
 .energy-brand .flowtree-mark { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid #ccd6f0; border-radius: 8px; background: #eef2ff; color: #4d63c9; font-size: 18px; }
@@ -61,7 +61,7 @@
 .theme-toggle:hover, .theme-toggle:focus-visible { border-color: #d8dfeb; background: #f1f4fa; color: #3f599f; }
 .theme-toggle .material-symbols-rounded { font-size: 20px; }
 .sidebar-profile { margin-top: auto; border-top-color: #e3e7ee; border-radius: 9px; }
-.sidebar-history { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 18px; }.sidebar-history button { display: inline-flex; min-height: 34px; align-items: center; justify-content: center; gap: 5px; padding: 7px; border: 1px solid #d8dfeb; border-radius: 8px; background: #fff; color: #516078; font-size: 11px; }.sidebar-history button:hover:not(:disabled), .sidebar-history button:focus-visible:not(:disabled) { border-color: #b8c6e0; background: #edf2ff; color: #405aa2; }.sidebar-history button:disabled, .mobile-more-actions button:disabled { cursor: not-allowed; opacity: .45; }.sidebar-history .material-symbols-rounded { font-size: 17px; }
+.sidebar-history { display: flex; gap: 4px; }.sidebar-history button { display: grid; width: 30px; min-height: 30px; place-items: center; padding: 0; border: 1px solid #d8dfeb; border-radius: 8px; background: #fff; color: #516078; }.sidebar-history button:hover:not(:disabled), .sidebar-history button:focus-visible:not(:disabled) { border-color: #b8c6e0; background: #edf2ff; color: #405aa2; }.sidebar-history button:disabled, .mobile-more-actions button:disabled { cursor: not-allowed; opacity: .45; }.sidebar-history .material-symbols-rounded { font-size: 17px; }
 .sidebar-avatar, .sidebar-avatar-image { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border: 1px solid #cbd4e0; border-radius: 50%; background: #fff; color: #687793; font-size: 17px; object-fit: cover; }
 .account-card { display: flex; align-items: center; gap: 13px; margin: 18px 0 24px; padding: 15px; border: 1px solid #dfe4ec; border-radius: 12px; background: #fafbfc; }
 .account-card img, .account-card .overview-icon { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border-radius: 50%; color: #6179ca; font-size: 34px; object-fit: cover; }
