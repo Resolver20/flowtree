@@ -6,6 +6,7 @@ import { useGoogleDrivePlan } from './hooks/useGoogleDrivePlan'
 import PlanDialog from './features/flowtree/PlanDialog'
 import PlanRestoreScreen from './features/flowtree/PlanRestoreScreen'
 import { useTheme } from './hooks/useTheme'
+import { useSessionState } from './hooks/useSessionState'
 import { useFlowData } from './hooks/useFlowData'
 
 function App() {
@@ -14,7 +15,8 @@ function App() {
   const [dialog, setDialog] = useState(null)
   const [path, setPath] = useState([])
   const [notice, setNotice] = useState(null)
-  const [navigation, setNavigation] = useState({ view: 'home', nodeId: null })
+  const [navigation, setNavigation] = useSessionState('flowtree-navigation', { view: 'home', nodeId: null },
+    value => ['home', 'sinking', 'loans', 'goals', 'recurring', 'investments', 'ledger'].includes(value?.view) && (value.nodeId === null || typeof value.nodeId === 'string'))
   function notify(message) {
     setNotice({ message })
   }

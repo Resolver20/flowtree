@@ -12,6 +12,7 @@ import InvestmentsView from './InvestmentsView'
 import GeneralLedgerView from './GeneralLedgerView'
 import { createTreeLayout } from './treeLayout'
 import { useElementSize } from './useElementSize'
+import { useSectionScroll } from '../../hooks/useSectionScroll'
 import './EnergyExplorer.css'
 
 const MOBILE_BREAKPOINT = 760
@@ -106,6 +107,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
 }
 
 export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path, onPathChange: setPath, profile, incomeSources, generalLedgers, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
+  const sectionRef = useSectionScroll(view)
   const demo = false
   const [collapsedPaths, setCollapsedPaths] = useState(() => new Set())
   const [showDriveSaved, setShowDriveSaved] = useState(false)
@@ -267,7 +269,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
     setPath([])
   }
 
-  return <main className={`energy-home theme-${theme}`}>
+  return <main ref={sectionRef} className={`energy-home theme-${theme}`}>
     <TreeHeader
       breadcrumbs={breadcrumbs}
       expandAll={expandAll}

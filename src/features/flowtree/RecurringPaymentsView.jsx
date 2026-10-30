@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useSessionState } from '../../hooks/useSessionState'
 import { createMonthSnapshot, monthCardSummary, monthKey } from '../../domain/monthlyHistory'
 import { formatMoney } from '../../lib/money'
 
 const monthName = date => new Intl.DateTimeFormat('en-IN', { month: 'long' }).format(date)
 
 export default function RecurringPaymentsView({ plan }) {
-  const [year, setYear] = useState(() => new Date().getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState(() => monthKey())
+  const [year, setYear] = useSessionState('flowtree-payment-year', () => new Date().getFullYear(), value => Number.isInteger(value) && value >= 1900 && value <= 9999)
+  const [selectedMonth, setSelectedMonth] = useSessionState('flowtree-payment-month', monthKey, value => typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value))
   const currentMonth = monthKey()
   const months = Array.from({ length: 12 }, (_, index) => {
     const date = new Date(year, index, 1)
