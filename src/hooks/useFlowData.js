@@ -28,7 +28,7 @@ function normalizeGeneralLedger(ledger) {
   }
 }
 
-function normalizeData(data) {
+export function normalizeFlowData(data) {
   const legacyIncome = Math.max(0, Number(data?.income) || 0)
   return {
     ...data,
@@ -42,7 +42,7 @@ function normalizeData(data) {
 }
 
 export function createBlankFlowData() {
-  return normalizeData({
+  return normalizeFlowData({
     profile: { name: 'You', visible: true },
     incomeSources: [],
     generalLedgers: [],
@@ -132,7 +132,7 @@ export function useFlowData() {
   }
 
   function replaceData(nextData, { resetHistory = false } = {}) {
-    const normalized = normalizeData(nextData)
+    const normalized = normalizeFlowData(nextData)
     if (resetHistory) setHistory({ data: normalized, past: [], future: [] })
     else record(() => normalized)
   }

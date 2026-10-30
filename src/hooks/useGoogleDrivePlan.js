@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from '../domain/flowDataTransfer'
 import { organizeSubscriptions } from '../domain/flowTree'
+import { restoreDriveSession } from '../domain/restoreDriveSession'
 import { preserveCurrentMonth } from '../domain/monthlyHistory'
 import { loadRecoveryVersions } from '../domain/versionRecovery'
 import { driveRestoreMode, orderValidDriveRestoreCandidates } from '../domain/driveRestoreCandidates'
-import { createBlankFlowData } from './useFlowData'
+import { createBlankFlowData, normalizeFlowData } from './useFlowData'
 import { connectGoogleDrive, downloadFlowtreeBackup, downloadFlowtreeRevision, findOrCreateFolder, getDriveUser, listFlowtreeRestoreCandidates, listFlowtreeRevisions, revokeGoogleDriveAccess, uploadFlowtreeBackup } from '../lib/googleDriveSync'
 
 const DRIVE_FOLDER_NAME = 'gpt'
@@ -59,9 +60,10 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
   const [drive, setDrive] = useState(() => {
     const session = readDriveSession()
     return session
-      ? { status: 'restoring', user: null, error: '', ...session }
+      ? { ...session, status: 'restoring', user: session.user || null, error: '' }
       : { status: googleClientId ? 'idle' : 'unavailable', user: null, error: '', accessToken: '', folderId: '', fileId: '' }
   })
+  const [startupState, setStartupState] = useState(() => drive.status === 'restoring' ? 'loading' : 'ready')
   const replaceDataRef = useRef(replaceData)
   const hasAttemptedDriveRestore = useRef(false)
 
@@ -69,12 +71,13 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
 
   async function restoreDriveCandidate({ accessToken, user, candidate, candidates = [] }) {
     try {
-      const restoredPlan = candidate.restoredPlan || parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId: candidate.id }))
+      const restoredPlan = normalizeFlowData(candidate.restoredPlan || parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId: candidate.id })))
       replaceDataRef.current({ ...restoredPlan, tree: organizeSubscriptions(restoredPlan.tree) }, { resetHistory: true })
       setSavedContents(serializeFlowData(restoredPlan))
       setPath([])
       writeDriveSession({ accessToken, folderId: candidate.folderId, fileId: candidate.id })
       setDrive({ status: 'connected', user, error: '', accessToken, folderId: candidate.folderId, fileId: candidate.id })
+      setStartupState('ready')
       notify(`Your plan was restored from Google Drive for ${user.emailAddress || 'your Google account'}.`)
     } catch (error) {
       if (candidates.length > 1) {
@@ -82,6 +85,7 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
         setDialog({ type: 'driveSync' })
         return
       }
+      if (startupState !== 'ready') setStartupState('error')
       setDrive({ status: 'error', user: null, error: error.message || 'Could not restore your Google Drive plan. No data was uploaded.', accessToken: '', folderId: '', fileId: '' })
     }
   }
@@ -104,6 +108,7 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
       setDrive(previous => ({ ...previous, status: 'unavailable', error: 'Google Drive sign-in has not been configured for this deployment.' }))
       return
     }
+    if (startupState !== 'ready') setStartupState('loading')
     setDrive(previous => ({ ...previous, status: 'connecting', error: '' }))
     try {
       const accessToken = await connectGoogleDrive({ clientId: googleClientId, prompt })
@@ -113,6 +118,7 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
       ])
       const candidates = await findValidDriveRestoreCandidates(accessToken, discovery.candidates)
       const mode = driveRestoreMode(candidates)
+      if (mode !== 'restore') setStartupState('ready')
       if (mode === 'restore') {
         await restoreDriveCandidate({ accessToken, user, candidate: candidates[0] })
         return
@@ -127,6 +133,7 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
       setDialog({ type: 'driveSync' })
     } catch (error) {
       setDrive(previous => ({ ...previous, status: 'error', error: error.message || 'Google Drive sign-in failed.' }))
+      if (startupState !== 'ready') setStartupState('error')
     }
   }
 
@@ -136,17 +143,23 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
     hasAttemptedDriveRestore.current = true
     async function restore() {
       try {
-        const [user, restoredPlan] = await Promise.all([
-          getDriveUser({ accessToken: session.accessToken }),
-          downloadFlowtreeBackup({ accessToken: session.accessToken, fileId: session.fileId }),
-        ])
-        const plan = parseFlowImport(restoredPlan)
+        let restoredUser = session.user || null
+        const plan = normalizeFlowData(await restoreDriveSession(session, {
+          loadPlan: async ({ accessToken, fileId }) => parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId })),
+          loadUser: getDriveUser,
+          onUser: user => {
+            restoredUser = user
+            setDrive(previous => previous.accessToken === session.accessToken ? { ...previous, user } : previous)
+          },
+        }))
         replaceDataRef.current({ ...plan, tree: organizeSubscriptions(plan.tree) }, { resetHistory: true })
         setSavedContents(serializeFlowData(plan))
         setPath([])
-        setDrive({ status: 'connected', user, error: '', ...session })
+        setDrive({ ...session, status: 'connected', user: restoredUser || { displayName: plan.profile.name }, error: '' })
+        setStartupState('ready')
       } catch {
         clearDriveSession()
+        setStartupState('error')
         setDrive({ status: 'error', user: null, error: 'Could not restore your Google Drive plan. Sign in again to retry; no data was uploaded.', accessToken: '', folderId: '', fileId: '' })
       }
     }
@@ -154,8 +167,8 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
   }, [setPath])
 
   useEffect(() => {
-    if (drive.accessToken && drive.folderId && drive.fileId) writeDriveSession({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: drive.fileId })
-  }, [drive.accessToken, drive.folderId, drive.fileId])
+    if (drive.accessToken && drive.folderId && drive.fileId) writeDriveSession({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: drive.fileId, user: drive.user?.emailAddress ? drive.user : undefined })
+  }, [drive.accessToken, drive.folderId, drive.fileId, drive.user])
 
   async function disconnectDrive() {
     if (!allowDiscard() || savingRef.current) return
@@ -256,5 +269,5 @@ export function useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth, dia
     }
   }
 
-  return { hasUnsavedChanges, downloadBackup, drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured: Boolean(googleClientId) }
+  return { startupState, hasUnsavedChanges, downloadBackup, drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured: Boolean(googleClientId) }
 }

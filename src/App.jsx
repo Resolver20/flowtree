@@ -4,6 +4,7 @@ import { loanProjection } from './domain/loan'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import { useGoogleDrivePlan } from './hooks/useGoogleDrivePlan'
 import PlanDialog from './features/flowtree/PlanDialog'
+import PlanRestoreScreen from './features/flowtree/PlanRestoreScreen'
 import { useFlowData } from './hooks/useFlowData'
 
 function App() {
@@ -16,7 +17,7 @@ function App() {
     setNotice({ message })
   }
 
-  const { drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured, hasUnsavedChanges, downloadBackup } = useGoogleDrivePlan({
+  const { drive, startupState, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured, hasUnsavedChanges, downloadBackup } = useGoogleDrivePlan({
     plan: { profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree },
     replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify,
   })
@@ -177,6 +178,8 @@ function App() {
 
   const monthlyIncome = incomeSources.reduce((sum, source) => sum + Math.max(0, Number(source.amount) || 0), 0)
   const driveUser = drive.user ? { emailAddress: drive.user.emailAddress, displayName: drive.user.displayName, photoLink: drive.user.photoLink } : null
+
+  if (startupState !== 'ready') return <PlanRestoreScreen state={startupState} error={drive.error} onRetry={connectDrive} configured={driveConfigured} />
 
   return <div className="app-shell energy-mode">
     <EnergyExplorer
