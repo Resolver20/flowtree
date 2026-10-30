@@ -42,6 +42,15 @@ test('empty plans accept top-level categories and deleted leaves no longer count
   assert.deepEqual(pathToNode(tree, 'missing'), [])
 })
 
+test('deleting a recurring payment preserves its parent category and every other category', () => {
+  const tree = createTreeFromBuckets()
+  const deleted = removeNode(tree, 'seed-11')
+  assert.equal(deleted.length, tree.length)
+  assert.equal(findPath(deleted, ['provisions']).name, 'Emergency Fund')
+  assert.equal(findPath(deleted, ['provisions', 'seed-11']), null)
+  assert.equal(findPath(deleted, ['needs']).name, 'Cash Flow')
+})
+
 test('yearly targets keep saved progress separate from monthly planning', () => {
   const node = { amount: 12000, savedAmount: 3000, period: 'year', status: 'active', children: [] }
   assert.equal(monthlyTotal(node), 750)

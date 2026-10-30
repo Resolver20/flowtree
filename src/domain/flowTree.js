@@ -14,6 +14,10 @@ export const FLOW_GROUPS = [
   { id: 'growth', name: 'Long-Term Growth', note: 'Future wealth building', icon: 'trending_up', tone: 'green' },
 ]
 
+export function isBuiltInFlowGroup(id) {
+  return FLOW_GROUPS.some(group => group.id === id)
+}
+
 export const SUBSCRIPTION_NAMES = new Set(['Google Drive', 'Apple One', 'GPT', 'Netflix'])
 export const NODE_STATUSES = ['dormant', 'seeded', 'active', 'funded']
 

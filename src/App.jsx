@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from './domain/flowDataTransfer'
-import { findNode, organizeSubscriptions, pathToNode } from './domain/flowTree'
+import { findNode, isBuiltInFlowGroup, organizeSubscriptions, pathToNode } from './domain/flowTree'
 import { loanProjection } from './domain/loan'
 import { driveRestoreMode, orderValidDriveRestoreCandidates } from './domain/driveRestoreCandidates'
 import { canAutosaveDrive } from './domain/driveSyncState'
@@ -231,6 +231,12 @@ function App() {
 
   function deleteItem(id) {
     const node = findNode(tree, id)
+    if (!node) return
+    if (isBuiltInFlowGroup(id) && pathToNode(tree, id).length === 1) {
+      notify(`${node.name} stays in your plan so deleting an item cannot remove its category or other data.`)
+      setDialog(null)
+      return
+    }
     setNotice({ message: `${node.name} deleted.`, tree, path })
     deleteNode(id)
     if (path.includes(id)) setPath(path.slice(0, path.indexOf(id)))

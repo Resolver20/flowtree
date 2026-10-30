@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { annualTargetProgress, countBranch, findNode, monthlyAllocation, monthlyTotal, NODE_STATUSES, totalChildren } from '../../domain/flowTree'
+import { annualTargetProgress, countBranch, findNode, isBuiltInFlowGroup, monthlyAllocation, monthlyTotal, NODE_STATUSES, totalChildren } from '../../domain/flowTree'
 import { formatDate, formatMoney } from '../../lib/money'
 import { colorForNode, iconForNode } from './nodePresentation'
 import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
@@ -228,7 +228,7 @@ function JsonEditorDialog({ data, onClose, onSave }) {
   </DialogShell>
 }
 
-function ManageDialog({ node, onClose, onDelete, onRequestEdit, onRequestAdd }) {
+function ManageDialog({ node, onClose, onDelete, onRequestEdit, onRequestAdd, canDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const progress = annualTargetProgress(node)
   const children = node.children || []
@@ -254,7 +254,7 @@ function ManageDialog({ node, onClose, onDelete, onRequestEdit, onRequestAdd }) 
       <div><dt>Direct children</dt><dd>{children.length}</dd></div>
     </dl>
     <div className="dialog-actions manage-actions">
-      <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button>
+      {canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button>}
       <button type="button" onClick={() => onRequestAdd(node.id)}>Add child</button>
       <button type="button" className="modal-submit" onClick={() => onRequestEdit(node.id)}>Edit details</button>
     </div>
@@ -307,6 +307,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   const node = dialog.nodeId ? findNode(tree, dialog.nodeId) : null
   const parent = dialog.parentId ? findNode(tree, dialog.parentId) : null
   const isEditing = Boolean(node)
+  const canDelete = !isBuiltInFlowGroup(node?.id)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [amount, setAmount] = useState(node?.amount ?? '')
   const [savedAmount, setSavedAmount] = useState(node?.savedAmount ?? '')
@@ -378,7 +379,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
       </div>
       <small>Funded and dormant items pause the entire branch’s allocation.</small>
       <div className="amount-preview" aria-live="polite"><span>Monthly branch total<small>Includes {formatMoney(totalChildren(node?.children || []))} in child targets</small></span><strong>{formatMoney(preview)}</strong></div>
-      <div className="dialog-actions">{isEditing && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button>}<button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">{isEditing ? 'Save changes' : 'Add to tree'}</button></div>
+      <div className="dialog-actions">{isEditing && canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button>}<button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">{isEditing ? 'Save changes' : 'Add to tree'}</button></div>
     </form>
   </DialogShell>
 }
@@ -395,7 +396,7 @@ export default function PlanDialog({ dialog, profile, incomeSources, generalLedg
   if (dialog.type === 'sinkingFunds') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} title="Sinking funds" description="These are your yearly targets. Flowtree sets aside their monthly equivalents so they are ready when each payment is due." />
   if (dialog.type === 'importJson') return <ImportPlanDialog dialog={dialog} onClose={onClose} onImport={onImportData} />
   if (dialog.type === 'buffer') return <BufferDialog buffer={buffer} onClose={onClose} onSave={onSaveBuffer} />
-  if (dialog.type === 'manage') return <ManageDialog node={findNode(tree, dialog.nodeId)} onClose={onClose} onDelete={onDeleteNode} onRequestEdit={onRequestEdit} onRequestAdd={onRequestAdd} />
+  if (dialog.type === 'manage') { const node = findNode(tree, dialog.nodeId); return <ManageDialog node={node} canDelete={!isBuiltInFlowGroup(node?.id)} onClose={onClose} onDelete={onDeleteNode} onRequestEdit={onRequestEdit} onRequestAdd={onRequestAdd} /> }
   if (dialog.type === 'node' && findNode(tree, dialog.nodeId)?.loan) return <LoanNodeDialog node={findNode(tree, dialog.nodeId)} onClose={onClose} onSave={onSaveNode} />
   return <NodeDialog dialog={dialog} tree={tree} onClose={onClose} onSave={onSaveNode} onDelete={onDeleteNode} />
 }
