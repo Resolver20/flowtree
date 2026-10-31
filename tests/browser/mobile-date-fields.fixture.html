@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script type="module">
+import React,{useState} from 'react';import{createRoot}from'react-dom/client';
+import DateField from '/src/features/flowtree/DateField.jsx';import CardStartSetup from '/src/features/flowtree/CardStartSetup.jsx';
+import '/src/index.css';import '/src/features/flowtree/EnergyExplorer.css';
+const root=createRoot(document.querySelector('#root'));let key=0;
+function Fixture({dark,start='2026-01-01',target='2027-12-31'}){
+const [startDate,setStart]=useState(start),[dueDate,setTarget]=useState(target);
+return React.createElement('main',{className:`energy-mode theme-${dark?'dark':'light'}`},React.createElement('form',{className:'goal-editor',style:{margin:0,padding:16},onSubmit:event=>{event.preventDefault();document.body.dataset.saved=JSON.stringify({startDate,dueDate})}},
+React.createElement(CardStartSetup,{mode:'existing',startDate,onStartDateChange:setStart}),
+React.createElement(DateField,{label:'Target date',name:'dueDate',value:dueDate,min:startDate,onChange:setTarget},React.createElement('button',{type:'button',onClick:()=>setTarget('2028-02-29')},'+1 year')),
+React.createElement('button',{type:'submit'},'Save dates'),React.createElement('button',{type:'button',onClick:()=>setTarget('2028-02-29')},'External date update')));
+}
+window.renderCase=props=>root.render(React.createElement(Fixture,{key:++key,...props}));window.renderCase({});
+</script></html>

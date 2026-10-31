@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Mobile annual progress regression</title>
+<body><pre id="result">Running…</pre><iframe title="Annual progress cards" style="border:0" src="/tests/browser/mobile-annual-progress.fixture.html"></iframe>
+<script type="module">
+const frame=document.querySelector('iframe'), result=document.querySelector('#result'),checks=[];
+const wait=()=>new Promise(resolve=>setTimeout(resolve,60));
+const assert=(condition,message)=>{if(!condition)throw Error(message);checks.push(message)};
+try {
+for(let i=0;i<100&&!frame.contentWindow.renderCase;i++)await wait();
+assert(Boolean(frame.contentWindow.renderCase),'Fixture mounted');
+for(const [width,height] of [[320,740],[390,844],[568,320],[760,740]]){
+frame.style.width=`${width}px`;frame.style.height=`${height}px`;
+for(const dark of [false,true])for(const sinking of [false,true])for(const saved of [0,2760,3960,12000,15000]){
+frame.contentWindow.renderCase({saved,dark,sinking});await wait();
+const doc=frame.contentDocument,expected=Math.min(saved/12000,1);
+for(const path of ['protection/insurance','goals/travel']){
+const row=doc.querySelector(`[data-tree-path="${path}"] > .mobile-tree-node-row`),card=row.querySelector('.mobile-tree-card'),bar=card.querySelector('.node-progress'),fill=bar?.firstElementChild;
+const prefix=`${width}/${dark}/${sinking}/${saved}/${path}`;
+assert(bar&&bar.getAttribute('aria-hidden')==='true',`${prefix}: bottom progress line present`);
+assert(Math.abs(parseFloat(fill.style.width)-expected*100)<.01,`${prefix}: fill matches saved target progress`);
+assert(!/percent|saved|%/.test(card.querySelector('.mobile-tree-copy').textContent),`${prefix}: no visible completion text`);
+assert(card.getAttribute('aria-label').includes(`${Math.round(expected*100)} percent`),`${prefix}: completion retained for assistive technology`);
+const b=bar.getBoundingClientRect(),r=card.getBoundingClientRect();
+assert(b.height===2&&b.left>=r.left&&b.right<=r.right&&b.bottom<=r.bottom&&r.bottom-b.bottom<=6,`${prefix}: thin line inside card bottom`);
+assert(card.scrollWidth<=card.clientWidth,`${prefix}: no card overflow`);
+}
+assert(!doc.querySelector('[data-tree-path="protection/insurance/monthly"] > .mobile-tree-node-row .node-progress'),`${width}: monthly target has no progress line`);
+assert(!doc.querySelector('[data-tree-path="protection"] > .mobile-tree-node-row .node-progress'),`${width}: category has no invented progress`);
+}
+}
+document.body.dataset.result='pass';result.textContent=`PASS (${checks.length} checks)`;
+}catch(error){document.body.dataset.result='fail';result.textContent=`FAIL: ${error.message}`}
+</script></body></html>

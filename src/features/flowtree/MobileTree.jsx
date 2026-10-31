@@ -53,9 +53,10 @@ function MobileNode({ entry, tree, monthlyIncome, selectedPath, expandAll, colla
 
   const content = <>
     <span className="mobile-tree-icon material-symbols-rounded" style={{ color }} aria-hidden="true">{iconForNode(item)}</span>
-    <span className="mobile-tree-copy"><strong>{item.name}</strong><small>{targetText}</small></span>
+    <span className="mobile-tree-copy"><strong>{item.name}</strong><small>{formatMoney(monthlyAmount)} per month</small></span>
     <MonthlyPlanShare label={share.label} />
     <InactiveMarker inactive={inactive} />
+    {annualProgress && <span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${annualProgress.ratio * 100}%` }} /></span>}
     {hasChildren && <span className="mobile-tree-cue material-symbols-rounded" aria-hidden="true">{showChildren ? 'expand_less' : 'expand_more'}</span>}
   </>
 

@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><div id="root"></div><script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import MobileTree from '/src/features/flowtree/MobileTree.jsx';
+import {allocateEnergy} from '/src/domain/energyFlow.js';
+import '/src/index.css';
+import '/src/features/flowtree/EnergyExplorer.css';
+const root=createRoot(document.querySelector('#root'));
+window.renderCase=({saved=3000,dark=false,sinking=false}={})=>{
+const annual=(id,name,children=[])=>({id,name,period:'year',amount:12000,savedAmount:saved,status:'active',children});
+const monthly={id:'monthly',name:'Monthly bill',amount:100,period:'month',children:[]};
+const tree=[{id:'protection',name:'Risk Protection',amount:0,children:[annual('insurance','Annual insurance',[monthly])]},
+{id:'goals',name:'Life goals',amount:0,children:[annual('travel','Long annual travel target name')]}];
+root.render(React.createElement('div',{className:dark?'theme-dark':'theme-light'},React.createElement(MobileTree,{
+ tree,allocations:allocateEnergy(tree,60000).allocations,monthlyIncome:60000,monthlyDeductions:100,monthlyOutcome:59900,income:60000,incomeSources:[],path:[],expandAll:true,collapsedPaths:new Set(),sinking,
+ onNavigate:()=>{},onInspect:()=>{document.body.dataset.inspected='yes'},onInspectIncome:()=>{},onInspectPlan:()=>{}
+})));
+};
+window.renderCase();
+</script></html>

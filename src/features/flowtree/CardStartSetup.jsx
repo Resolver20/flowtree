@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import DateField from './DateField'
 import { cardStartDate, cardStartMode } from '../../domain/cardStart'
 
 export default function CardStartSetup({ mode, onModeChange, startDate, onStartDateChange }) {
@@ -11,7 +12,7 @@ export default function CardStartSetup({ mode, onModeChange, startDate, onStartD
   }
   return <>
     <label>Card setup<select value={selectedMode} onChange={event => changeMode(event.target.value)}><option value="fresh">Fresh</option><option value="existing">Already started</option></select></label>
-    {selectedMode === 'existing' && <label>Start date<input name="startDate" type="date" value={startDate} onChange={event => onStartDateChange(event.target.value)} required /></label>}
+    {selectedMode === 'existing' && <DateField label="Start date" name="startDate" value={startDate} onChange={onStartDateChange} />}
     {selectedMode === 'fresh' && <input name="startDate" type="hidden" value={startDate} />}
   </>
 }

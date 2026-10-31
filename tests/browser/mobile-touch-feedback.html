@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Mobile touch feedback regression</title><body>
+<pre id="result">Running…</pre><iframe title="Touch feedback" src="/tests/browser/mobile-touch-feedback.fixture.html" style="border:0"></iframe>
+<script type="module">
+const frame=document.querySelector('iframe'),checks=[],wait=()=>new Promise(resolve=>setTimeout(resolve,60));
+const assert=(ok,message)=>{if(!ok)throw Error(message);checks.push(message)};
+try{
+for(let i=0;i<100&&!frame.contentWindow.fixtureReady;i++)await wait();
+assert(frame.contentWindow.fixtureReady,'Fixture mounted');
+const doc=frame.contentDocument,win=frame.contentWindow;
+// Each mouse-hover style must be unreachable on a phone viewport or touch-only device.
+function walk(rules,conditions=[]){for(const rule of rules){
+if(rule.selectorText?.includes(':hover'))assert(conditions.some(c=>c.includes('min-width: 761px')&&c.includes('hover: hover')),`Hover gated: ${rule.selectorText}`);
+if(rule.cssRules?.length)walk(rule.cssRules,[...conditions,rule.conditionText||'']);
+}}
+for(const sheet of doc.styleSheets)walk(sheet.cssRules);
+for(const width of [320,390,568,760]){
+frame.style.width=`${width}px`;frame.style.height='900px';
+for(const dark of [false,true]){
+win.setTheme(dark);await wait();
+for(const button of doc.querySelectorAll('button')){
+button.classList.remove('is-selected');const before=win.getComputedStyle(button).borderColor,background=win.getComputedStyle(button).backgroundColor;
+button.click();assert(win.getComputedStyle(button).borderColor===before,`${width}/${dark}/${button.textContent}: tap does not leave a selected border`);
+assert(win.getComputedStyle(button).backgroundColor===background,`${width}/${dark}/${button.textContent}: no persistent selected background`);
+button.focus();assert(win.getComputedStyle(button).outlineStyle==='none',`${width}/${dark}/${button.textContent}: no mobile focus outline`);button.blur();
+if(button.matches('.payment-month-card'))assert(win.getComputedStyle(button).outlineStyle==='none',`${width}/${dark}: selected month has no pointer outline`);
+button.classList.remove('is-selected');
+}
+const tree=doc.querySelector('.mobile-tree-node'),normalTreeBorder=win.getComputedStyle(tree.querySelector('.mobile-tree-card')).borderColor;tree.classList.add('is-selected');
+assert(win.getComputedStyle(tree.querySelector('.mobile-tree-card')).borderColor===normalTreeBorder,`${width}/${dark}: tree selection keeps its normal edge`);
+tree.classList.remove('is-selected');
+}
+}
+document.body.dataset.result='pass';document.querySelector('#result').textContent=`PASS (${checks.length} checks)`;
+}catch(error){document.body.dataset.result='fail';document.querySelector('#result').textContent=`FAIL: ${error.message}`;}
+</script></body></html>

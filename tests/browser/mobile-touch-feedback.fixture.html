@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><div id="surface" class="energy-mode energy-home theme-light">
+<section style="padding:16px;display:grid;gap:12px">
+<div class="mobile-tree-node"><div class="mobile-tree-node-row"><button type="button" class="mobile-tree-card">Tree card</button><button class="mobile-tree-manage" type="button">Info</button></div></div>
+<div class="loan-list"><button type="button">Loan</button></div>
+<div class="goal-list"><button type="button">Goal</button></div>
+<div class="investment-list loan-list"><button type="button">Investment</button></div>
+<div class="ledger-list"><button type="button">Ledger</button></div>
+<button type="button" class="calendar-day">Calendar day</button>
+<button type="button" class="payment-month-card">Payment month</button>
+<div class="account-menu" style="position:static"><button type="button">Account action</button></div>
+</section></div><script type="module">
+import '/src/index.css';import '/src/features/flowtree/EnergyExplorer.css';
+window.setTheme=dark=>document.querySelector('#surface').className=`energy-mode energy-home theme-${dark?'dark':'light'}`;
+for(const button of document.querySelectorAll('button'))button.addEventListener('click',()=>button.classList.toggle('is-selected'));
+window.fixtureReady=true;
+</script></html>

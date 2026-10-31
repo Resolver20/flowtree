@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Mobile typed dates regression</title><body><pre id="result">Running…</pre><iframe title="Typed dates" style="border:0" src="/tests/browser/mobile-date-fields.fixture.html"></iframe>
+<script type="module">
+const f=document.querySelector('iframe'),checks=[],wait=()=>new Promise(r=>setTimeout(r,70));
+const assert=(ok,msg)=>{if(!ok)throw Error(msg);checks.push(msg)};
+try{
+for(let i=0;i<100&&!f.contentWindow.renderCase;i++)await wait();
+assert(f.contentWindow.renderCase,'Fixture mounted');
+for(const width of [320,390,568,768,1366])for(const dark of [false,true]){
+f.style.width=`${width}px`;f.style.height='740px';f.contentWindow.renderCase({dark});await wait();
+const d=f.contentDocument,w=f.contentWindow;
+const type=(el,value)=>{Object.getOwnPropertyDescriptor(w.HTMLInputElement.prototype,'value').set.call(el,value);el.dispatchEvent(new w.Event('input',{bubbles:true}))};
+const fields=[...d.querySelectorAll('.date-field')],inputs=fields.map(field=>field.querySelector('.date-text-input'));
+for(const field of fields){const text=field.querySelector('.date-text-input'),calendar=field.querySelector('.date-calendar-trigger'),box=field.getBoundingClientRect(),t=text.getBoundingClientRect(),c=calendar.getBoundingClientRect();
+assert(text.type==='text'&&text.inputMode==='numeric',`${width}/${dark}: keyboard-editable text date`);
+assert(t.width>=110&&t.right<=c.left&&c.right<=box.right&&field.scrollWidth<=field.clientWidth,`${width}/${dark}: full date and calendar fit without overlap`);
+assert(c.width===40&&c.height===44,`${width}/${dark}: compact calendar target`);
+}
+type(inputs[0],'01012026');type(inputs[1],'31122027');await wait();
+assert(inputs[0].value==='01/01/2026'&&inputs[1].value==='31/12/2027',`${width}/${dark}: numeric typing inserts separators`);
+d.querySelector('form').requestSubmit();await wait();
+assert(d.body.dataset.saved===JSON.stringify({startDate:'2026-01-01',dueDate:'2027-12-31'}),`${width}/${dark}: canonical dates saved`);
+delete d.body.dataset.saved;type(inputs[1],'31042027');await wait();d.querySelector('form').requestSubmit();
+assert(!d.body.dataset.saved&&!inputs[1].validity.valid,`${width}/${dark}: invalid date blocks save`);
+[...d.querySelectorAll('button')].find(b=>b.textContent==='External date update').click();await wait();
+assert(inputs[1].value==='29/02/2028'&&inputs[1].validity.valid,`${width}/${dark}: external update clears invalid draft`);
+const calendar=fields[1].querySelector('.date-calendar-input');type(calendar,'2028-03-15');await wait();
+assert(inputs[1].value==='15/03/2028',`${width}/${dark}: calendar selection updates typed date`);
+assert(d.documentElement.scrollWidth<=width,`${width}/${dark}: no horizontal page overflow`);
+}
+document.body.dataset.result='pass';document.querySelector('#result').textContent=`PASS (${checks.length} checks)`;
+}catch(error){document.body.dataset.result='fail';document.querySelector('#result').textContent=`FAIL: ${error.message}`}
+</script></body></html>

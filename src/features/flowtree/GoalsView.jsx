@@ -1,4 +1,5 @@
 import CardStartSetup from './CardStartSetup'
+import DateField from './DateField'
 import GoalSavingsSummary from './GoalSavingsSummary'
 import InactiveMarker from './InactiveMarker'
 import { useMemo, useState } from 'react'
@@ -48,7 +49,7 @@ function GoalEditor({ goal, onSave, onCancel }) {
       <label>Target amount (₹)<input value={amount} onChange={event => setAmount(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Goal icon<IconPicker value={symbol} onChange={setSymbol} /></label>
       <CardStartSetup mode={startMode} onModeChange={mode => { setStartMode(mode); if (mode === 'fresh') { setStartDate(todayDate()); setSavedAmount(0) } setError('') }} startDate={startDate} onStartDateChange={date => { setStartDate(date); setError('') }} />
-      {period === 'year' && <><label>Target date<input type="date" value={dueDate} onChange={event => { setDueDate(event.target.value); setError('') }} required /></label><label>Already accumulated (₹)<input value={savedAmount} onChange={event => setSavedAmount(event.target.value)} type="number" min="0" step="0.01" /></label></>}
+      {period === 'year' && <><DateField label="Target date" value={dueDate} min={startDate || undefined} onChange={date => { setDueDate(date); setError('') }} /><label>Already accumulated (₹)<input value={savedAmount} onChange={event => setSavedAmount(event.target.value)} type="number" min="0" step="0.01" /></label></>}
       <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(item => <option key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</option>)}</select></label>
     </div>
     <small>Inactive goals stay out of the monthly plan. You can still set their start and target dates.</small>
