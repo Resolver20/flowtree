@@ -403,4 +403,4 @@ After an approved deployment, inspect the public homepage HTML and confirm the `
 
 ### Income and monthly plan info actions
 
-On Home, verify the Income section label has a visible `Info` button and the Monthly plan card has its info button on desktop and phone layouts, including when multiple income sources are present. Activate Income and expect the total amount, one edit button per source, and Add income source; activate Monthly plan and expect its overview dialog. These actions must not open a child branch or change the plan.
+On Home, verify the Income section label has a visible `Info` button and the Monthly plan card has its info button on desktop and phone layouts, including when multiple income sources are present. Activate Income and expect the total amount, one edit button per source, and Add income source; activate Monthly plan and expect its overview dialog. Open an income source editor and expect the same compact card treatment as the desktop view with only Name, Amount per month, and Icon fields; payday and start-date controls are not shown. These actions must not open a child branch or change the plan.

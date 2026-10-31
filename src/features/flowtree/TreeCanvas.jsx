@@ -37,12 +37,13 @@ function FinanceNode({ sinking, monthlyOutcome, point, worldWidth, worldHeight, 
   </div>
 }
 
-export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mobile, path, collapsedPaths, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect, onInspectPlan, onInspectIncome }) {
+export default function TreeCanvas({ sinking = false, layout, monthlyIncome, monthlyDeductions, mobile, path, collapsedPaths, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect, onInspectPlan, onInspectIncome }) {
   if (mobile) {
     return <MobileTree
       sinking={sinking}
       monthlyIncome={monthlyIncome}
       monthlyOutcome={layout.monthlyOutcome}
+      monthlyDeductions={monthlyDeductions}
       allocations={layout.allocations}
       expandAll={layout.expandAll}
       collapsedPaths={collapsedPaths}

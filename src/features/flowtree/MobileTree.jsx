@@ -74,8 +74,7 @@ function MobileNode({ entry, tree, monthlyIncome, selectedPath, expandAll, colla
   </div>
 }
 
-export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onInspectIncome, onNavigate, onInspect, onInspectPlan }) {
-  const availableLabel = 'remaining this month'
+export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, monthlyDeductions, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onInspectIncome, onNavigate, onInspect, onInspectPlan }) {
   const rootLabel = sinking ? 'Sinking funds' : 'Monthly plan'
   return <div className="mobile-tree" aria-label={`${rootLabel} flow`}>
     {!sinking && <><section className="mobile-tree-income" aria-label="Income">
@@ -87,7 +86,10 @@ export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutc
     <div className="mobile-tree-connector" aria-hidden="true" /></>}
     <section className="mobile-plan-root" aria-label={rootLabel}>
       <span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
-      <span><strong>{rootLabel}</strong>{!sinking && <small>{formatMoney(monthlyOutcome)} {availableLabel}</small>}</span>
+      <div className="mobile-plan-copy"><strong>{rootLabel}</strong>{!sinking && <div className="mobile-plan-summary" aria-label="Monthly plan summary">
+        <small className="is-deductions">Deductions <span>{formatMoney(monthlyDeductions)}</span></small>
+        <small className="is-remaining">Remaining <span>{formatMoney(monthlyOutcome)}</span></small>
+      </div>}</div>
       {!sinking && <button type="button" className="mobile-tree-manage" onClick={onInspectPlan} aria-label="View monthly plan information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button>}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" />

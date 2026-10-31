@@ -277,7 +277,15 @@
   .mobile-tree-step button .material-symbols-rounded { font-size: 15px; }
   .mobile-income-source, .mobile-plan-root, .mobile-tree-card { display: flex; width: 100%; min-height: 64px; align-items: center; gap: 11px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); text-align: left; }
   .mobile-income-source > .material-symbols-rounded, .mobile-plan-root > .material-symbols-rounded { color: #5366c8; font-size: 24px; }
-  .mobile-income-source > span:nth-child(2), .mobile-plan-root > span:last-child { display: grid; min-width: 0; gap: 3px; }
+  .mobile-income-source > span:nth-child(2), .mobile-plan-copy { display: grid; min-width: 0; gap: 3px; }
+  .mobile-plan-copy { flex: 1; }
+  .mobile-plan-summary { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .mobile-plan-summary small { display: grid; gap: 2px; overflow-wrap: anywhere; }
+  .mobile-plan-summary .is-deductions { color: #27704c; }
+  .mobile-plan-summary .is-remaining { color: #5b53a6; }
+  .mobile-plan-summary small > span { font-weight: 600; }
+  .theme-dark .mobile-plan-summary .is-deductions { color: #98dbb6; }
+  .theme-dark .mobile-plan-summary .is-remaining { color: #d1bcff; }
   .mobile-income-source strong, .mobile-plan-root strong, .mobile-tree-copy strong { overflow: hidden; color: var(--text); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
   .mobile-income-source small, .mobile-plan-root small, .mobile-tree-copy small { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
   .mobile-income-source > button, .mobile-tree-manage { display: grid; flex: 0 0 auto; width: 38px; height: 38px; place-items: center; margin-left: auto; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--accent); }

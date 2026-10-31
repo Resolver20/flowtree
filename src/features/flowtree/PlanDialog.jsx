@@ -39,12 +39,6 @@ function displayDateValue(value) {
   return match ? `${match[3]}/${match[2]}/${match[1]}` : ''
 }
 
-function formatIncomeStart(value) {
-  if (!value) return 'Starts today'
-  const date = new Date(`${value}T00:00:00`)
-  return Number.isNaN(date.getTime()) ? 'Start date not set' : `Starts ${date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
-}
-
 function parseDateValue(value) {
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim())
   if (!match) return ''
@@ -130,7 +124,7 @@ function IncomeSourceManageDialog({ source, onClose, onDelete, onRequestEdit }) 
   </DialogShell>
 
   return <DialogShell title={source.name} onClose={onClose}>
-    <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">{source.icon || 'payments'}</span><div><span>Monthly income source</span><strong>{formatMoney(source.amount)} <small>/month</small></strong><small>{formatIncomeStart(source.startDate)} · paid on the {source.dayOfMonth || 1}{(source.dayOfMonth || 1) === 1 ? 'st' : (source.dayOfMonth || 1) === 2 ? 'nd' : (source.dayOfMonth || 1) === 3 ? 'rd' : 'th'} of each month</small></div></div>
+    <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">{source.icon || 'payments'}</span><div><span>Monthly income source</span><strong>{formatMoney(source.amount)} <small>/month</small></strong></div></div>
     <div className="dialog-actions manage-actions">
       <button type="button" className="modal-submit" onClick={() => onRequestEdit(source.id)}>Edit details</button><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete</button></div>
   </DialogShell>
@@ -138,17 +132,14 @@ function IncomeSourceManageDialog({ source, onClose, onDelete, onRequestEdit }) 
 
 function IncomeSourceDialog({ source, onClose, onSave }) {
   const [symbol, setSymbol] = useState(source?.icon || 'payments')
-  const [startDate, setStartDate] = useState(source?.startDate || cardStartDate())
   const [error, setError] = useState('')
   return <DialogShell title={source ? 'Edit income source' : 'Add income source'} onClose={onClose}>
     <p>Every active income source flows into the shared monthly plan. The date is a planning marker; Flowtree never moves money automatically.</p>
-    <form onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); const name = String(form.get('name') || '').trim(); if (!name) { setError('Enter a name, not just spaces.'); return } onSave({ sourceId: source?.id, name, amount: Math.max(0, Number(form.get('amount')) || 0), icon: symbol, startDate: String(form.get('startDate') || ''), dayOfMonth: Math.min(31, Math.max(1, Number(form.get('dayOfMonth')) || 1)) }); onClose() }}>
+    <form onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); const name = String(form.get('name') || '').trim(); if (!name) { setError('Enter a name, not just spaces.'); return } onSave({ sourceId: source?.id, name, amount: Math.max(0, Number(form.get('amount')) || 0), icon: symbol }); onClose() }}>
       <label>Name<input name="name" maxLength="100" defaultValue={source?.name || ''} placeholder="e.g. Salary" onChange={() => setError('')} required /></label>
       {error && <span role="alert" className="field-error">{error}</span>}
       <div className="form-grid">
         <label>Amount per month (₹)<input name="amount" type="number" min="0" step="0.01" defaultValue={source?.amount ?? ''} required /></label>
-        <label>Starts on<input name="startDate" type="date" value={startDate} onChange={event => setStartDate(event.target.value)} required /></label>
-        <label>Pay day each month<input name="dayOfMonth" type="number" min="1" max="31" step="1" defaultValue={source?.dayOfMonth || 1} required /></label>
         <label>Icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={group.label} label={group.label}>{group.options.map(([value, label]) => <option key={`income-${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label>
       </div>
       <div className="dialog-actions"><button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">{source ? 'Save changes' : 'Add income source'}</button></div>

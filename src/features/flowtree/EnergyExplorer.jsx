@@ -309,6 +309,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
             key={view}
             layout={layout}
             monthlyIncome={income}
+            monthlyDeductions={planned}
             mobile={isMobileLayout}
             collapsedPaths={collapsedPaths}
             path={path}
