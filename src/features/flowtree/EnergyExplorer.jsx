@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { allocateEnergy, energyAtPath } from '../../domain/energyFlow'
+import { allocateEnergy } from '../../domain/energyFlow'
 import { toggleBranch } from '../../domain/treeExpansion'
 import { findPath, sortTreeByMonthlyTotal, totalChildren } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
@@ -82,12 +82,12 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
   const health = !hasIncome
     ? 'Set your monthly income to start planning this month.'
     : available < 0
-      ? `Over-planned by ${formatMoney(Math.abs(available))} after your safety buffer.`
+      ? `Remaining after deductions and safety buffer: ${formatMoney(available)}.`
       : planned === 0
         ? 'No monthly targets are planned yet.'
         : `${Math.round(planned / income * 100)}% of this month’s income is planned after your safety buffer.`
-  const availableLabel = available < 0 ? 'Over-planned' : 'Available'
-  const availableIcon = available < 0 ? 'warning' : 'savings'
+  const availableLabel = 'Remaining'
+  const availableIcon = 'account_balance_wallet'
 
   return <header className="mobile-home-outlook">
     <div className="mobile-home-outlook-heading">
@@ -100,8 +100,8 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
     </div>
     <div className="mobile-home-totals" aria-label="Monthly plan summary">
       <span><small><span className="material-symbols-rounded" aria-hidden="true">payments</span>Income</small><strong>{formatMoney(income)}</strong></span>
-      <span><small><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>Planned</small><strong>{formatMoney(planned)}</strong></span>
-      <span className={available < 0 ? 'is-over' : 'is-available'}><small><span className="material-symbols-rounded" aria-hidden="true">{availableIcon}</span>{availableLabel}</small><strong>{formatMoney(available)}</strong></span>
+      <span className="is-deductions"><small><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>Deductions</small><strong>{formatMoney(planned)}</strong></span>
+      <span className="is-remaining"><small><span className="material-symbols-rounded" aria-hidden="true">{availableIcon}</span>{availableLabel}</small><strong>{formatMoney(available)}</strong></span>
     </div>
     <p className="mobile-home-outlook-health"><span className="material-symbols-rounded" aria-hidden="true">insights</span><span>{health}</span></p>
   </header>
@@ -137,19 +137,6 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
   const monthlyOutcome = income - buffer - planned
   const showMobileHomeOutlook = view === 'home' && !path.length && !expandAll
   const flow = useMemo(() => allocateEnergy(visibleTree, Math.max(0, income - buffer)), [visibleTree, income, buffer])
-  const currentNode = findPath(visibleTree, path)
-  const currentFunding = energyAtPath(flow.allocations, path)
-  const currentChildren = currentNode?.children || visibleTree
-  const currentAllocations = currentFunding?.children || flow.allocations
-  const nextFunding = currentChildren.length
-    ? currentAllocations.find(item => item.target > item.allocated)
-    : currentFunding?.target > currentFunding?.allocated ? currentFunding : null
-  const nextName = currentChildren.find(item => item.id === nextFunding?.id)?.name || currentNode?.name
-  const status = income <= 0
-    ? 'Set your income to see which destinations your plan can fill.'
-    : nextFunding
-      ? `Next: ${nextName} needs ${formatMoney(nextFunding.target - nextFunding.allocated)}.`
-      : 'Every monthly target in this view is filled.'
   const layout = useMemo(() => ({
     ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, collapsedPaths, incomeSourceCount: incomeSources.length, showPerson: showProfileMarker }),
     available: income - buffer,
@@ -297,10 +284,11 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
       onRedo={onRedo}
     />
     <DriveSyncStatus status={driveStatus} />
-    {view === 'loans' ? <LoansView loans={loans} focusedLoanId={focusedNodeId} onSaveLoan={onSaveLoan} onDeleteLoan={onDeleteLoan} /> : view === 'goals' ? <GoalsView goals={goals} focusedGoalId={focusedNodeId} onSaveGoal={onSaveGoal} /> : view === 'recurring' ? <RecurringPaymentsView plan={{ tree, incomeSources, buffer, monthlyHistory }} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
+    {view === 'loans' ? <LoansView loans={loans} focusedLoanId={focusedNodeId} onSaveLoan={onSaveLoan} onDeleteLoan={onDeleteLoan} /> : view === 'goals' ? <GoalsView goals={goals} focusedGoalId={focusedNodeId} onSaveGoal={onSaveGoal} /> : view === 'recurring' ? <RecurringPaymentsView plan={{ tree, incomeSources, buffer, monthlyHistory }} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${view === 'sinking' ? ' is-sinking' : ''}${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
       {showMobileHomeOutlook && <MobileHomeOutlook profile={profile} driveUser={driveUser} income={income} buffer={buffer} planned={planned} />}
       {visibleTree.length
         ? <TreeCanvas
+            key={view}
             layout={layout}
             mobile={isMobileLayout}
             collapsedPaths={collapsedPaths}
@@ -316,6 +304,6 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
           />
         : <EmptyTreeState sinking={view === 'sinking'} onReturnHome={returnToRoot} />}
     </div>
-    <TreeStatus demo={demo} mobileHome={showMobileHomeOutlook} sinking={view === 'sinking'} flow={flow} available={layout.available} monthlyOutcome={monthlyOutcome} planned={planned} status={status} /></>}
+    {view !== 'sinking' && <TreeStatus demo={demo} mobileHome={showMobileHomeOutlook} monthlyOutcome={monthlyOutcome} planned={planned} />}</>}
   </main>
 }

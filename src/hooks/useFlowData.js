@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { preserveCurrentMonth, recordPayment } from '../domain/monthlyHistory'
-import { addChild, createTreeFromBuckets, organizeSubscriptions, removeNode, updateNode } from '../domain/flowTree'
+import { addChild, createTreeFromBuckets, normalizeTreeStatuses, organizeSubscriptions, removeNode, updateNode } from '../domain/flowTree'
 
 function localDateValue(date = new Date()) {
   const year = date.getFullYear()
@@ -37,7 +37,7 @@ export function normalizeFlowData(data) {
       ? data.incomeSources.map(normalizeIncomeSource)
       : [normalizeIncomeSource({ id: 'salary', name: 'Salary', amount: legacyIncome, icon: 'payments' })],
     generalLedgers: Array.isArray(data?.generalLedgers) ? data.generalLedgers.map(normalizeGeneralLedger) : [],
-    tree: organizeSubscriptions(Array.isArray(data?.tree) ? data.tree : createTreeFromBuckets([])),
+    tree: normalizeTreeStatuses(organizeSubscriptions(Array.isArray(data?.tree) ? data.tree : createTreeFromBuckets([]))),
   }
 }
 

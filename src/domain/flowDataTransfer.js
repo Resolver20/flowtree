@@ -1,4 +1,4 @@
-import { NODE_STATUSES } from './flowTree.js'
+import { NODE_STATUSES, normalizeNodeStatus } from './flowTree.js'
 
 export const FLOWTREE_EXPORT_FORMAT = 'flowtree-plan'
 export const FLOWTREE_EXPORT_VERSION = 1
@@ -125,7 +125,7 @@ function normalizeNode(node, path, ids, counters, depth) {
 
   const period = source.period ?? 'month'
   if (!['month', 'year'].includes(period)) fail(`${path}.period must be "month" or "year".`)
-  const status = source.status ?? 'active'
+  const status = normalizeNodeStatus(source.status)
   if (!NODE_STATUSES.includes(status)) fail(`${path}.status must be one of: ${NODE_STATUSES.join(', ')}.`)
 
   const normalizedLoan = loanAt(source.loan, `${path}.loan`)

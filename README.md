@@ -86,7 +86,7 @@ The allocation preview is deterministic:
 4. Within a parent, reserve the parent's direct amount first and pass the rest to its children in order.
 5. Convert yearly targets to monthly equivalents by dividing by 12.
 
-For dated yearly targets, expected progress is recalculated from the rolling 12-month cycle. A Life goal with a start and end date instead uses the whole goal window: its progress is the higher of the recorded accumulated amount and the planned amount to date, and the preview reserves `(target - progress) / months remaining` from future monthly income. This remains planning information and never moves money automatically.
+For dated yearly targets, expected progress is recalculated from the rolling 12-month cycle. Dated-target editors share a compact Card setup option: Fresh or Already started. Fresh uses today as the start; Already started exposes the start date. Fixed monthly bills, loans, investments, and income do not show this setup option. Existing stored dates are preserved; income retains its normal Starts on field. Monthly amounts and lender projections retain their own calculations. Dated targets use the start/end schedule. A Life goal uses this dated schedule. Its schedule includes both the start and target months. Expected saved progress counts planned contributions before the current month, keeping any higher recorded savings. The remaining amount is spread over the remaining contribution months, including this month once the schedule has started. A fresh active goal is included in the current monthly plan; paused goals still show their requirement without reserving money. This remains planning information and never moves money automatically.
 
 The useful plan summary is:
 
@@ -130,8 +130,8 @@ Authoring rules:
 - Every income source and destination needs a unique, non-empty `id` within its own list.
 - `amount`, `savedAmount`, and `buffer` are JSON numbers greater than or equal to zero. Do not put them in quotation marks.
 - `period` is `"month"` or `"year"`.
-- `status` is `"dormant"`, `"seeded"`, `"active"`, or `"funded"`.
-- `dueDate` is optional and uses `YYYY-MM-DD`; it is normally used with yearly targets.
+- `status` is `"active"` or `"inactive"`. Inactive items pause allocation for their entire branch. Older `"seeded"` values import as active; `"dormant"` and `"funded"` import as inactive.
+- Destination `startDate` is optional and editable even while inactive; it records a planning date and does not automatically activate an item. `dueDate` is optional and uses `YYYY-MM-DD`; it is normally used with yearly targets. Life goals support editing both dates.
 - Income `startDate` is optional and uses `YYYY-MM-DD`; `dayOfMonth` is optional and is an integer from 1 to 31 (default: 1). These fields describe the expected monthly income cadence for planning only; Flowtree does not schedule transfers.
 - `children` is always an array. Use `[]` for the end of a branch, or nest more destination objects to continue the hierarchy.
 - `savedAmount`, `dueDate`, `icon`, `tone`, and `note` are optional. Missing optional values receive safe defaults.

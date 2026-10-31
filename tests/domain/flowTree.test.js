@@ -90,8 +90,9 @@ test('dated life goals pace progress across their whole start-to-end window', ()
   const goal = { amount: 120000, savedAmount: 10000, startDate: '2026-10-01', dueDate: '2028-10-01', period: 'year', status: 'active', children: [] }
   const halfway = new Date(2027, 9, 18)
 
-  assert.deepEqual(annualTargetProgress(goal, halfway), { target: 120000, saved: 60000, ratio: 0.5 })
-  assert.equal(monthlyAllocation(goal, halfway), 5000)
+  // Both the start and end months are contributions: 25 months in total.
+  assert.deepEqual(annualTargetProgress(goal, halfway), { target: 120000, saved: 57600, ratio: 0.48 })
+  assert.equal(monthlyAllocation(goal, halfway), 4800)
   assert.deepEqual(annualTargetProgress({ ...goal, savedAmount: 80000 }, halfway), { target: 120000, saved: 80000, ratio: 2 / 3 })
 })
 

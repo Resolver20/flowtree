@@ -105,15 +105,16 @@ export function createTreeLayout({ tree, path, allocations, expandAll, collapsed
   const expandedVerticalOffset = expandAll && branchY.positions.size
     ? (height - (Math.min(...branchY.positions.values()) + Math.max(...branchY.positions.values()))) / 2
     : 0
-  const worldWidth = Math.max(1180, COLUMN_START + Math.max(0, depthCounts.length - 1) * COLUMN_GAP + 120)
   // Keep text at its authored size. The canvas scrolls when the tree is larger
   // than the available space instead of reducing cards to unreadable thumbnails.
   const scale = 1
-  const leftEdge = showPerson ? PERSON_X - 36 : incomeSourceCount ? INCOME_SOURCE_X - 98 : SOURCE_X - 36
+  const leftEdge = showPerson ? PERSON_X - 36 : incomeSourceCount ? INCOME_SOURCE_X - 98 : SOURCE_X - 130
   const rightEdge = COLUMN_START + Math.max(0, columns.length - 1) * COLUMN_GAP + 98
-  const centeredOffset = (worldWidth - leftEdge - rightEdge) / 2
-  // Keep the first visible node inside the world even when the canvas scrolls.
-  const horizontalOffset = centeredOffset
+  // Size the world around visible content, not hidden profile space or unopened
+  // descendant columns. The viewport centers this compact world when it fits.
+  const worldPadding = 32
+  const worldWidth = rightEdge - leftEdge + worldPadding * 2
+  const horizontalOffset = worldPadding - leftEdge
   const personPoint = { x: PERSON_X + horizontalOffset, y: height / 2 }
   const incomeSourcePoints = Array.from({ length: incomeSourceCount }, (_, index) => ({
     x: INCOME_SOURCE_X + horizontalOffset,

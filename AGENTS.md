@@ -45,7 +45,7 @@ The earlier prototype screens and styles were removed. Confirm imports before ed
 - A parent reserves its own direct amount before passing its allocated remainder to children.
 - `dormant` and `funded` nodes currently consume no allocation.
 - Demo mode must never write demo values to persistent data.
-- Positive post-plan money is **Available** or **Unassigned**. A negative result is **Over-planned**. Never label either value as an actual account balance.
+- Show monthly **Deductions** in green on the left and signed **Remaining** in purple on the right. Keep negative remaining amounts visible without changing the label to Over-planned. These are plan-preview amounts, never an actual account balance.
 - Saved data remains browser-local under `flowtree-v2`; preserve migration from `flowtree-data`.
 
 ## Working rules
@@ -81,6 +81,8 @@ For design work:
 - Minor refinements inside this established system do not require a new image-generated concept. A broad redesign requires an explicit design direction and user approval before implementation.
 
 ## Required validation
+
+For every user-requested behavior change or bug fix, maintain the matching regression coverage in `tests/` during the same change. Add or update an automated test for logic that can be checked reliably. For visual or browser interactions, document a repeatable scenario and expected result in the manual checklist in `tests/README.md`, and verify it in the browser. Keep existing regression cases when fixing a new issue. Clearly distinguish automated tests from manual checks; do not claim that `npm test` covers a browser interaction unless it actually does.
 
 For logic changes:
 

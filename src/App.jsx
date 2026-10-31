@@ -69,19 +69,19 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
     if (sourceId) { changeIncomeSource(sourceId, changes); notify(`${changes.name} updated.`) } else { createIncomeSource({ id: crypto.randomUUID(), ...changes }); notify(`${changes.name} added.`) }
   }
 
-  function saveLoan({ id, name, loan }) {
+  function saveLoan({ id, name, loan, status, startDate }) {
     const projection = loanProjection(loan)
     const savedLoan = { ...loan, userMonthlyContribution: projection.userMonthlyContribution }
     const destination = drive.accessToken && drive.folderId && drive.fileId
       ? 'Home updated. Use Save to Google Drive to save these changes.'
       : 'Home updated. Sign in to Google Drive to save this plan there.'
     if (id) {
-      changeNode(id, { name, loan: savedLoan, amount: projection.userMonthlyContribution, period: 'month' })
+      changeNode(id, { name, status, startDate, loan: savedLoan, amount: projection.userMonthlyContribution, period: 'month' })
       notify(`${name} loan details updated. ${destination}`)
       return
     }
     const debt = findNode(tree, 'obligations')
-    createChild('obligations', { id: crypto.randomUUID(), name, amount: projection.userMonthlyContribution, savedAmount: 0, period: 'month', status: 'active', icon: 'account_balance', symbol: 'account_balance', tone: debt?.tone || 'coral', note: '', loan: savedLoan, children: [] })
+    createChild('obligations', { id: crypto.randomUUID(), name, amount: projection.userMonthlyContribution, savedAmount: 0, period: 'month', status, startDate, icon: 'account_balance', symbol: 'account_balance', tone: debt?.tone || 'coral', note: '', loan: savedLoan, children: [] })
     notify(`${name} added to Debt Commitments. ${destination}`)
   }
 
@@ -104,10 +104,10 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
     notify(`${node.name} payment day updated.`)
   }
 
-  function saveInvestment({ id, name, type, amount, currentValue, status, symbol }) {
+  function saveInvestment({ id, name, type, amount, currentValue, status, startDate, symbol }) {
     // `amount` remains the monthly planning contribution. The recorded value
     // is deliberately metadata, so it cannot be mistaken for allocatable cash.
-    const changes = { name, amount, savedAmount: 0, period: 'month', dueDate: '', startDate: '', status, icon: symbol, symbol, investment: { type, currentValue } }
+    const changes = { name, amount, savedAmount: 0, period: 'month', dueDate: '', startDate, status, icon: symbol, symbol, investment: { type, currentValue } }
     if (id) {
       changeNode(id, changes)
       notify(`${name} investment updated.`)

@@ -1,3 +1,5 @@
+import { goalCardPreview } from './goalCardPreview'
+import InactiveMarker from './InactiveMarker'
 import { annualTargetProgress } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import { colorForNode, iconForNode } from './nodePresentation'
@@ -29,21 +31,24 @@ function MobileNode({ entry, selectedPath, expandAll, collapsedPaths, onNavigate
   const showChildren = hasChildren && (expandAll ? !collapsedPaths.has(path.join('/')) : path.every((id, index) => selectedPath[index] === id))
   const annualProgress = annualTargetProgress(item)
   const color = colorForNode(item)
+  const isGoal = path.includes('goals') && item.id !== 'goals'
+  const { monthlyAmount, inactive } = goalCardPreview(item, isGoal, funding.target)
   const targetText = annualProgress
-    ? `${formatMoney(funding.target)} per month, ${Math.round(annualProgress.ratio * 100)} percent of the annual target saved`
-    : `${formatMoney(funding.target)} per month`
+    ? `${formatMoney(monthlyAmount)} per month, ${Math.round(annualProgress.ratio * 100)} percent of the ${isGoal ? 'goal' : 'annual'} target saved`
+    : `${formatMoney(monthlyAmount)} per month`
 
   const content = <>
     <span className="mobile-tree-icon material-symbols-rounded" style={{ color }} aria-hidden="true">{iconForNode(item)}</span>
     <span className="mobile-tree-copy"><strong>{item.name}</strong><small>{targetText}</small></span>
+    <InactiveMarker inactive={inactive} />
     {hasChildren && <span className="mobile-tree-cue material-symbols-rounded" aria-hidden="true">{showChildren ? 'expand_less' : 'expand_more'}</span>}
   </>
 
   return <div className={`mobile-tree-node${isSelected ? ' is-selected' : ''}${showChildren ? ' is-expanded' : ''}`} data-tree-path={path.join('/')}>
     <div className="mobile-tree-node-row">
       {hasChildren
-        ? <button type="button" className="mobile-tree-card" onClick={() => onNavigate(path)} aria-expanded={showChildren} aria-label={`${showChildren ? 'Collapse' : 'Show'} ${item.name}, ${targetText}`}>{content}</button>
-        : <div className="mobile-tree-card" aria-label={`${item.name}, ${targetText}`}>{content}</div>}
+        ? <button type="button" className="mobile-tree-card" onClick={() => onNavigate(path)} aria-expanded={showChildren} aria-label={`${showChildren ? 'Collapse' : 'Show'} ${item.name}, ${targetText}${inactive ? ', Inactive — excluded from monthly allocation' : ''}`}>{content}</button>
+        : <div className="mobile-tree-card" aria-label={`${item.name}, ${targetText}${inactive ? ', Inactive — excluded from monthly allocation' : ''}`}>{content}</div>}
       <button type="button" className="mobile-tree-manage" onClick={() => onInspect(item.id)} aria-label={`View and manage ${item.name}`}>
         <span className="material-symbols-rounded" aria-hidden="true">info</span>
       </button>
@@ -63,7 +68,7 @@ function MobileNode({ entry, selectedPath, expandAll, collapsedPaths, onNavigate
 }
 
 export default function MobileTree({ monthlyOutcome, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
-  const availableLabel = monthlyOutcome < 0 ? 'over-planned this month' : 'available this month'
+  const availableLabel = 'remaining this month'
   return <div className="mobile-tree" aria-label="Monthly plan flow">
     <section className="mobile-tree-income" aria-label="Income">
       <span className="mobile-tree-step">Income</span>

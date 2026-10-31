@@ -1,5 +1,8 @@
+import { goalCardPreview } from './goalCardPreview'
+import InactiveMarker from './InactiveMarker'
 import { formatMoney } from '../../lib/money'
 import { annualTargetProgress } from '../../domain/flowTree'
+import { goalSavingsPlan } from '../../domain/goalSavingsPlan'
 import { colorForNode, iconForNode } from './nodePresentation'
 
 export default function TreeNodeCard({ entry, isExpanded, isSelected, isCategory, worldWidth, worldHeight, onNavigate, onInspect }) {
@@ -9,17 +12,21 @@ export default function TreeNodeCard({ entry, isExpanded, isSelected, isCategory
   const action = isExpanded ? 'Collapse to' : 'Show'
   const annualProgress = annualTargetProgress(item)
   const color = colorForNode(item)
-  const isLifeGoal = path.includes('goals')
-  const targetText = annualProgress
+  const isLifeGoal = path.includes('goals') && item.id !== 'goals'
+  const { monthlyAmount, inactive } = goalCardPreview(item, isLifeGoal, funding.target)
+  const progressText = annualProgress
     ? `${formatMoney(annualProgress.saved)} ${isLifeGoal ? 'planned accumulated of' : 'expected saved of'} ${formatMoney(annualProgress.target)} ${isLifeGoal ? 'goal target' : 'annual target'}`
     : `${formatMoney(funding.allocated)} funded of ${formatMoney(funding.target)} monthly target`
+
+  const targetText = `${progressText}${isLifeGoal ? `, ${formatMoney(goalSavingsPlan(item).remaining)} still to save, ${formatMoney(monthlyAmount)} per month estimate` : ''}${inactive ? ', Inactive — excluded from monthly allocation' : ''}`
 
   const cardContent = <>
     <span className="amount-icon material-symbols-rounded" style={{ color }} aria-hidden="true">{iconForNode(item)}</span>
     <span className="amount-copy"><strong>{item.name}</strong>{annualProgress
-      ? <><span className="amount-number">{formatMoney(funding.target)}<small> /mo</small></span><span className="target-meta">{formatMoney(annualProgress.saved)} / {formatMoney(annualProgress.target)} · {Math.round(annualProgress.ratio * 100)}%</span></>
-      : <span className="amount-number">{formatMoney(funding.target)}<small> /mo</small></span>}
+      ? <><span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span><span className="target-meta">{formatMoney(annualProgress.saved)} / {formatMoney(annualProgress.target)} · {Math.round(annualProgress.ratio * 100)}%</span></>
+      : <span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span>}
     </span>
+    <InactiveMarker inactive={inactive} />
     {annualProgress && <span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${annualProgress.ratio * 100}%` }} /></span>}
     {hasChildren && !isExpanded && <span className="branch-cue material-symbols-rounded" aria-hidden="true">chevron_right</span>}
   </>

@@ -1,3 +1,5 @@
+import { goalSavingsPlan } from './goalSavingsPlan.js'
+
 /**
  * A node can contain its own allocation and any number of child nodes.
  * A parent's displayed total includes its own allocation plus its children.
@@ -19,10 +21,19 @@ export function isBuiltInFlowGroup(id) {
 }
 
 export const SUBSCRIPTION_NAMES = new Set(['Google Drive', 'Apple One', 'GPT', 'Netflix'])
-export const NODE_STATUSES = ['dormant', 'seeded', 'active', 'funded']
+export const NODE_STATUSES = ['active', 'inactive']
+
+export function normalizeNodeStatus(status = 'active') {
+  if (status === null) return 'active'
+  return ['inactive', 'dormant', 'funded'].includes(status) ? 'inactive' : status === 'seeded' ? 'active' : status
+}
+
+export function normalizeTreeStatuses(nodes) {
+  return nodes.map(node => ({ ...node, status: normalizeNodeStatus(node.status), children: normalizeTreeStatuses(node.children || []) }))
+}
 
 function makeNode({ id, name, amount = 0, savedAmount = 0, startDate = '', period = 'month', status = 'active', icon = 'savings', tone = 'blue', note = '', children = [] }) {
-  return { id, name, amount, savedAmount, startDate, period, status, icon, tone, note, children }
+  return { id, name, amount, savedAmount, startDate, period, status: normalizeNodeStatus(status), icon, tone, note, children }
 }
 
 function createGroupNodes() {
@@ -66,19 +77,7 @@ export function expectedAnnualSavings(node, today = new Date()) {
   if (!dueMatch) return savedAmount
   const [, year, month] = dueMatch.map(Number)
 
-  // A dated life goal has a finite savings window, unlike an annual bill.
-  // Keep the existing rolling-12-month pacing for yearly expenses that do not
-  // have a start date, but pace a life goal over its full start-to-end window.
-  const startMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.startDate || '')
-  if (startMatch) {
-    const [, startYear, startMonth] = startMatch.map(Number)
-    const totalMonths = (year - startYear) * 12 + (month - startMonth)
-    if (totalMonths > 0) {
-      const elapsedMonths = (today.getFullYear() - startYear) * 12 + (today.getMonth() - (startMonth - 1))
-      const scheduledSavings = target * Math.min(1, Math.max(0, elapsedMonths / totalMonths))
-      return Math.min(target, Math.max(savedAmount, scheduledSavings))
-    }
-  }
+  if (node.startDate) return goalSavingsPlan(node, today).saved
 
   const monthsToDue = (year - today.getFullYear()) * 12 + (month - 1 - today.getMonth())
   const completedMonths = 12 - Math.min(12, Math.max(0, monthsToDue))
@@ -90,9 +89,15 @@ export function expectedAnnualSavings(node, today = new Date()) {
 }
 
 export function monthlyAllocation(node, today = new Date()) {
-  if (node.status === 'dormant' || node.status === 'funded') return 0
+  if (normalizeNodeStatus(node.status) === 'inactive') return 0
+  return requiredMonthlyAmount(node, today)
+}
+
+// A paused target still has a savings requirement; status only controls allocation.
+export function requiredMonthlyAmount(node, today = new Date()) {
   const amount = Math.max(0, Number(node.amount) || 0)
   if (node.period !== 'year') return amount
+  if (node.startDate) return goalSavingsPlan(node, today).monthlyRequired
   const saved = expectedAnnualSavings(node, today)
   return (amount - saved) / monthsUntilTarget(node.dueDate, today)
 }
@@ -112,7 +117,7 @@ export function totalExpectedAnnualSavings(nodes, today = new Date()) {
 }
 
 export function monthlyTotal(node, today = new Date()) {
-  if (node.status === 'dormant' || node.status === 'funded') return 0
+  if (normalizeNodeStatus(node.status) === 'inactive') return 0
   return monthlyAllocation(node, today) + (node.children || []).reduce((sum, child) => sum + monthlyTotal(child, today), 0)
 }
 
@@ -271,4 +276,9 @@ export function addChild(nodes, parentId, child) {
       ? [...(node.children || []), child]
       : addChild(node.children || [], parentId, child),
   }))
+}
+
+// Goal destinations use a target and deadline; the Life goals root is a grouping card.
+export function isGoalDestination(nodes, nodeId, parentId) {
+  return nodeId !== 'goals' && pathToNode(nodes, nodeId || parentId)[0] === 'goals'
 }

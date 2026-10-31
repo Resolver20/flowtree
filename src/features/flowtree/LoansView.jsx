@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { NODE_STATUSES, normalizeNodeStatus, monthlyAllocation } from '../../domain/flowTree'
 import { loanProjection } from '../../domain/loan'
 import { formatMoney } from '../../lib/money'
+import { shouldShowLoanPreview } from './loanPreview'
 
 function formatDuration(months) {
   const years = Math.floor(months / 12)
@@ -8,7 +10,7 @@ function formatDuration(months) {
   return [years ? `${years} yr` : '', remainder ? `${remainder} mo` : ''].filter(Boolean).join(' ') || '0 mo'
 }
 
-function LoanDraftSketch({ principal, remainingPrincipal, annualRate, tenureYears, extraPayment, userMonthlyContribution }) {
+function LoanDraftSketch({ principal, remainingPrincipal, annualRate, tenureYears, extraPayment, userMonthlyContribution, status }) {
   const draft = useMemo(() => {
     // Reuse the persisted-loan calculation so a preview cannot disagree with Home after save.
     const tenureMonths = Math.round((Number(tenureYears) || 0) * 12)
@@ -32,7 +34,7 @@ function LoanDraftSketch({ principal, remainingPrincipal, annualRate, tenureYear
       : <>
         <div className="loan-draft-metrics">
           <div><span>Scheduled monthly payment</span><strong>{formatMoney(draft.scheduledPayment)}</strong></div>
-          <div><span>Your amount in Home</span><strong>{formatMoney(draft.userMonthlyContribution)}</strong></div>
+          <div><span>Your amount in Home</span><strong>{formatMoney(monthlyAllocation({ amount: draft.userMonthlyContribution, status }))}</strong></div>
           <div><span>Selected tenure</span><strong>{formatDuration(draft.tenureMonths)}</strong></div>
           <div><span>Draft payoff</span><strong>{formatDuration(draft.payoffMonths)}</strong></div>
           <div><span>Total payable</span><strong>{formatMoney(draft.totalPaid)}</strong></div>
@@ -56,6 +58,7 @@ function LoanEditor({ loan, onSave, onCancel }) {
   const [tenureYears, setTenureYears] = useState(loan?.loan?.tenureMonths ? loan.loan.tenureMonths / 12 : '')
   const [extraPayment, setExtraPayment] = useState(loan?.loan?.extraPayment ?? 0)
   const [userMonthlyContribution, setUserMonthlyContribution] = useState(loan?.loan?.userMonthlyContribution ?? '')
+  const [status, setStatus] = useState(normalizeNodeStatus(loan?.status))
   const [error, setError] = useState('')
 
   function submit(event) {
@@ -64,7 +67,7 @@ function LoanEditor({ loan, onSave, onCancel }) {
     if (!name.trim() || !data.principal || !Number.isFinite(data.remainingPrincipal) || !data.tenureMonths) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
     if (data.remainingPrincipal > data.principal) { setError('Remaining principal cannot exceed the original principal.'); return }
     if (data.remainingPrincipal > 0 && data.userMonthlyContribution !== undefined && data.userMonthlyContribution > loanProjection(data).scheduledPayment) { setError('Your monthly contribution cannot exceed the scheduled monthly payment.'); return }
-    onSave({ id: loan?.id, name: name.trim(), loan: data })
+    onSave({ id: loan?.id, name: name.trim(), status, startDate: loan?.startDate || '', loan: data })
   }
 
   return <form className="loan-editor" onSubmit={submit}>
@@ -77,9 +80,10 @@ function LoanEditor({ loan, onSave, onCancel }) {
       <label>Loan tenure (years)<input value={tenureYears} onChange={event => setTenureYears(event.target.value)} type="number" min="0.01" max="50" step="0.01" inputMode="decimal" aria-describedby="tenure-help" /></label>
       <label>Extra principal / month (₹)<input value={extraPayment} onChange={event => setExtraPayment(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Your contribution / month (₹)<input value={userMonthlyContribution} onChange={event => setUserMonthlyContribution(event.target.value)} type="number" min="0" step="0.01" placeholder="Full payment" /></label>
+      <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(value => <option key={value} value={value}>{value === 'active' ? 'Active' : 'Inactive'}</option>)}</select></label>
     </div>
     <small id="tenure-help">Enter the remaining number of years until this loan is scheduled to close.</small>
-    <LoanDraftSketch principal={principal} remainingPrincipal={remainingPrincipal} annualRate={annualRate} tenureYears={tenureYears} extraPayment={extraPayment} userMonthlyContribution={userMonthlyContribution} />
+    <LoanDraftSketch principal={principal} remainingPrincipal={remainingPrincipal} annualRate={annualRate} tenureYears={tenureYears} extraPayment={extraPayment} userMonthlyContribution={userMonthlyContribution} status={status} />
     {error && <span className="field-error" role="alert">{error}</span>}
     <div className="loan-editor-actions"><button className="loan-save" type="submit">Save loan details</button></div>
   </form>
@@ -92,7 +96,7 @@ function LoanPortfolioOverview({ loans, onSelect }) {
     return {
       remainingPrincipal: total.remainingPrincipal + projection.remainingPrincipal,
       scheduledPayment: total.scheduledPayment + projection.scheduledPayment,
-      userMonthlyContribution: total.userMonthlyContribution + projection.userMonthlyContribution,
+      userMonthlyContribution: total.userMonthlyContribution + monthlyAllocation(loan),
     }
   }, { remainingPrincipal: 0, scheduledPayment: 0, userMonthlyContribution: 0 })
 
@@ -140,9 +144,7 @@ export default function LoansView({ loans, focusedLoanId, onSaveLoan, onDeleteLo
   }
 
   function handleOutsideClick(event) {
-    if (!selected || editingId || adding || !selected.loan) return
-    if (event.target.closest('.loan-details, .loan-editor, .loan-list, button, input, select, textarea, a')) return
-    showPreview()
+    if (shouldShowLoanPreview(event.target, { selected, editingId, adding })) showPreview()
   }
 
   return <section className="loans-view" aria-label="Loans" onClick={handleOutsideClick}>
@@ -150,13 +152,13 @@ export default function LoansView({ loans, focusedLoanId, onSaveLoan, onDeleteLo
     {!loans.length && !adding && <div className="loans-empty"><span className="material-symbols-rounded" aria-hidden="true">account_balance</span><strong>No loans in Debt Commitments</strong><p>Add a loan to create a payoff schedule and keep its monthly payment in your plan.</p><button type="button" onClick={() => setAdding(true)}>Add your first loan</button></div>}
     {adding && <LoanEditor onSave={saveLoan} onCancel={() => setAdding(false)} />}
     {loans.length > 0 && <div className="loan-workspace">
-      <aside className="loan-list" aria-label="Your loans">{loans.map(loan => <button type="button" key={loan.id} className={loan.id === selected?.id ? 'is-selected' : ''} aria-pressed={loan.id === selected?.id} onClick={() => { setSelectedId(loan.id); setScheduleLoanId(null); setEditingId(null); setAdding(false) }}><span className="material-symbols-rounded" aria-hidden="true">account_balance</span><span><strong>{loan.name}</strong><small>{loan.loan ? `${formatMoney(loanProjection(loan.loan).userMonthlyContribution)} in Home / month` : 'Add loan details'}</small></span></button>)}</aside>
+      <aside className="loan-list" aria-label="Your loans">{loans.map(loan => <button type="button" key={loan.id} className={loan.id === selected?.id ? 'is-selected' : ''} aria-pressed={loan.id === selected?.id} onClick={() => { setSelectedId(loan.id); setScheduleLoanId(null); setEditingId(null); setAdding(false) }}><span className="material-symbols-rounded" aria-hidden="true">account_balance</span><span><strong>{loan.name}</strong><small>{loan.loan ? `${formatMoney(monthlyAllocation(loan))} in Home / month` : 'Add loan details'}</small></span></button>)}</aside>
       {!selected ? <LoanPortfolioOverview loans={loans} onSelect={setSelectedId} /> : (editingId === selected.id || !selected.loan) ? <LoanEditor loan={selected} onSave={saveLoan} onCancel={() => setEditingId(null)} /> : projection && <div className="loan-details">
         <div className="loan-details-heading"><div><span className="eyebrow">LOAN OVERVIEW</span><h2>{selected.name}</h2></div><div className="loan-details-actions"><button type="button" onClick={showPreview}>Back to preview</button><button type="button" onClick={() => setEditingId(selected.id)}>Edit loan</button><button type="button" className="delete-link" onClick={deleteLoan}>Delete loan</button></div></div>
         <div className="loan-stat-grid">
           <div><span>Original principal</span><strong>{formatMoney(projection.principal)}</strong></div><div><span>Principal remaining</span><strong>{formatMoney(projection.remainingPrincipal)}</strong></div><div><span>Rate of interest</span><strong>{projection.annualRate}% p.a.</strong></div><div><span>Selected tenure</span><strong>{formatDuration(projection.tenureMonths)}</strong><small>Remaining term entered for this loan</small></div><div><span>Clearance timeline</span><strong>{formatDuration(projection.payoffMonths)}</strong><small>{projection.payoffMonths < projection.tenureMonths ? `${formatDuration(projection.tenureMonths - projection.payoffMonths)} faster with extra payment` : 'Based on remaining tenure'}</small></div>
         </div>
-        <div className="loan-payment-summary"><div><span>Scheduled monthly payment</span><strong>{formatMoney(projection.scheduledPayment)}</strong><small>Base EMI {formatMoney(projection.basePayment)}{projection.extraPayment ? ` + ${formatMoney(projection.extraPayment)} extra principal` : ''}</small></div><div><span>Your amount in Home</span><strong>{formatMoney(projection.userMonthlyContribution)}</strong><small>Only your contribution is included in the monthly plan</small></div><div><span>Projected interest remaining</span><strong>{formatMoney(projection.totalInterest)}</strong><small>Estimate at the current rate</small></div></div>
+        <div className="loan-payment-summary"><div><span>Scheduled monthly payment</span><strong>{formatMoney(projection.scheduledPayment)}</strong><small>Base EMI {formatMoney(projection.basePayment)}{projection.extraPayment ? ` + ${formatMoney(projection.extraPayment)} extra principal` : ''}</small></div><div><span>Your amount in Home</span><strong>{formatMoney(monthlyAllocation(selected))}</strong><small>Only your contribution is included in the monthly plan</small></div><div><span>Projected interest remaining</span><strong>{formatMoney(projection.totalInterest)}</strong><small>Estimate at the current rate</small></div></div>
         <section className="loan-schedule"><div><h3>Repayment schedule</h3><p>View the complete month-by-month projection when you need the detailed lender schedule.</p><button type="button" className="loan-schedule-toggle" onClick={() => setScheduleLoanId(showSchedule ? null : selected.id)} aria-expanded={showSchedule}>{showSchedule ? 'Hide full repayment schedule' : 'View full repayment schedule'}</button></div>{showSchedule && <div className="loan-table-wrap"><table><thead><tr><th>Month</th><th>Payment</th><th>Interest</th><th>Principal</th><th>Principal remaining</th></tr></thead><tbody>{projection.rows.map(row => <tr key={row.month}><td>{row.month}</td><td>{formatMoney(row.payment)}</td><td>{formatMoney(row.interest)}</td><td>{formatMoney(row.principal)}</td><td>{formatMoney(row.balance)}</td></tr>)}</tbody></table></div>}</section>
       </div>}
     </div>}

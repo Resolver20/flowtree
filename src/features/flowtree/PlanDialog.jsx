@@ -1,16 +1,20 @@
+import { cardStartDate } from '../../domain/cardStart'
+import CardStartSetup from './CardStartSetup'
+import GoalSavingsSummary from './GoalSavingsSummary'
 import DriveRevisionDialog from './DriveRevisionDialog'
 import { useEffect, useRef, useState } from 'react'
-import { pathToNode, annualTargetProgress, countBranch, findNode, isBuiltInFlowGroup, monthlyAllocation, monthlyTotal, NODE_STATUSES, totalChildren } from '../../domain/flowTree'
+import { pathToNode, annualTargetProgress, countBranch, findNode, isBuiltInFlowGroup, isGoalDestination, monthlyAllocation, requiredMonthlyAmount, monthlyTotal, NODE_STATUSES, normalizeNodeStatus, totalChildren } from '../../domain/flowTree'
 import { formatDate, formatMoney } from '../../lib/money'
 import { colorForNode, iconForNode } from './nodePresentation'
 import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
 import DriveSyncDialog from './DriveSyncDialog'
 import { parseFlowImport, serializeFlowData } from '../../domain/flowDataTransfer'
 import { loanProjection } from '../../domain/loan'
+import { goalTargetDate } from '../../domain/goalDates'
 
 const formatStatus = status => status[0].toUpperCase() + status.slice(1)
 
-function localDateValue(date) {
+function localDateValue(date = new Date()) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -110,6 +114,7 @@ function IncomeSourceManageDialog({ source, onClose, onDelete, onRequestEdit }) 
 
 function IncomeSourceDialog({ source, onClose, onSave }) {
   const [symbol, setSymbol] = useState(source?.icon || 'payments')
+  const [startDate, setStartDate] = useState(source?.startDate || cardStartDate())
   const [error, setError] = useState('')
   return <DialogShell title={source ? 'Edit income source' : 'Add income source'} onClose={onClose}>
     <p>Every active income source flows into the shared monthly plan. The date is a planning marker; Flowtree never moves money automatically.</p>
@@ -118,7 +123,7 @@ function IncomeSourceDialog({ source, onClose, onSave }) {
       {error && <span role="alert" className="field-error">{error}</span>}
       <div className="form-grid">
         <label>Amount per month (₹)<input name="amount" type="number" min="0" step="0.01" defaultValue={source?.amount ?? ''} required /></label>
-        <label>Starts on<input name="startDate" type="date" defaultValue={source?.startDate || localDateValue()} required /></label>
+        <label>Starts on<input name="startDate" type="date" value={startDate} onChange={event => setStartDate(event.target.value)} required /></label>
         <label>Pay day each month<input name="dayOfMonth" type="number" min="1" max="31" step="1" defaultValue={source?.dayOfMonth || 1} required /></label>
         <label>Icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={group.label} label={group.label}>{group.options.map(([value, label]) => <option key={`income-${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label>
       </div>
@@ -153,7 +158,8 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     amount: node.amount,
     savedAmount: node.savedAmount ?? 0,
     dueDate: node.dueDate || defaultAnnualTargetDate(),
-    status: node.status,
+    startDate: node.startDate || cardStartDate(),
+    status: normalizeNodeStatus(node.status),
     parentPath,
     node,
   })))
@@ -167,10 +173,10 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
   function submit(event) {
     event.preventDefault()
     if (drafts.some(draft => !draft.name.trim())) { setError('Every yearly target needs a name.'); return }
-    if (drafts.some(draft => !draft.dueDate || draft.dueDate < tomorrowDate())) { setError('Every target date must be in the future.'); return }
+    if (drafts.some(draft => !draft.dueDate || draft.dueDate < cardStartDate() || draft.dueDate < draft.startDate)) { setError('Every target date must be in the future.'); return }
     onSave(drafts.map(draft => {
-      const preview = { ...draft.node, name: draft.name.trim(), amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, status: draft.status }
-      return { id: draft.id, changes: { name: preview.name, amount: preview.amount, dueDate: preview.dueDate, status: preview.status, savedAmount: preview.savedAmount } }
+      const preview = { ...draft.node, name: draft.name.trim(), amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, status: draft.status }
+      return { id: draft.id, changes: { name: preview.name, amount: preview.amount, dueDate: preview.dueDate, startDate: preview.startDate, status: preview.status, savedAmount: preview.savedAmount } }
     }))
     onClose()
   }
@@ -180,15 +186,16 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     {!drafts.length ? <div className="empty-annual-targets"><strong>No yearly targets yet</strong><span>Change a destination’s frequency to Yearly and it will appear here.</span></div> : <form onSubmit={submit}>
       <div className="annual-target-list">
         {drafts.map(draft => {
-          const preview = { ...draft.node, name: draft.name, amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, status: draft.status }
+          const preview = { ...draft.node, name: draft.name, amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, status: draft.status }
           const progress = annualTargetProgress(preview)
           return <section className="annual-target-row" key={draft.id}>
             <div className="annual-target-heading"><input aria-label="Target name" value={draft.name} onChange={event => changeDraft(draft.id, { name: event.target.value })} /><small>{draft.parentPath || 'Top-level category'}</small></div>
+            <CardStartSetup startDate={draft.startDate} onStartDateChange={date => changeDraft(draft.id, { startDate: date })} />
             <label>Annual target (₹)<input type="number" min="0" step="0.01" value={draft.amount} onChange={event => changeDraft(draft.id, { amount: event.target.value })} /></label>
             <label>Saved so far (₹)<input type="number" min="0" step="0.01" value={draft.savedAmount} onChange={event => changeDraft(draft.id, { savedAmount: event.target.value })} /></label>
             <label>Target date<input type="date" min={tomorrowDate()} value={draft.dueDate} onChange={event => changeDraft(draft.id, { dueDate: event.target.value })} /></label>
-            <label>Status<select value={draft.status} onChange={event => changeDraft(draft.id, { status: event.target.value })}>{NODE_STATUSES.map(status => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></label>
-            <div className="annual-target-summary"><span><small>Saved for progress</small><strong>{formatMoney(progress.saved)}</strong></span><span><small>Progress</small><strong>{Math.round(progress.ratio * 100)}%</strong></span><span><small>Needed monthly</small><strong>{formatMoney(monthlyAllocation(preview))}</strong></span></div>
+            <label>Status<select value={normalizeNodeStatus(draft.status)} onChange={event => changeDraft(draft.id, { status: event.target.value })}>{NODE_STATUSES.map(status => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></label>
+            <div className="annual-target-summary"><span><small>Saved for progress</small><strong>{formatMoney(progress.saved)}</strong></span><span><small>Progress</small><strong>{Math.round(progress.ratio * 100)}%</strong></span><span><small>Needed monthly</small><strong>{formatMoney(requiredMonthlyAmount(preview))}</strong></span></div>
           </section>
         })}
       </div>
@@ -236,7 +243,7 @@ function JsonEditorDialog({ data, onClose, onSave }) {
   </DialogShell>
 }
 
-function ManageDialog({ onViewOverview, node, onClose, onDelete, onRequestEdit, onRequestAdd, canDelete }) {
+function ManageDialog({ onViewOverview, isGoal, node, onClose, onDelete, onRequestEdit, onRequestAdd, canDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const progress = annualTargetProgress(node)
   const children = node.children || []
@@ -249,9 +256,9 @@ function ManageDialog({ onViewOverview, node, onClose, onDelete, onRequestEdit, 
   return <DialogShell title={node.name} onClose={onClose} dismissOnOutside={Boolean(node.loan)}>
     <div className="card-overview">
       <span className="overview-icon material-symbols-rounded" style={{ color: colorForNode(node) }} aria-hidden="true">{iconForNode(node)}</span>
-      <div><span>{formatStatus(node.status)} · {node.period === 'year' ? 'Yearly target' : 'Monthly target'}</span><strong>{formatMoney(node.amount || 0)} <small>/{node.period === 'year' ? 'year' : 'month'}</small></strong></div>
+      <div><span>{formatStatus(normalizeNodeStatus(node.status))} · {isGoal ? 'Goal target' : node.period === 'year' ? 'Yearly target' : 'Monthly target'}</span><strong>{formatMoney(node.amount || 0)} {!isGoal && <small>/{node.period === 'year' ? 'year' : 'month'}</small>}</strong></div>
     </div>
-    {progress && <div className="target-preview">
+    {node.period === 'year' && node.startDate ? <GoalSavingsSummary goal={node} /> : progress && <div className="target-preview">
       <div><span>Expected progress</span><strong>{Math.round(progress.ratio * 100)}%</strong></div>
       <progress value={progress.saved} max={progress.target || 1} />
       <small>{formatMoney(progress.saved)} expected of {formatMoney(progress.target)} · {formatMoney(monthlyAllocation(node))} planned monthly</small>
@@ -278,7 +285,7 @@ function LoanNodeDialog({ node, onClose, onSave }) {
   const [tenureYears, setTenureYears] = useState(node.loan.tenureMonths / 12)
   const [extraPayment, setExtraPayment] = useState(node.loan.extraPayment || 0)
   const [userMonthlyContribution, setUserMonthlyContribution] = useState(node.loan.userMonthlyContribution ?? '')
-  const [status, setStatus] = useState(node.status)
+  const [status, setStatus] = useState(normalizeNodeStatus(node.status))
   const [error, setError] = useState('')
   const preview = loanProjection({ principal, remainingPrincipal, annualRate, tenureMonths: Math.round((Number(tenureYears) || 0) * 12), extraPayment, ...(userMonthlyContribution === '' ? {} : { userMonthlyContribution }) })
 
@@ -288,7 +295,7 @@ function LoanNodeDialog({ node, onClose, onSave }) {
     if (!name.trim() || !loan.principal || !Number.isFinite(loan.remainingPrincipal) || !Number(tenureYears)) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
     if (loan.remainingPrincipal > loan.principal) { setError('Remaining principal cannot exceed the original principal.'); return }
     if (loan.remainingPrincipal > 0 && loan.userMonthlyContribution !== undefined && loan.userMonthlyContribution > loanProjection(loan).scheduledPayment) { setError('Your monthly contribution cannot exceed the scheduled monthly payment.'); return }
-    onSave({ nodeId: node.id, name: name.trim(), loan, status })
+    onSave({ nodeId: node.id, name: name.trim(), loan, status, startDate: node.startDate || '' })
     onClose()
   }
 
@@ -306,7 +313,7 @@ function LoanNodeDialog({ node, onClose, onSave }) {
         <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(value => <option key={value} value={value}>{formatStatus(value)}</option>)}</select></label>
       </div>
       {error && <span className="field-error" role="alert">{error}</span>}
-      <div className="amount-preview" aria-live="polite"><span>Your amount reflected in Home<small>Scheduled EMI: {formatMoney(preview.scheduledPayment)}</small></span><strong>{formatMoney(preview.userMonthlyContribution)}</strong></div>
+      <div className="amount-preview" aria-live="polite"><span>Your amount reflected in Home<small>Scheduled EMI: {formatMoney(preview.scheduledPayment)}</small></span><strong>{formatMoney(monthlyAllocation({ amount: preview.userMonthlyContribution, status }))}</strong></div>
       <div className="dialog-actions"><button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">Save loan</button></div>
     </form>
   </DialogShell>
@@ -316,21 +323,24 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   const node = dialog.nodeId ? findNode(tree, dialog.nodeId) : null
   const parent = dialog.parentId ? findNode(tree, dialog.parentId) : null
   const isEditing = Boolean(node)
+  const isGoal = isGoalDestination(tree, dialog.nodeId, dialog.parentId)
   const canDelete = !isBuiltInFlowGroup(node?.id)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [amount, setAmount] = useState(node?.amount ?? '')
   const [savedAmount, setSavedAmount] = useState(node?.savedAmount ?? '')
-  const [period, setPeriod] = useState(node?.period || 'month')
-  const initialDueDate = node?.dueDate || (node?.period === 'year' ? defaultAnnualTargetDate() : '')
+  const [selectedPeriod, setPeriod] = useState(node?.period || 'month')
+  const period = isGoal ? 'year' : selectedPeriod
+  const initialDueDate = node?.dueDate || (period === 'year' ? defaultAnnualTargetDate() : '')
+  const [startDate, setStartDate] = useState(node?.startDate || cardStartDate())
+  const [startMode, setStartMode] = useState(node?.startDate ? 'existing' : 'fresh')
   const [dueDate, setDueDate] = useState(initialDueDate)
   const [dateText, setDateText] = useState(displayDateValue(initialDueDate))
   const [dateError, setDateError] = useState('')
-  const [status, setStatus] = useState(node?.status || 'active')
+  const [status, setStatus] = useState(normalizeNodeStatus(node?.status || 'active'))
   const [symbol, setSymbol] = useState(node ? iconForNode(node) : 'savings')
   const [error, setError] = useState('')
-  const previewNode = { amount, savedAmount: Math.max(0, Number(savedAmount) || 0), dueDate, period, status, children: node?.children || [] }
+  const previewNode = { amount, startDate, savedAmount: Math.max(0, Number(savedAmount) || 0), dueDate, period, status, children: node?.children || [] }
   const preview = monthlyTotal(previewNode)
-  const annualProgress = annualTargetProgress(previewNode)
 
   function submit(event) {
     event.preventDefault()
@@ -338,9 +348,10 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
     const name = String(form.get('name') || '').trim()
     if (!name) { setError('Enter a name, not just spaces.'); return }
     if (period === 'year') {
+      if (startDate && dueDate < startDate) { setDateError('Choose a target date on or after the start date.'); return }
       const parsedDate = parseDateValue(dateText)
       if (!parsedDate) { setDateError('Enter a valid date as DD/MM/YYYY.'); return }
-      if (parsedDate < tomorrowDate()) { setDateError('Choose a future date.'); return }
+      if (parsedDate < localDateValue(new Date())) { setDateError('Choose a future date.'); return }
     }
     onSave({
       nodeId: dialog.nodeId,
@@ -348,8 +359,9 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
       name,
       amount: Math.max(0, Number(form.get('amount')) || 0),
       savedAmount: period === 'year' ? Math.max(0, Number(savedAmount) || 0) : 0,
+      startDate: period === 'year' ? startDate : node?.startDate || '',
       dueDate: period === 'year' ? dueDate : '',
-      period: String(form.get('period')),
+      period,
       status: String(form.get('status')),
       symbol,
     })
@@ -367,26 +379,22 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
       <label>Name<input autoFocus name="name" maxLength={100} defaultValue={node?.name || ''} placeholder="e.g. Subscriptions" onChange={() => setError('')} required aria-invalid={Boolean(error)} aria-describedby={error ? 'name-error' : undefined} /></label>
       {error && <span id="name-error" role="alert" className="field-error">{error}</span>}
       <div className="form-grid">
-        <label>Own amount (₹)<input name="amount" type="number" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-describedby="amount-help" /></label>
-        <label>Frequency<select name="period" value={period} onChange={event => { const nextPeriod = event.target.value; setPeriod(nextPeriod); if (nextPeriod === 'year' && !dueDate) { const nextDate = defaultAnnualTargetDate(); setDueDate(nextDate); setDateText(displayDateValue(nextDate)) } }}><option value="month">Monthly</option><option value="year">Yearly</option></select></label>
+        <label>{isGoal ? 'Target amount (₹)' : 'Own amount (₹)'}<input name="amount" type="number" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-describedby="amount-help" /></label>
+        {!isGoal && <label>Frequency<select name="period" value={period} onChange={event => { const nextPeriod = event.target.value; setPeriod(nextPeriod); if (nextPeriod === 'year' && !dueDate) { const nextDate = defaultAnnualTargetDate(); setDueDate(nextDate); setDateText(displayDateValue(nextDate)) } }}><option value="month">Monthly</option><option value="year">Yearly</option></select></label>}
       </div>
-      <small id="amount-help">Exclude child amounts — they are added automatically. Leave at 0 for a grouping category.</small>
+      <small id="amount-help">{isGoal ? 'Monthly savings are calculated from your target, saved amount, and dates.' : 'Exclude child amounts — they are added automatically. Leave at 0 for a grouping category.'}</small>
+      {period === 'year' && <CardStartSetup mode={startMode} onModeChange={mode => { setStartMode(mode); if (mode === 'fresh') { setStartDate(localDateValue(new Date())); setSavedAmount(0) } setDateError('') }} startDate={startDate} onStartDateChange={date => { setStartDate(date); setDateError('') }} />}
       {period === 'year' && <>
-        <label>Target date<span className="date-entry"><input name="dueDateText" type="text" inputMode="numeric" placeholder="DD/MM/YYYY" value={dateText} onChange={event => { const text = event.target.value; setDateText(text); setDateError(''); const parsed = parseDateValue(text); if (parsed) setDueDate(parsed) }} aria-invalid={Boolean(dateError)} aria-describedby={dateError ? 'date-error' : undefined} /><input className="date-picker" aria-label="Choose target date from calendar" type="date" min={tomorrowDate()} value={dueDate} onChange={event => { setDueDate(event.target.value); setDateText(displayDateValue(event.target.value)); setDateError('') }} /><button type="button" onClick={() => { const nextDate = defaultAnnualTargetDate(); setDueDate(nextDate); setDateText(displayDateValue(nextDate)); setDateError('') }}>One year from today</button></span></label>
+        <label>Target date<span className="date-entry"><input name="dueDateText" type="text" inputMode="numeric" placeholder="DD/MM/YYYY" value={dateText} onChange={event => { const text = event.target.value; setDateText(text); setDateError(''); const parsed = parseDateValue(text); if (parsed) setDueDate(parsed) }} aria-invalid={Boolean(dateError)} aria-describedby={dateError ? 'date-error' : undefined} /><input className="date-picker" aria-label="Choose target date from calendar" type="date" min={localDateValue(new Date())} value={dueDate} onChange={event => { setDueDate(event.target.value); setDateText(displayDateValue(event.target.value)); setDateError('') }} /><button type="button" aria-label="Move target date forward one year" title="Move target date forward one year" onClick={() => { const nextDate = goalTargetDate(parseDateValue(dateText) || dueDate || localDateValue(new Date()), 1); setDueDate(nextDate); setDateText(displayDateValue(nextDate)); setDateError('') }}>+1 year</button></span></label>
         {dateError && <span id="date-error" role="alert" className="field-error">{dateError}</span>}
         <label>Saved so far (₹)<input name="savedAmount" type="number" min="0" step="0.01" value={savedAmount} onChange={event => setSavedAmount(event.target.value)} /></label>
-        <div className="calculated-field"><span>Expected saved so far</span><strong>{formatMoney(annualProgress.saved)}</strong><small>Progress uses the higher of your saved amount and the planned pace to the target date.</small></div>
-        <div className="target-preview" aria-live="polite">
-          <div><span>Expected progress</span><strong>{Math.round(annualProgress.ratio * 100)}%</strong></div>
-          <progress value={annualProgress.saved} max={annualProgress.target || 1} />
-          <small>{formatMoney(annualProgress.saved)} saved of {formatMoney(annualProgress.target)} · {formatMoney(monthlyAllocation(previewNode))} needed monthly{dueDate ? ` until ${formatDate(dueDate)}` : ' over the next 12 months'}</small>
-        </div>
+        <GoalSavingsSummary goal={previewNode} />
       </>}
       <div className="form-grid">
         <label>Icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={group.label} label={group.label}>{group.options.map(([value, label]) => <option key={`${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label>
         <label>Status<select name="status" value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(status => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></label>
       </div>
-      <small>Funded and dormant items pause the entire branch’s allocation.</small>
+      <small>Inactive items pause the entire branch’s allocation. Dates stay editable; activate the item when you want to include it in the plan.</small>
       <div className="amount-preview" aria-live="polite"><span>Monthly branch total<small>Includes {formatMoney(totalChildren(node?.children || []))} in child targets</small></span><strong>{formatMoney(preview)}</strong></div>
       <div className="dialog-actions">{isEditing && canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button>}<button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">{isEditing ? 'Save changes' : 'Add to tree'}</button></div>
     </form>
@@ -406,7 +414,7 @@ export default function PlanDialog({ monthlyHistory, onViewOverview, dialog, pro
   if (dialog.type === 'sinkingFunds') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} title="Sinking funds" description="These are your yearly targets. Flowtree sets aside their monthly equivalents so they are ready when each payment is due." />
   if (dialog.type === 'importJson') return <ImportPlanDialog dialog={dialog} onClose={onClose} onImport={onImportData} />
   if (dialog.type === 'buffer') return <BufferDialog buffer={buffer} onClose={onClose} onSave={onSaveBuffer} />
-  if (dialog.type === 'manage') { const node = findNode(tree, dialog.nodeId); return <ManageDialog onViewOverview={['obligations', 'goals'].includes(pathToNode(tree, node?.id)[0]) ? onViewOverview : null} node={node} canDelete={!isBuiltInFlowGroup(node?.id)} onClose={onClose} onDelete={onDeleteNode} onRequestEdit={onRequestEdit} onRequestAdd={onRequestAdd} /> }
+  if (dialog.type === 'manage') { const node = findNode(tree, dialog.nodeId); return <ManageDialog isGoal={isGoalDestination(tree, node?.id)} onViewOverview={['obligations', 'goals'].includes(pathToNode(tree, node?.id)[0]) ? onViewOverview : null} node={node} canDelete={!isBuiltInFlowGroup(node?.id)} onClose={onClose} onDelete={onDeleteNode} onRequestEdit={onRequestEdit} onRequestAdd={onRequestAdd} /> }
   if (dialog.type === 'node' && findNode(tree, dialog.nodeId)?.loan) return <LoanNodeDialog node={findNode(tree, dialog.nodeId)} onClose={onClose} onSave={onSaveNode} />
   return <NodeDialog dialog={dialog} tree={tree} onClose={onClose} onSave={onSaveNode} onDelete={onDeleteNode} />
 }

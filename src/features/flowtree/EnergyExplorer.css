@@ -392,11 +392,11 @@
 .calculated-field span { color: #697590; font-size: 12px; }
 .calculated-field strong { font-size: 13px; font-variant-numeric: tabular-nums; }
 .calculated-field small { grid-column: 1 / -1; color: #647086; font-size: 10px; line-height: 1.45; }
-.date-entry { display: grid; grid-template-columns: minmax(0, 1fr) 42px auto; gap: 8px; }
+.date-entry { display: grid; grid-template-columns: minmax(0, 1fr) 42px auto; align-items: center; gap: 8px; }
 .modal .date-entry .date-picker { width: 42px; padding: 7px; color: transparent; }
 .date-picker::-webkit-datetime-edit { display: none; }
 .date-picker::-webkit-calendar-picker-indicator { margin: 0; cursor: pointer; }
-.modal .date-entry button { min-height: 38px; padding: 8px 11px; border: 1px solid #d6deef; border-radius: 8px; background: #f5f7fb; color: #53627e; font-size: 11px; white-space: nowrap; }
+.modal .date-entry button { min-height: 32px; padding: 5px 8px; border: 1px solid #d6deef; border-radius: 6px; background: #f5f7fb; color: #53627e; font-size: 11px; white-space: nowrap; }
 .modal .date-entry button:hover, .modal .date-entry button:focus-visible { background: #ebeff7; color: #35445d; }
 .card-overview { display: flex; align-items: center; gap: 14px; margin: 20px 0; padding: 16px; border: 1px solid #dfe4ec; border-radius: 10px; }
 .overview-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; background: #f0f3f8; color: #5366c8; font-size: 24px; }
@@ -439,7 +439,7 @@
 .change-notice button { min-width: 36px; min-height: 36px; border: 0; background: transparent; color: #5366c8; }
 .storage-warning { position: fixed; bottom: 0; z-index: 30; padding: 12px; width: 100%; background: #fff0d0; color: #573d12; font-size: 12px; }
 @media (max-width: 600px) {
-  .date-entry { grid-template-columns: 1fr; }
+  .date-entry { grid-template-columns: minmax(0, 1fr) 42px auto; }
   .modal { padding: 24px 20px; }
   .annual-target-list { max-height: 55dvh; }
   .annual-target-row { grid-template-columns: 1fr; }
@@ -655,3 +655,28 @@
   .mobile-income-source strong, .mobile-plan-root strong, .mobile-tree-copy strong { font-size: 14px; }
   .mobile-income-source small, .mobile-plan-root small, .mobile-tree-copy small { font-size: 12px; }
 }
+
+/* Monthly summary: deductions stay green; signed remaining stays purple. */
+.theme-dark .plan-totals > div:last-child { border-color: #655084; background: #302744; }
+.theme-dark .plan-totals > div:last-child strong { color: #d1bcff; }
+.mobile-home-totals .is-deductions { border-color: #b9dec7; background: #f3fbf6; }
+.mobile-home-totals .is-deductions strong { color: #27704c; }
+.mobile-home-totals .is-remaining { border-color: #dfddf6; background: #f3f2ff; }
+.mobile-home-totals .is-remaining strong { color: #5b53a6; }
+.theme-dark .mobile-home-totals .is-deductions { border-color: #356d57; background: #193a31; }
+.theme-dark .mobile-home-totals .is-deductions strong { color: #98dbb6; }
+.theme-dark .mobile-home-totals .is-remaining { border-color: #655084; background: #302744; }
+.theme-dark .mobile-home-totals .is-remaining strong { color: #d1bcff; }
+@media (min-width: 761px) { .energy-viewport.is-sinking { top: 104px; bottom: 28px; } }
+
+.goal-editor > small { display: block; margin-top: 12px; color: var(--muted, #748095); font-size: 11px; line-height: 1.5; }
+
+.inactive-marker { cursor: default; font-size: 10px; font-weight: 400; line-height: 1.2; white-space: nowrap; display: inline-flex; align-items: center; margin-left: auto; flex-shrink: 0; color: var(--muted, #737b88); vertical-align: middle; }
+.goal-list span.inactive-marker { cursor: default; font-size: 10px; font-weight: 400; line-height: 1.2; white-space: nowrap; display: inline-flex; }
+
+.amount-node:has(> .inactive-marker) .amount-copy, .mobile-tree-card:has(> .inactive-marker) .mobile-tree-copy { flex: 1; }
+.has-children:not(.is-expanded) .amount-node > .inactive-marker { margin-right: 8px; }
+.goal-list button > span:nth-child(2) { display: grid; min-width: 0; flex: 1; gap: 3px; }
+.goal-portfolio-list button > span:first-child { flex: 1; }
+
+.goal-start-note { align-self: center; color: var(--muted, #748095); font-size: 11px; line-height: 1.5; }

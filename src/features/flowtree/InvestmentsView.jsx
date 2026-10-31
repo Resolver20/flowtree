@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NODE_STATUSES } from '../../domain/flowTree'
+import { NODE_STATUSES, normalizeNodeStatus, monthlyAllocation } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
 
@@ -9,7 +9,7 @@ function InvestmentEditor({ investment, onSave, onCancel }) {
   const [amount, setAmount] = useState(investment?.amount ?? '')
   const [currentValue, setCurrentValue] = useState(investment?.investment?.currentValue ?? '')
   const [symbol, setSymbol] = useState(investment?.symbol || investment?.icon || 'trending_up')
-  const [status, setStatus] = useState(investment?.status || 'active')
+  const [status, setStatus] = useState(normalizeNodeStatus(investment?.status || 'active'))
   const [error, setError] = useState('')
 
   function submit(event) {
@@ -24,7 +24,7 @@ function InvestmentEditor({ investment, onSave, onCancel }) {
       setError('Enter an investment type.')
       return
     }
-    onSave({ id: investment?.id, name: name.trim(), type: type.trim(), amount: nextAmount, currentValue: nextCurrentValue, status, symbol })
+    onSave({ id: investment?.id, name: name.trim(), type: type.trim(), amount: nextAmount, currentValue: nextCurrentValue, status, startDate: investment?.startDate || '', symbol })
   }
 
   return <form className="goal-editor investment-editor" onSubmit={submit}>
@@ -37,7 +37,7 @@ function InvestmentEditor({ investment, onSave, onCancel }) {
       <label>Investment icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={`investment-${group.label}`} label={group.label}>{group.options.map(([value, label]) => <option key={`investment-${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label>
       <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(item => <option key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</option>)}</select></label>
     </div>
-    <div className="goal-preview investment-preview"><span>Monthly amount reflected in Home</span><strong>{formatMoney(Math.max(0, Number(amount) || 0))}</strong><span>Recorded current value</span><strong>{formatMoney(Math.max(0, Number(currentValue) || 0))}</strong><small>This helps you track the plan; it is not a live market value or an account balance.</small></div>
+    <div className="goal-preview investment-preview"><span>Monthly amount reflected in Home</span><strong>{formatMoney(monthlyAllocation({ amount, status }))}</strong><span>Recorded current value</span><strong>{formatMoney(Math.max(0, Number(currentValue) || 0))}</strong><small>This helps you track the plan; it is not a live market value or an account balance.</small></div>
     {error && <span className="field-error" role="alert">{error}</span>}
     <div className="goal-editor-actions"><button className="goal-save investment-save" type="submit">Save investment</button></div>
   </form>
@@ -59,11 +59,11 @@ export default function InvestmentsView({ investments, onSaveInvestment }) {
     {!investments.length && !adding && <div className="goals-empty investments-empty"><span className="material-symbols-rounded" aria-hidden="true">trending_up</span><strong>No investments in Long-Term Growth</strong><p>Add an investment to include its monthly contribution in your Home flow.</p><button type="button" onClick={() => setAdding(true)}>Add your first investment</button></div>}
     {adding && <InvestmentEditor onSave={saveInvestment} onCancel={() => setAdding(false)} />}
     {investments.length > 0 && <div className="goals-workspace investments-workspace">
-      <aside className="goal-list investment-list" aria-label="Your investments">{investments.map(investment => <button type="button" key={investment.id} className={investment.id === selected?.id ? 'is-selected' : ''} aria-pressed={investment.id === selected?.id} onClick={() => { setEditingId(investment.id); setAdding(false) }}><span className="material-symbols-rounded" aria-hidden="true">{investment.symbol || investment.icon || 'trending_up'}</span><span><strong>{investment.name}</strong><small>{formatMoney(investment.amount)} / month</small></span></button>)}</aside>
+      <aside className="goal-list investment-list" aria-label="Your investments">{investments.map(investment => <button type="button" key={investment.id} className={investment.id === selected?.id ? 'is-selected' : ''} aria-pressed={investment.id === selected?.id} onClick={() => { setEditingId(investment.id); setAdding(false) }}><span className="material-symbols-rounded" aria-hidden="true">{investment.symbol || investment.icon || 'trending_up'}</span><span><strong>{investment.name}</strong><small>{formatMoney(monthlyAllocation(investment))} / month</small></span></button>)}</aside>
       {selected && editingId === selected.id ? <InvestmentEditor investment={selected} onSave={saveInvestment} onCancel={() => setEditingId(null)} /> : selected && <div className="goal-details investment-details">
         <div className="goal-details-heading"><div><span className="eyebrow">INVESTMENT OVERVIEW</span><h2>{selected.name}</h2></div><button type="button" onClick={() => setEditingId(selected.id)}>Edit investment</button></div>
-        <div className="goal-stat-grid investment-stat-grid"><div><span>Current value</span><strong>{formatMoney(selected.investment?.currentValue || 0)}</strong></div><div><span>Monthly contribution</span><strong>{formatMoney(selected.amount)}</strong></div><div><span>Investment type</span><strong>{selected.investment?.type || 'Investment'}</strong></div><div><span>Status</span><strong>{selected.status[0].toUpperCase() + selected.status.slice(1)}</strong></div></div>
-        <section className="goal-home-link investment-home-link"><span className="material-symbols-rounded" aria-hidden="true">account_tree</span><div><strong>Included in your Home flow</strong><p>Home adds this investment to Long-Term Growth as {formatMoney(selected.amount)} each month.</p></div></section>
+        <div className="goal-stat-grid investment-stat-grid"><div><span>Current value</span><strong>{formatMoney(selected.investment?.currentValue || 0)}</strong></div><div><span>Monthly contribution</span><strong>{formatMoney(monthlyAllocation(selected))}</strong></div><div><span>Investment type</span><strong>{selected.investment?.type || 'Investment'}</strong></div><div><span>Status</span><strong>{normalizeNodeStatus(selected.status)[0].toUpperCase() + normalizeNodeStatus(selected.status).slice(1)}</strong></div></div>
+        <section className="goal-home-link investment-home-link"><span className="material-symbols-rounded" aria-hidden="true">account_tree</span><div><strong>Included in your Home flow</strong><p>Home adds this investment to Long-Term Growth as {formatMoney(monthlyAllocation(selected))} each month.</p></div></section>
       </div>}
     </div>}
   </section>

@@ -122,13 +122,13 @@ Child icons may use a recognizable service or purpose color, but card surfaces r
 Keep one compact summary near the income/status area:
 
 ```text
-Income ₹50,000  ·  Planned ₹46,466  ·  Available ₹3,534
+Deductions ₹46,466  ·  Remaining ₹3,534
 ```
 
 When planned money plus buffer exceeds income:
 
 ```text
-Over-planned by ₹4,000
+Remaining ₹-4,000
 ```
 
 Calculation:
@@ -138,7 +138,7 @@ available = income - safety buffer - total monthly targets
 ```
 
 - Do not repeat the summary on every node.
-- Use green only for a healthy available state and restrained red/orange for over-planned state.
+- Show deductions in green on the left and remaining in purple on the right. Preserve the sign of a negative remaining amount; keep the same Remaining label and purple color.
 - Do not call the result a bank balance because Flowtree does not read an account.
 
 ## Responsive behavior
@@ -169,7 +169,7 @@ available = income - safety buffer - total monthly targets
 - Does opening one branch keep the other nodes stationary?
 - Does the complete tree fit the canvas without page scrolling?
 - Is the complete expanded tree visibly centered at normal browser zoom and after zooming out?
-- Are focus, selected, hover, available, and over-planned states distinguishable?
+- Are focus, selected, hover, deductions, and remaining amounts distinguishable?
 - Is every label honest about planned versus actual money?
 - Does the screen still feel calm after adding more items?
 
