@@ -327,3 +327,20 @@ On 2026-10-31, this regression reproduced 11 failing cases before the fix and pa
 
 - Blur-capable browsers render the footer with 55% light/dark surface opacity and translucent active tabs. Unsupported blur and reduced-transparency preferences retain solid surfaces.
 - Manual: inspect Home and More in light/dark themes on a phone; labels must stay legible, only one footer tab is highlighted, and the raised bottom spacing remains unchanged. This is a frosted-glass treatment, not native iOS Liquid Glass rendering.
+
+### More menu account duplication
+
+- More contains section shortcuts and theme switching only. Profile, sign-in, sign-out and Drive account actions remain in Account.
+- Footer browser regression checks More has no duplicate account section at phone sizes. Manually check signed-in and signed-out Account still exposes the corresponding account actions.
+
+- Mobile theme switching lives in Account only; More now contains section shortcuts only. Footer regression checks the theme action is absent from More and present in Account across phone sizes. Manual: Account → Use dark mode, then reopen Account → Use light mode; the theme should change and the menu should dismiss each time.
+
+### Glass footer over scrolling content
+
+- Mobile content extends to the bottom of the screen beneath the floating glass footer instead of ending at a blank footer strip. Bottom content padding and scroll padding equal the shared dock clearance, so the last item can scroll fully above the dock. More/Account still open above the dock.
+- Footer regression replaces the old viewport-ending-above-dock expectation with viewport-to-bottom, sufficient scroll-end padding and last-card visibility checks. Manually scroll Home, Sinking and dedicated lists: content should blur beneath the pill, while the last item's actions remain reachable. This follows Apple's floating tab-bar pattern; web blur does not reproduce native Liquid Glass refraction.
+
+### Slide across footer tabs
+
+- A horizontal drag previews the tab under the pointer and activates it on release. Tap and keyboard actions remain native buttons. Vertical gestures do not select tabs; pointer cancellation or release outside the buttons cancels selection. More/Account open only on release.
+- Browser regression includes synthetic pointer preview/release/cancel checks (capture is stubbed only for synthetic events). Native browser drag was separately verified from Home to Loans in a 390×844 actual offline app. Physical iPhone touch still needs device verification. Repeat Home→Sinking→Loans, drag to More/Account, cancel outside the bar and scroll vertically near it; no duplicate activation or lost vertical scrolling should occur.

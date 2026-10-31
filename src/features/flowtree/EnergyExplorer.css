@@ -784,6 +784,9 @@
     --mobile-nav-clearance: calc(66px + var(--mobile-nav-bottom) + 12px);
   }
   .mobile-bottom-nav {
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
     right: auto;
     bottom: var(--mobile-nav-bottom);
     left: calc(var(--mobile-safe-left) + (100% - var(--mobile-safe-left) - var(--mobile-safe-right)) / 2);
@@ -808,8 +811,12 @@
   .mobile-bottom-nav button.is-active { border-color: transparent; background: #e5ecfc; }
   .theme-dark .mobile-bottom-nav { background: #202938; border-color: #465063; box-shadow: 0 4px 16px #05091230; }
   .theme-dark .mobile-bottom-nav button.is-active { border-color: transparent; background: #344765; }
-  .energy-viewport, .energy-viewport.has-mobile-home-outlook,
-  .loans-view, .goals-view, .recurring-view, .ledger-view { bottom: var(--mobile-nav-clearance); }
+  .energy-viewport, .energy-viewport.is-sinking, .energy-viewport.has-mobile-home-outlook,
+  .loans-view, .goals-view, .recurring-view, .ledger-view {
+    bottom: 0;
+    padding-bottom: var(--mobile-nav-clearance);
+    scroll-padding-bottom: var(--mobile-nav-clearance);
+  }
   .account-menu, .mobile-more-menu {
     bottom: var(--mobile-nav-clearance);
     max-height: calc(100dvh - var(--mobile-nav-clearance) - 16px);
