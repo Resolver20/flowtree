@@ -1,0 +1,16 @@
+<!doctype html><html><meta charset="utf-8"><title>Mobile icon picker checks</title><pre id="results">Running…</pre><script type="module">
+const results=document.querySelector('#results');let checks=0;
+try{for(const theme of ['light','dark'])for(const width of [320,390,568,760,768,1366,1920]){
+ const frame=document.createElement('iframe');frame.style.cssText=`width:${width}px;height:320px;border:0`;frame.src=`./mobile-icon-picker.fixture.html?theme=${theme}`;document.body.append(frame);await new Promise(resolve=>frame.onload=resolve);
+ const d=frame.contentDocument;for(let i=0;i<100&&!d.querySelector('[role=combobox]');i++)await new Promise(r=>setTimeout(r,20));
+ function check(ok,message){if(!ok)throw Error(`${width}: ${message}`);checks++}
+ const search=d.querySelector('[role=combobox]');check(Boolean(search),'search field present');search.focus();await new Promise(r=>setTimeout(r,30));
+ const options=d.querySelectorAll('[role=option]');check(options.length>50,'full list on focus');check([...options].every(b=>b.querySelector('.material-symbols-rounded')),'icons visible');check(search.getBoundingClientRect().height>=44,'touch height');
+ async function type(text){Object.getOwnPropertyDescriptor(frame.contentWindow.HTMLInputElement.prototype,'value').set.call(search,text);search.dispatchEvent(new frame.contentWindow.Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,30))}
+ await type('insu');check(d.querySelectorAll('[role=option]').length>1,'partial matches');check([...d.querySelectorAll('[role=option]')].every(b=>b.textContent.toLowerCase().includes('insu')),'irrelevant matches removed');
+ await type('no-such-icon');check(d.querySelector('[role=status]')?.textContent.includes('No icons'),'empty state');check(d.querySelector('output').textContent==='savings','typing does not replace saved icon');
+ await type('bank');check(d.querySelectorAll('[role=option]').length===1,'filtered match');search.dispatchEvent(new frame.contentWindow.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));await new Promise(r=>setTimeout(r,30));check(d.querySelector('output').textContent==='account_balance','enter selects single match');check(!d.querySelector('.icon-picker-panel'),'selection closes panel');
+ await type('home');search.dispatchEvent(new frame.contentWindow.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));await new Promise(r=>setTimeout(r,30));check(!d.querySelector('.icon-picker-panel'),'escape closes panel');check(search.value==='Bank','escape restores current label');
+ check(d.documentElement.scrollWidth<=width,'no horizontal overflow');frame.remove();
+}results.textContent=`PASS ${checks} checks`;}catch(error){results.textContent=`FAIL ${error.message}`;throw error}
+</script></html>

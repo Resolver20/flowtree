@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><div id="root"></div><script type="module">
+import React,{useState} from 'react';import{createRoot}from'react-dom/client';
+import IconPicker from '/src/features/flowtree/IconPicker.jsx';
+import '/src/index.css';import '/src/features/flowtree/EnergyExplorer.css';
+function Fixture(){const[value,setValue]=useState('savings');return React.createElement('main',{className:`energy-mode theme-${new URLSearchParams(location.search).get('theme') || 'light'}`},React.createElement('form',{className:'goal-editor',style:{margin:0,padding:16},onSubmit:e=>e.preventDefault()},React.createElement('label',null,'Goal icon',React.createElement(IconPicker,{value,onChange:setValue})),React.createElement('output',null,value)))}
+createRoot(document.querySelector('#root')).render(React.createElement(Fixture));
+</script></html>

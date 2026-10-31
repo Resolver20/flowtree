@@ -11,7 +11,7 @@ const annual=(id,name,children=[])=>({id,name,period:'year',amount:12000,savedAm
 const monthly={id:'monthly',name:'Monthly bill',amount:100,period:'month',children:[]};
 const tree=[{id:'protection',name:'Risk Protection',amount:0,children:[annual('insurance','Annual insurance',[monthly])]},
 {id:'goals',name:'Life goals',amount:0,children:[annual('travel','Long annual travel target name')]}];
-root.render(React.createElement('div',{className:dark?'theme-dark':'theme-light'},React.createElement(MobileTree,{
+root.render(React.createElement('div',{className:`energy-mode energy-home ${dark?'theme-dark':'theme-light'}`},React.createElement(MobileTree,{
  tree,allocations:allocateEnergy(tree,60000).allocations,monthlyIncome:60000,monthlyDeductions:100,monthlyOutcome:59900,income:60000,incomeSources:[],path:[],expandAll:true,collapsedPaths:new Set(),sinking,
  onNavigate:()=>{},onInspect:()=>{document.body.dataset.inspected='yes'},onInspectIncome:()=>{},onInspectPlan:()=>{}
 })));

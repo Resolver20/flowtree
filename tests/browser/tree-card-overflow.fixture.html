@@ -1,0 +1,6 @@
+<!doctype html><html><meta charset="utf-8"><div id="root"></div><script type="module">
+import React from 'react';import{createRoot}from'react-dom/client';import TreeNodeCard from '/src/features/flowtree/TreeNodeCard.jsx';import '/src/index.css';import '/src/features/flowtree/EnergyExplorer.css';
+const items=['Home','Marriage with a long name','EV Car'].map((name,i)=>({id:`goal${i}`,name,amount:i?2000000:20000000,period:'year',savedAmount:0,startDate:'2026-01-01',dueDate:'2037-01-01',status:'dormant',children:[]}));
+const tree=[{id:'goals',name:'Life goals',children:items}];
+createRoot(document.querySelector('#root')).render(React.createElement('main',{className:'energy-mode theme-dark',style:{position:'relative',width:390,height:320}},items.map((item,i)=>React.createElement(TreeNodeCard,{key:item.id,entry:{item,funding:{target:150376,allocated:0,ratio:0},path:['goals',item.id],point:{x:195,y:60+i*85}},tree,monthlyIncome:60000,worldWidth:390,worldHeight:320,onInspect:()=>{}}))));
+</script></html>

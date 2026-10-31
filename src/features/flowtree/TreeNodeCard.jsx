@@ -25,11 +25,8 @@ export default function TreeNodeCard({ entry, tree, monthlyIncome, isExpanded, i
 
   const cardContent = <>
     <span className="amount-icon material-symbols-rounded" style={{ color }} aria-hidden="true">{iconForNode(item)}</span>
-    <span className="amount-copy"><strong>{item.name}</strong>{annualProgress
-      ? <><span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span><span className="target-meta">{formatMoney(annualProgress.saved)} / {formatMoney(annualProgress.target)} · {Math.round(annualProgress.ratio * 100)}%</span></>
-      : <span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span>}
-    </span>
-    <MonthlyPlanShare label={share.label} />
+    <span className="amount-copy"><strong>{item.name}</strong><span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span></span>
+    {!inactive && <MonthlyPlanShare label={share.label} />}
     <InactiveMarker inactive={inactive} />
     {annualProgress && <span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${annualProgress.ratio * 100}%` }} /></span>}
     {hasChildren && !isExpanded && <span className="branch-cue material-symbols-rounded" aria-hidden="true">chevron_right</span>}

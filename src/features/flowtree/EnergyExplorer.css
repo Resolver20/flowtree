@@ -180,6 +180,10 @@ button.income-source-card { cursor: pointer; }
 .mobile-tree-copy > strong { padding-right: 38px; }
 .node-progress { position: absolute; right: 12px; bottom: 4px; left: 50px; height: 2px; overflow: hidden; border-radius: 2px; background: #e5e8ee; }
 .node-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--progress-color); }
+@media (max-width: 760px) {
+  .mobile-tree-card > .node-progress { left: 12px; right: 12px; bottom: 5px; height: 4px; background: #dce1e8; }
+  .theme-dark .mobile-tree-card > .node-progress { background: #46536a; }
+}
 .energy-status { position: absolute; z-index: 3; top: 14px; right: 28px; display: grid; grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr); align-items: center; gap: 10px 14px; width: min(520px, calc(100% - 500px)); padding: 10px 12px 8px; border: 1px solid #d9e0ef; border-radius: 13px; background: linear-gradient(125deg, #ffffff 0%, #f5f7ff 58%, #f1f8f5 100%); box-shadow: 0 8px 22px #34466d12; color: #43516e; }
 .summary-heading { display: grid; align-content: center; gap: 5px; text-align: left; }
 .summary-heading strong { color: #2f3b52; font-size: 12px; font-weight: 650; letter-spacing: -.1px; }
@@ -972,3 +976,25 @@ button.income-source-card { cursor: pointer; }
 }
 .date-calendar-input::-webkit-datetime-edit { display: none; }
 .date-calendar-input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; cursor: pointer; }
+
+.mobile-icon-picker { display: grid; min-width: 0; gap: 8px; }
+.mobile-icon-picker .material-symbols-rounded { color: #6577cc; font-size: 22px; }
+.icon-picker-panel { display: grid; gap: 8px; min-width: 0; padding: 10px; border-radius: 12px; background: var(--surface, #fff); }
+.icon-picker-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; max-height: 240px; overflow-y: auto; overscroll-behavior: contain; }
+.mobile-icon-picker .icon-picker-options button { position: relative; display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 52px; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text, #303947); text-align: left; font-size: 12px; line-height: 1.35; }
+.icon-picker-options button > span:nth-child(2) { overflow-wrap: anywhere; }
+.mobile-icon-picker .icon-picker-options .icon-picker-check { position: absolute; top: 2px; right: 2px; font-size: 12px; }
+.icon-picker-empty { grid-column: 1 / -1; padding: 12px 4px; color: var(--muted, #667085); font-size: 12px; }
+
+/* Tree cards show the monthly amount and a quiet progress line; details live in Info. */
+.amount-node .amount-copy { flex: 1; min-width: 0; gap: 5px; }
+.amount-node .amount-number { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.amount-node > .inactive-marker { position: absolute; right: 10px; top: 7px; bottom: auto; margin: 0; font-size: 9px; }
+.amount-node:has(> .inactive-marker) .amount-copy > strong { padding-right: 42px; }
+.has-children:not(.is-expanded) .amount-node > .inactive-marker { margin-right: 0; }
+.icon-search-field { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mobile-icon-picker .icon-search-field input { flex: 1; min-width: 0; width: 100%; min-height: 44px; font-size: 16px; }
+.icon-search-field > .material-symbols-rounded { flex: 0 0 22px; }
+@media (min-width: 761px) {
+  .icon-picker-options [aria-selected="true"] { outline: 2px solid var(--accent, #6577cc); outline-offset: -2px; }
+}

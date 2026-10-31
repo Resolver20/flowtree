@@ -20,7 +20,10 @@ assert(Math.abs(parseFloat(fill.style.width)-expected*100)<.01,`${prefix}: fill 
 assert(!/percent|saved|%/.test(card.querySelector('.mobile-tree-copy').textContent),`${prefix}: no visible completion text`);
 assert(card.getAttribute('aria-label').includes(`${Math.round(expected*100)} percent`),`${prefix}: completion retained for assistive technology`);
 const b=bar.getBoundingClientRect(),r=card.getBoundingClientRect();
-assert(b.height===2&&b.left>=r.left&&b.right<=r.right&&b.bottom<=r.bottom&&r.bottom-b.bottom<=6,`${prefix}: thin line inside card bottom`);
+assert(b.height===4&&b.left>=r.left&&b.right<=r.right&&b.bottom<=r.bottom&&r.bottom-b.bottom<=7,`${prefix}: visible line inside card bottom`);
+const f=fill.getBoundingClientRect(),view=frame.contentWindow;
+assert(Math.abs(f.width-b.width*expected)<1&&f.height===4,`${prefix}: rendered fill matches completed proportion`);
+assert(view.getComputedStyle(fill).backgroundColor!==view.getComputedStyle(bar).backgroundColor&&view.getComputedStyle(bar).backgroundColor!==view.getComputedStyle(card).backgroundColor,`${prefix}: fill and remaining track contrast with card`);
 assert(card.scrollWidth<=card.clientWidth,`${prefix}: no card overflow`);
 }
 assert(!doc.querySelector('[data-tree-path="protection/insurance/monthly"] > .mobile-tree-node-row .node-progress'),`${width}: monthly target has no progress line`);
