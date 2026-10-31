@@ -187,3 +187,14 @@ test('starter categories follow financial management, risk, tax, and investment 
   assert.equal(findPath(tree, ['tax', 'tax']).name, 'Property tax')
   assert.equal(findPath(tree, ['provisions', 'rd']).name, 'Recurring deposit')
 })
+
+test('sinking expected savings includes nested annual records once and ignores monthly amounts', () => {
+  const nodes = [{ amount: 999999, savedAmount: 999999, period: 'month', children: [
+    { amount: 12000, savedAmount: 3000, period: 'year', status: 'active', children: [
+      { amount: 6000, savedAmount: 1500, period: 'year', status: 'inactive', children: [] },
+    ] },
+    { amount: 3000, savedAmount: 750, period: 'year', children: [] },
+  ] }]
+  assert.equal(totalExpectedAnnualSavings(nodes, new Date(2026, 9, 31)), 5250)
+  assert.equal(totalExpectedAnnualSavings([], new Date(2026, 9, 31)), 0)
+})

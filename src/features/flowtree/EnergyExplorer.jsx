@@ -1,3 +1,4 @@
+import { selectSinkingFunds } from '../../domain/sinkingFunds'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { allocateEnergy } from '../../domain/energyFlow'
 import { toggleBranch } from '../../domain/treeExpansion'
@@ -6,6 +7,7 @@ import { formatMoney } from '../../lib/money'
 import TreeCanvas from './TreeCanvas'
 import TreeHeader from './TreeHeader'
 import TreeStatus from './TreeStatus'
+import SinkingFundsSummary from './SinkingFundsSummary'
 import LoansView from './LoansView'
 import GoalsView from './GoalsView'
 import RecurringPaymentsView from './RecurringPaymentsView'
@@ -51,13 +53,6 @@ function EmptyTreeState({ sinking, onReturnHome }) {
     <p>{sinking ? 'Add a yearly target with a future date, then return here to see its monthly set-aside.' : 'Add a category to start building your monthly plan.'}</p>
     <button type="button" onClick={onReturnHome}>Return to Home</button>
   </div>
-}
-
-function annualTargetsOnly(nodes) {
-  return nodes.flatMap(node => {
-    const children = annualTargetsOnly(node.children || [])
-    return node.period === 'year' || children.length ? [{ ...node, children }] : []
-  })
 }
 
 function useMobileLayout() {
@@ -116,7 +111,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
   const [viewportRef, viewport, hasMeasuredViewport] = useElementSize()
   const isMobileLayout = useMobileLayout()
   const orderedTree = useMemo(() => sortTreeByMonthlyTotal(tree), [tree])
-  const sinkingTree = useMemo(() => sortTreeByMonthlyTotal(annualTargetsOnly(tree)), [tree])
+  const sinkingTree = useMemo(() => selectSinkingFunds(orderedTree), [orderedTree])
   const visibleTree = view === 'sinking' ? sinkingTree : orderedTree
   const loans = useMemo(() => {
     const debt = tree.find(node => node.id === 'obligations')
@@ -304,6 +299,6 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
           />
         : <EmptyTreeState sinking={view === 'sinking'} onReturnHome={returnToRoot} />}
     </div>
-    {view !== 'sinking' && <TreeStatus demo={demo} mobileHome={showMobileHomeOutlook} monthlyOutcome={monthlyOutcome} planned={planned} />}</>}
+    {view === 'sinking' ? <SinkingFundsSummary tree={sinkingTree} /> : <TreeStatus demo={demo} mobileHome={showMobileHomeOutlook} monthlyOutcome={monthlyOutcome} planned={planned} />}</>}
   </main>
 }

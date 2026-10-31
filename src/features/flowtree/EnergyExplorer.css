@@ -680,3 +680,24 @@
 .goal-portfolio-list button > span:first-child { flex: 1; }
 
 .goal-start-note { align-self: center; color: var(--muted, #748095); font-size: 11px; line-height: 1.5; }
+
+/* Keep the expected-savings summary above the Sinking funds canvas. */
+.energy-status.sinking-status { display: flex; top: 70px; right: 28px; bottom: auto; left: auto; justify-content: space-between; gap: 16px; width: min(420px, calc(100% - 280px)); max-height: none; padding: 10px 12px; background: var(--surface); }
+.sinking-saved { display: grid; min-width: 140px; gap: 3px; padding: 7px 10px; border: 1px solid #d8ecdf; border-radius: 9px; background: #f1faf5; }
+.sinking-saved > span { color: var(--muted, #6d788c); font-size: 10px; }
+.sinking-saved > strong { color: #27704c; font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.theme-dark .sinking-saved { border-color: #356d57; background: #193a31; }
+.theme-dark .sinking-saved > strong { color: #98dbb6; }
+@media (min-width: 901px) { .energy-viewport.is-sinking { top: 164px; } }
+@media (min-width: 761px) and (max-width: 900px) {
+  .energy-status.sinking-status { top: 104px; right: 20px; width: calc(100% - 264px); }
+  .energy-viewport.is-sinking { top: 190px; }
+}
+@media (max-width: 760px) {
+  .energy-status.sinking-status { top: 88px; right: 16px; left: 16px; width: auto; padding: 8px 10px; }
+  .sinking-status .summary-heading { display: block; }
+  .sinking-status .summary-heading strong { font-size: 12px; }
+  .sinking-saved { min-width: 120px; padding: 5px 8px; }
+  .sinking-saved > strong { font-size: 15px; }
+  .energy-viewport.is-sinking { top: 168px; padding-top: 8px; padding-bottom: 24px; }
+}
