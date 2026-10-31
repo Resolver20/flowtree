@@ -1,23 +1,19 @@
 import { useRef } from 'react'
 import { sectionAfterSwipe } from '../../domain/sectionNavigation'
 
-export default function useSectionSwipe(view, onSelect, { footer = false } = {}) {
+export default function useSectionSwipe(view, onSelect) {
   const start = useRef(null)
   const suppressClick = useRef(false)
   function begin(target, x, y) {
     start.current = null
     suppressClick.current = false
     if (!window.matchMedia('(max-width: 760px)').matches || document.querySelector('dialog[open], .loan-editor, .goal-editor, .ledger-editor, .investment-editor')) return
-    if (footer) {
-      if (target.closest('.mobile-account-trigger')) return
-    } else {
-      if (target.closest('button, input, select, textarea, a, nav, .account-menu, .loan-table-wrap, .ledger-table-wrap, .loan-list, .goal-list, .ledger-list, form')) return
-      // Native horizontal lists/tables keep their own gestures.
-      for (let el = target; el && el !== document.body; el = el.parentElement) {
-        if (el.scrollWidth > el.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(el).overflowX)) return
-      }
-      if (x < 20 || x > window.innerWidth - 20) return // Preserve browser edge gestures.
+    if (target.closest('button, input, select, textarea, a, nav, .account-menu, .loan-table-wrap, .ledger-table-wrap, .loan-list, .goal-list, .ledger-list, form')) return
+    // Native horizontal lists/tables keep their own gestures.
+    for (let el = target; el && el !== document.body; el = el.parentElement) {
+      if (el.scrollWidth > el.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(el).overflowX)) return
     }
+    if (x < 20 || x > window.innerWidth - 20) return // Preserve browser edge gestures.
     start.current = { x, y }
   }
   function finish(x, y) {

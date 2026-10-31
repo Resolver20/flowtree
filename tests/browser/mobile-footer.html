@@ -30,10 +30,20 @@ try {
     if(last)assert(last.getBoundingClientRect().bottom<=bounds.top,`${width}: last card clears dock`);
     canvas.scrollTop=0;
     const swipe=async dx=>{
-      const r=strip.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height/2;
-      strip.dispatchEvent(new win.PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,clientX:x,clientY:y}));
-      strip.dispatchEvent(new win.PointerEvent('pointerup',{bubbles:true,pointerType:'mouse',button:0,clientX:x+dx,clientY:y}));await wait();
+      const page=doc.querySelector('.energy-home');
+      const x=width/2,y=height/2;
+      page.dispatchEvent(new win.PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,clientX:x,clientY:y}));
+      page.dispatchEvent(new win.PointerEvent('pointerup',{bubbles:true,pointerType:'mouse',button:0,clientX:x+dx,clientY:y}));await wait();
     };
+    const activeBefore=strip.querySelector('[aria-current="page"]').dataset.section;
+    const pageScroll=canvas.scrollTop;
+    strip.scrollLeft=strip.scrollWidth;await wait();
+    assert(strip.scrollLeft>0 && strip.querySelector('[aria-current="page"]').dataset.section===activeBefore && canvas.scrollTop===pageScroll,`${width}: footer scroll is independent of page selection and scroll`);
+    strip.dispatchEvent(new win.PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,clientX:200,clientY:bounds.top+30}));
+    strip.dispatchEvent(new win.PointerEvent('pointerup',{bubbles:true,pointerType:'mouse',button:0,clientX:100,clientY:bounds.top+30}));await wait();
+    assert(strip.querySelector('[aria-current="page"]').dataset.section===activeBefore,`${width}: footer gestures never trigger page swipe`);
+    assert(win.getComputedStyle(strip).touchAction==='pan-x',`${width}: footer permits native horizontal scrolling`);
+    strip.scrollLeft=0;
     const current=()=>strip.querySelector('[aria-current="page"]')?.dataset.section;
     await swipe(70);assert(current()==='home',`${width}: stops at Home`);
     for(const button of buttons.slice(1)){

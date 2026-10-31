@@ -1,3 +1,4 @@
+import useSectionTransition from './useSectionTransition'
 import useSectionSwipe from './useSectionSwipe'
 import { selectSinkingFunds } from '../../domain/sinkingFunds'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -107,6 +108,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
 
 export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path: unpinnedPath, onPathChange: setPath, profile, incomeSources, generalLedgers, canvasPins, onChangeCanvasPin, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const sectionRef = useSectionScroll(view)
+  useSectionTransition(sectionRef, view)
   const demo = false
   const isMobileLayout = useMobileLayout()
   const pin = isMobileLayout ? undefined : canvasPins?.[view]

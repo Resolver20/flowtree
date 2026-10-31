@@ -1,4 +1,3 @@
-import useSectionSwipe from './useSectionSwipe'
 import { MOBILE_SECTIONS } from '../../domain/sectionNavigation'
 import { usePwaInstall } from '../../hooks/usePwaInstall'
 import InstallDialog from './InstallDialog'
@@ -63,7 +62,6 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
 
   const sectionActions = { home: onReturnToRoot, sinking: onShowSinkingFunds, loans: onShowLoans, goals: onShowGoals, recurring: onShowRecurringPayments, investments: onShowInvestments, ledger: onShowGeneralLedger }
   const selectSection = id => closeMenuThen(sectionActions[id])
-  const sectionSwipe = useSectionSwipe(view, selectSection, { footer: true })
   useEffect(() => {
     const strip = mobileSectionsRef.current
     const center = () => {
@@ -82,7 +80,7 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
       {offline && <span className="offline-test-label">Offline test copy</span>}
       <button className="mobile-history-action" type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo last plan change"><span className="material-symbols-rounded" aria-hidden="true">undo</span></button>
       <button className="mobile-history-action" type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo plan change"><span className="material-symbols-rounded" aria-hidden="true">redo</span></button>
-      <span className="save-state" role="status">{hasUnsavedChanges && <span className="is-unsaved" title="Changes waiting to be saved">Unsaved changes</span>}</span>
+      <span className="save-state" role="status"><span className="mobile-section-name">{MOBILE_SECTIONS.find(section => section.id === view)?.label}<small>{MOBILE_SECTIONS.findIndex(section => section.id === view) + 1} / {MOBILE_SECTIONS.length}</small></span>{hasUnsavedChanges && <span className="is-unsaved" title="Changes waiting to be saved">Unsaved changes</span>}</span>
       <button type="button" onClick={onDownloadBackup} title="Download JSON backup" aria-label="Download JSON backup"><span className="material-symbols-rounded" aria-hidden="true">download</span></button>
       {(connected || offline) && <button className="plan-save-button" type="button" onClick={onSaveDrivePlan} disabled={saving} aria-keyshortcuts="Meta+s Control+s" title={`Save ${offline ? 'offline copy in this browser' : 'plan to Google Drive'} (${saveShortcut}). Finish any open editor first.`}><span className="material-symbols-rounded" aria-hidden="true">{offline ? 'save' : 'cloud_upload'}</span><span>{driveStatus === 'saving' ? 'Saving…' : 'Save'}</span><kbd>{saveShortcut}</kbd></button>}
     </div>
@@ -155,7 +153,7 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
       </>}
     </section>}
     <nav className="mobile-bottom-nav" aria-label="Primary navigation">
-      <div ref={mobileSectionsRef} className="mobile-section-tabs" aria-label="Plan sections" {...sectionSwipe}>
+      <div ref={mobileSectionsRef} className="mobile-section-tabs" aria-label="Plan sections">
         {MOBILE_SECTIONS.map(section => <button key={section.id} data-section={section.id} type="button" className={!accountOpen && view === section.id ? 'is-active' : ''} aria-current={view === section.id ? 'page' : undefined} onClick={() => selectSection(section.id)}>
           <span className="material-symbols-rounded" aria-hidden="true">{section.icon}</span><span>{section.label}</span>
         </button>)}

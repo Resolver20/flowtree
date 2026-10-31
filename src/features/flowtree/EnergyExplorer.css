@@ -786,7 +786,7 @@
     --mobile-nav-clearance: calc(66px + var(--mobile-nav-bottom) + 12px);
   }
   .mobile-bottom-nav {
-    touch-action: pan-y;
+    touch-action: auto;
     user-select: none;
     -webkit-user-select: none;
     right: auto;
@@ -846,9 +846,17 @@
 /* Scrollable section strip; Account is separate and never a swipe destination. */
 @media (max-width: 760px) {
   .mobile-bottom-nav { grid-template-columns: minmax(0, 1fr) 58px; gap: 6px; }
-  .mobile-section-tabs { position: relative; display: flex; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; touch-action: pan-y; }
+  .mobile-section-tabs { position: relative; display: flex; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; touch-action: pan-x; overscroll-behavior-x: contain; }
   .mobile-section-tabs::-webkit-scrollbar { display: none; }
   .mobile-section-tabs > button { flex: 0 0 72px; }
   .mobile-bottom-nav > .mobile-account-trigger { border-left: 1px solid var(--line); border-radius: 16px; }
   .mobile-section-tabs > button > :last-child { font-size: 10px; }
+}
+
+.mobile-section-name { display: none; }
+@media (max-width: 760px) {
+  .mobile-section-name { display: flex; flex-direction: column; gap: 2px; color: var(--text); font-size: 11px; font-weight: 650; }
+  .mobile-section-name small { color: var(--muted); font-size: 9px; font-weight: 400; }
+  .plan-save-controls .save-state { overflow: hidden; }
+  .mobile-section-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 }
