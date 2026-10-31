@@ -191,7 +191,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
   const monthlyIncome = incomeSources.reduce((sum, source) => sum + Math.max(0, Number(source.amount) || 0), 0)
   const driveUser = drive.user ? { emailAddress: drive.user.emailAddress, displayName: drive.user.displayName, photoLink: drive.user.photoLink } : null
 
-  if (startupState !== 'ready') return <PlanRestoreScreen theme={theme} state={startupState} error={drive.error} onRetry={connectDrive} configured={driveConfigured && drive.status !== 'preparing'} />
+  if (startupState !== 'ready') return <PlanRestoreScreen theme={theme} state={startupState} error={drive.error} onRetry={connectDrive} retryRestore={drive.retryRestore} configured={driveConfigured && drive.status !== 'preparing'} />
 
   return <div className={`app-shell energy-mode theme-${theme}`}>
     <EnergyExplorer

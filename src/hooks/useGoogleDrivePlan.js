@@ -2,7 +2,7 @@ import { rememberGoogleAccount, forgetGoogleAccount, googleReconnectOptions } fr
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from '../domain/flowDataTransfer'
 import { organizeSubscriptions } from '../domain/flowTree'
-import { restoreDriveSession } from '../domain/restoreDriveSession'
+import { restoreDriveSession, requiresDriveSignIn } from '../domain/restoreDriveSession'
 import { preserveCurrentMonth } from '../domain/monthlyHistory'
 import { loadCachedRevision, loadRecoveryVersions } from '../domain/versionRecovery'
 import { driveRestoreMode, orderValidDriveRestoreCandidates } from '../domain/driveRestoreCandidates'
@@ -71,6 +71,7 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
   const [startupState, setStartupState] = useState(() => drive.status === 'restoring' ? 'loading' : 'ready')
   const replaceDataRef = useRef(replaceData)
   const hasAttemptedDriveRestore = useRef(false)
+  const [restoreAttempt, setRestoreAttempt] = useState(0)
 
   useEffect(() => { replaceDataRef.current = replaceData }, [replaceData])
 
@@ -121,6 +122,12 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
   async function connectDrive({ prompt } = {}) {
     if (offline) return
     if (!allowDiscard()) return
+    if (startupState === 'error' && drive.retryRestore && readDriveSession()) {
+      hasAttemptedDriveRestore.current = false
+      setStartupState('loading')
+      setRestoreAttempt(attempt => attempt + 1)
+      return
+    }
     if (!googleClientId) {
       setDrive(previous => ({ ...previous, status: 'unavailable', error: 'Google Drive sign-in has not been configured for this deployment.' }))
       return
@@ -187,14 +194,17 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
         setPath([])
         setDrive({ ...session, status: 'connected', user: restoredUser || { displayName: plan.profile.name }, error: '' })
         setStartupState('ready')
-      } catch {
-        clearDriveSession()
+      } catch (error) {
+        const expired = requiresDriveSignIn(error)
+        if (expired) clearDriveSession()
         setStartupState('error')
-        setDrive({ status: 'error', user: null, error: 'Could not restore your Google Drive plan. Sign in again to retry; no data was uploaded.', accessToken: '', folderId: '', fileId: '' })
+        setDrive(expired
+          ? { status: 'error', user: null, error: 'Google access expired. Reconnect to open your saved plan; no data was uploaded.', accessToken: '', folderId: '', fileId: '' }
+          : { ...session, status: 'error', retryRestore: true, error: 'Could not load your plan from Google Drive. Check your connection and retry; your sign-in has been kept and no data was uploaded.' })
       }
     }
     restore()
-  }, [setPath, offline])
+  }, [setPath, offline, restoreAttempt])
 
   useEffect(() => {
     if (drive.accessToken && drive.folderId && drive.fileId) writeDriveSession({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: drive.fileId, user: drive.user?.emailAddress ? drive.user : undefined })

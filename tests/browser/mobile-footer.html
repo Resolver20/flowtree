@@ -14,8 +14,7 @@ try {
     const doc=frame.contentDocument, win=frame.contentWindow;
     const nav=doc.querySelector('.mobile-bottom-nav');
     if(width>760){assert(win.getComputedStyle(nav).display==='none',`${width}: desktop dock hidden`);continue;}
-    const strip=nav.querySelector('.mobile-section-tabs');
-    const buttons=[...strip.querySelectorAll('button')];
+    const buttons=[...nav.querySelectorAll('[data-section]')];
     buttons[0].click();await wait();
     const bounds=nav.getBoundingClientRect();
     assert(bounds.left>=16 && bounds.right<=width-16 && bounds.bottom<=height-20,`${width}: dock fits safe gutters`);
@@ -35,44 +34,25 @@ try {
       page.dispatchEvent(new win.PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,clientX:x,clientY:y}));
       page.dispatchEvent(new win.PointerEvent('pointerup',{bubbles:true,pointerType:'mouse',button:0,clientX:x+dx,clientY:y}));await wait();
     };
-    const activeBefore=strip.querySelector('[aria-current="page"]').dataset.section;
-    const pageScroll=canvas.scrollTop;
-    strip.scrollLeft=strip.scrollWidth;await wait();
-    assert(strip.scrollLeft>0 && strip.querySelector('[aria-current="page"]').dataset.section===activeBefore && canvas.scrollTop===pageScroll,`${width}: footer scroll is independent of page selection and scroll`);
-    strip.dispatchEvent(new win.PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,clientX:200,clientY:bounds.top+30}));
-    strip.dispatchEvent(new win.PointerEvent('pointerup',{bubbles:true,pointerType:'mouse',button:0,clientX:100,clientY:bounds.top+30}));await wait();
-    assert(strip.querySelector('[aria-current="page"]').dataset.section===activeBefore,`${width}: footer gestures never trigger page swipe`);
-    assert(win.getComputedStyle(strip).touchAction==='pan-x',`${width}: footer permits native horizontal scrolling`);
-    strip.scrollLeft=0;
-    const current=()=>strip.querySelector('[aria-current="page"]')?.dataset.section;
-    await swipe(70);assert(current()==='home',`${width}: stops at Home`);
-    for(const button of buttons.slice(1)){
-      await swipe(-70);
-      assert(current()===button.dataset.section,`${width}: swipe reaches ${button.dataset.section}`);
-      const active=strip.querySelector('[aria-current="page"]'), r=active.getBoundingClientRect(), area=strip.getBoundingClientRect();
-      assert(r.left>=area.left-1 && r.right<=area.right+1,`${width}: selected tab remains visible`);
+    const current=()=>nav.querySelector('[aria-current="page"]')?.dataset.section;
+    await swipe(-70);assert(current()==='home',`${width}: page gestures no longer navigate`);
+    nav.dispatchEvent(new win.PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,clientX:200,clientY:bounds.top+30}));
+    nav.dispatchEvent(new win.PointerEvent('pointerup',{bubbles:true,pointerType:'mouse',button:0,clientX:100,clientY:bounds.top+30}));await wait();
+    assert(current()==='home' && nav.scrollWidth===nav.clientWidth,`${width}: fixed footer never scrolls or navigates on drag`);
+    const more=nav.querySelector('[aria-controls="mobile-more-menu"]');
+    more.click();await wait();
+    assert(nav.querySelectorAll('.is-active').length===1 && more.classList.contains('is-active'),`${width}: only More highlighted while open`);
+    const menu=doc.querySelector('.mobile-more-menu');
+    assert(menu && !menu.textContent.includes('Sign in') && !menu.textContent.includes('mode'),`${width}: More contains sections only`);
+    assert(menu.getBoundingClientRect().bottom<=bounds.top,`${width}: More clears dock`);
+    for(const label of ['Goals','Investments','General ledgers','Recurring payments']){
+      const option=[...doc.querySelectorAll('.mobile-more-actions button')].find(button=>button.textContent.includes(label));
+      option.click();await wait();
+      assert(!doc.querySelector('.mobile-more-menu') && more.classList.contains('is-active'),`${width}: ${label} opens with More selected`);
+      more.click();await wait();
     }
-    await swipe(-70);assert(current()==='ledger' && !doc.querySelector('.account-menu'),`${width}: end stops without opening Account`);
-    for(const button of buttons.slice(0,-1).reverse()){await swipe(70);assert(current()===button.dataset.section,`${width}: reverse swipe reaches ${button.dataset.section}`);}
-    if(width===390){
-      const touchEvent=(target,type,x,y)=>{
-        const event=new win.Event(type,{bubbles:true});
-        const point={clientX:x,clientY:y};
-        Object.defineProperties(event,{touches:{value:type==='touchstart'?[point]:[]},changedTouches:{value:[point]}});
-        target.dispatchEvent(event);
-      };
-      const pageSwipe=async(target,dx,dy=0)=>{touchEvent(target,'touchstart',250,300);touchEvent(target,'touchend',250+dx,300+dy);await wait();};
-      await pageSwipe(doc.querySelector('.energy-viewport'),-100);
-      assert(current()==='sinking','Content touch swipe selects next section');
-      await pageSwipe(doc.querySelector('.energy-viewport'),10,100);
-      assert(current()==='sinking','Vertical content scroll does not navigate');
-      buttons[2].click();await wait();doc.querySelector('.loan-list button').click();await wait();
-      doc.querySelector('.loan-schedule-toggle').click();await wait();
-      await pageSwipe(doc.querySelector('.loan-table-wrap'),-100);
-      assert(current()==='loans','Repayment table gestures do not change sections');
-      buttons[0].click();await wait();
-    }
-    assert(!nav.textContent.includes('More'),`${width}: real section labels replace More`);
+    doc.dispatchEvent(new win.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));await wait();
+    assert(!doc.querySelector('.mobile-more-menu') && doc.activeElement===more,`${width}: Escape closes More and restores focus`);
     nav.querySelector('.mobile-account-trigger').click();await wait();
     assert(nav.querySelectorAll('.is-active').length===1 && /Use (light|dark) mode/.test(doc.querySelector('.account-menu-theme').textContent),`${width}: Account remains separate with theme control`);
     assert(doc.querySelector('.account-menu').getBoundingClientRect().bottom<=bounds.top,`${width}: Account clears dock`);

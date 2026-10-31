@@ -6,3 +6,5 @@ export async function restoreDriveSession(session, { loadPlan, loadUser, onUser 
   }
   return loadPlan(session)
 }
+
+export const requiresDriveSignIn = error => error?.status === 401

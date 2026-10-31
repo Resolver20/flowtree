@@ -34,3 +34,21 @@ test('profile failures do not discard the plan; plan failures still surface', as
   assert.equal(await restoreDriveSession({}, { ...dependencies, loadPlan: async () => 'plan' }), 'plan')
   await assert.rejects(restoreDriveSession({}, { ...dependencies, loadPlan: async () => { throw new Error('Plan unavailable') } }), /Plan unavailable/)
 })
+
+test('only expired authorization requires signing in again', async () => {
+  const { requiresDriveSignIn } = await import('../../src/domain/restoreDriveSession.js')
+  assert.equal(requiresDriveSignIn({ status: 401 }), true)
+  for (const error of [new TypeError('Failed to fetch'), { status: 403 }, { status: 404 }, { status: 429 }, { status: 503 }, new SyntaxError('Invalid plan')]) {
+    assert.equal(requiresDriveSignIn(error), false)
+  }
+})
+
+test('Drive downloads retain HTTP status so network failures are not treated as logout', async t => {
+  const { downloadFlowtreeBackup } = await import('../../src/lib/googleDriveSync.js')
+  const original = globalThis.fetch
+  t.after(() => { globalThis.fetch = original })
+  for (const status of [401, 403, 503]) {
+    globalThis.fetch = async () => new Response('', { status })
+    await assert.rejects(downloadFlowtreeBackup({ accessToken: 'synthetic', fileId: 'test' }), error => error.status === status)
+  }
+})

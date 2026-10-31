@@ -1,5 +1,4 @@
 import useSectionTransition from './useSectionTransition'
-import useSectionSwipe from './useSectionSwipe'
 import { selectSinkingFunds } from '../../domain/sinkingFunds'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { allocateEnergy } from '../../domain/energyFlow'
@@ -270,8 +269,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
     setPath([])
   }
 
-  const pageSwipe = useSectionSwipe(view, next => { onChangeView(next); setPath([]) })
-  return <main {...pageSwipe} ref={sectionRef} className={`energy-home theme-${theme}`}>
+  return <main ref={sectionRef} className={`energy-home theme-${theme}`}>
     <TreeHeader
       breadcrumbs={breadcrumbs}
       expandAll={expandAll}

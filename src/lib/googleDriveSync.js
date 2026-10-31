@@ -61,7 +61,7 @@ async function driveRequest(path, accessToken, { baseUrl = DRIVE_API, ...options
     } catch {
       // Keep the status-based message when Drive does not return JSON.
     }
-    throw new Error(message)
+    throw Object.assign(new Error(message), { status: response.status })
   }
   return response.status === 204 ? null : response.json()
 }
@@ -157,7 +157,7 @@ export async function uploadFlowtreeBackup({ accessToken, folderId, contents, fi
 export async function downloadFlowtreeBackup({ accessToken, fileId } = {}) {
   if (!accessToken || !fileId) throw new Error('A Google Drive access token and file ID are required.')
   const response = await fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`, { headers: { Authorization: `Bearer ${accessToken}` } })
-  if (!response.ok) throw new Error(`Google Drive download failed (${response.status}).`)
+  if (!response.ok) throw Object.assign(new Error(`Google Drive download failed (${response.status}).`), { status: response.status })
   return response.text()
 }
 
