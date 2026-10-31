@@ -10,6 +10,8 @@ The normal `npm run build` remains the browser-only GitHub Pages build. `npm run
 
 Loading regression: Workers canonicalizes `/index.html` to `/`. The PWA must reconstruct followed-redirect shell responses before caching or serving them for navigation; otherwise subsequent launches fail with `ERR_FAILED`. The service-worker code is part of the cache version hash. Local production-browser tests reproduced the original error and verified the corrected cached reload and OAuth-error return. The earlier generic browser failure was therefore an app-shell bug, not evidence that the host was down.
 
+OAuth connection regression: the `token_connection` reference was traced to `googleFetch` using `redirect: 'error'`, unsupported in workerd. Manual mode plus explicit 3xx rejection preserves the no-forwarding rule and works in the actual runtime. `npm run test:runtime` verifies this without Google credentials or outbound requests. It is also required in the Pages workflow. Reference: [Workers Request redirect support](https://developers.cloudflare.com/workers/runtime-apis/request/).
+
 ## What changes
 
 Google's authorization-code flow uses an HttpOnly, Secure, SameSite=Lax session cookie, PKCE and a one-use cookie-bound state. Google access and refresh tokens live only in an AES-256-GCM encrypted Durable Object record, bound cryptographically to that object. The browser receives user metadata and Drive responses, never Google tokens. A non-secret transport marker selects the same-origin Drive proxy.

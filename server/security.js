@@ -94,7 +94,14 @@ export async function boundedBody(request, limit) {
 }
 
 export async function googleFetch(url, options = {}) {
-  return fetch(url, { ...options, redirect: 'error', signal: AbortSignal.timeout(10_000) })
+  // workerd rejects redirect:'error' before sending the request. Use its
+  // supported manual mode and refuse redirects without forwarding credentials.
+  const response = await fetch(url, { ...options, redirect: 'manual', signal: AbortSignal.timeout(10_000) })
+  if (response.status >= 300 && response.status < 400) {
+    await response.body?.cancel()
+    throw new Error('Unexpected upstream redirect')
+  }
+  return response
 }
 
 export function validateTokens(tokens, previousRefresh = '') {

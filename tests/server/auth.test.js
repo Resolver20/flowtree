@@ -2,10 +2,22 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import worker from '../../server/worker.js'
 import { SessionStore } from '../../server/sessionStore.js'
-import { boundedBody, configuration, cookie, digest, randomSecret, seal, unseal, validateTokens } from '../../server/security.js'
+import { boundedBody, configuration, cookie, digest, googleFetch, randomSecret, seal, unseal, validateTokens } from '../../server/security.js'
 import { authorizedDriveFetch, SERVER_SESSION } from '../../src/lib/serverAuth.js'
 
 const origin = 'https://flowtree.example'
+
+test('Google requests use workerd-compatible manual redirects and never follow credential-bearing redirects', async t => {
+  let calls = 0
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    calls++
+    assert.equal(options.redirect, 'manual')
+    assert.ok(options.signal instanceof AbortSignal)
+    return new Response('', { status: 302, headers: { Location: 'https://untrusted.invalid/' } })
+  })
+  await assert.rejects(googleFetch('https://oauth2.googleapis.com/token', { method: 'POST' }), /Unexpected upstream redirect/)
+  assert.equal(calls, 1)
+})
 function fixture() {
   const objects = new Map()
   const env = { APP_ORIGIN: origin, GOOGLE_CLIENT_ID: 'test-client', GOOGLE_CLIENT_SECRET: 'test-secret', AUTH_ENCRYPTION_KEY: randomSecret() }

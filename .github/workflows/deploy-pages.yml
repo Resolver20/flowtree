@@ -27,6 +27,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm test
+      - run: npm run test:runtime
+      - run: npm run lint
       - name: Build app or verified hosting migration page
         run: |
           if [ -n "$FLOWTREE_HOST_URL" ]; then

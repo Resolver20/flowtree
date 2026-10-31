@@ -1,5 +1,9 @@
 # Flowtree tests
 
+## Cloudflare request compatibility
+
+`npm run test:runtime` runs the real local workerd engine using Miniflare, with fetch mocked and no Google credentials or outbound traffic. It checks the actual Workers Request/AbortSignal implementations used by `googleFetch`. Workers supports `manual` and `follow`, and throws before network I/O for `redirect: 'error'`; that setting caused live login to return `token_connection`. The corrected helper uses manual mode and rejects every 3xx without following the Location. `tests/server/auth.test.js` also verifies a credential-bearing redirect is refused after one request. The runtime suite is separate from `npm test` and now runs in CI alongside the regular tests and lint.
+
 ## Redirected app-shell navigation
 
 Workers static assets redirect `/index.html` to `/`. Previously the PWA cached that followed-redirect Response and returned it for a browser navigation with manual redirect mode, producing `ERR_FAILED` after the first visit. `pwa.test.js` now reproduces this condition and checks non-redirected responses on cache write, legacy cache read, root reopening, Home Screen query URLs and OAuth-error return URLs, while preserving CSP headers and excluding auth/API requests.
