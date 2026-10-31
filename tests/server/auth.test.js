@@ -233,8 +233,29 @@ test('failed OAuth exchange preserves the previous authenticated session', async
   const state = new URL((await login.json()).url).searchParams.get('state')
   t.mock.method(globalThis, 'fetch', async () => Response.json({ error: 'upstream-private-detail' }, { status: 400 }))
   const response = await f.request(`/auth/callback?state=${state}&code=failed`, { cookie: `${login.headers.get('Set-Cookie').split(';')[0]}; ${existing.cookies}` })
-  assert.match(response.headers.get('Location'), /auth_error=failed$/)
+  assert.match(response.headers.get('Location'), /auth_error=token_rejected$/)
   assert.equal((await f.request('/auth/session', { cookie: existing.cookies }).then(r => r.json())).authenticated, true)
+})
+
+test('OAuth failures identify their step without exposing Google response details', async t => {
+  let mode
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (mode === 'connection') throw new Error('private network detail')
+    if (mode === 'invalid_client') return Response.json({ error: 'invalid_client', error_description: 'private credential detail' }, { status: 401 })
+    if (mode === 'unknown') return Response.json({ error: 'private-upstream-value' }, { status: 400 })
+    if (url === 'https://oauth2.googleapis.com/token') return Response.json({ access_token: 'private-access', ...(mode === 'refresh_missing' ? {} : { refresh_token: 'private-refresh' }), token_type: 'Bearer', expires_in: 3600 })
+    return Response.json({ error: { message: 'private account detail' } }, { status: 403 })
+  })
+  for (const [scenario, expected] of [['connection', 'token_connection'], ['invalid_client', 'token_invalid_client'], ['unknown', 'token_rejected'], ['refresh_missing', 'refresh_missing'], ['user', 'user_rejected']]) {
+    mode = scenario
+    const f = fixture()
+    const login = await f.request('/auth/login', { method: 'POST' })
+    const state = new URL((await login.json()).url).searchParams.get('state')
+    const response = await f.request(`/auth/callback?state=${state}&code=test`, { cookie: login.headers.get('Set-Cookie').split(';')[0] })
+    assert.equal(response.headers.get('Location'), `${origin}/?auth_error=${expected}`)
+    assert.ok(![...response.headers.values()].join().includes('private'))
+    assert.equal(response.headers.get('Cache-Control'), 'no-store')
+  }
 })
 
 test('uploads validate plan, canonical metadata, and gpt parent before forwarding', async t => {

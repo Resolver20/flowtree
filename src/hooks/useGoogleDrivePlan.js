@@ -205,7 +205,9 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
           if (!session.authenticated) {
             const callbackError = new URLSearchParams(window.location.search).get('auth_error')
             if (callbackError) window.history.replaceState(null, '', window.location.pathname)
-            setDrive({ status: session.configured ? 'idle' : 'unavailable', user: null, error: callbackError ? 'Sign-in was not completed. Please try again.' : '', accessToken: '', folderId: '', fileId: '' })
+            const safeError = callbackError && /^[a-z_]{1,50}$/.test(callbackError) ? callbackError : 'unknown'
+            setDrive({ status: session.configured ? 'idle' : 'unavailable', user: null, error: callbackError ? `Sign-in was not completed. Please try again. Reference: ${safeError}.` : '', accessToken: '', folderId: '', fileId: '' })
+            if (callbackError) setDialog({ type: 'driveSync' })
             setStartupState('ready')
             return
           }

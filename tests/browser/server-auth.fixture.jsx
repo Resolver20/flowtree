@@ -9,7 +9,7 @@ import { serverAuthEnabled } from '/src/lib/serverAuth.js'
 const mode = new URLSearchParams(location.search).get('mode') || 'restore'
 const requests = []
 let fail = mode === 'retry'
-let signedOut = false
+let signedOut = mode === 'auth-error'
 let generation = 0
 const noop = () => {}
 window.google = { accounts: { oauth2: { initTokenClient() { throw Error('Server mode must not use GIS') } } } }
@@ -32,7 +32,7 @@ export function Session() {
   const [plan, replaceData] = useState(createBlankFlowData)
   const [dialog, setDialog] = useState(null)
   const sync = useGoogleDrivePlan({ plan, replaceData, captureCurrentMonth: noop, dialog, setDialog, setPath: noop, notify: noop })
-  const result = { mode, enabled: serverAuthEnabled, startup: sync.startupState, status: sync.drive.status, retry: !!sync.drive.retryRestore, profile: plan.profile.name, dialog: dialog?.type, requests: requests.length, writes: requests.filter(request => request.method !== 'GET' && request.url !== '/auth/logout').length, browserAuthorization: requests.some(request => request.authorization), allSameOrigin: requests.every(request => request.cookies === 'same-origin'), storedCredentials: sessionStorage.getItem('flowtree-drive-session-v1') }
+  const result = { mode, enabled: serverAuthEnabled, startup: sync.startupState, status: sync.drive.status, error: sync.drive.error, retry: !!sync.drive.retryRestore, profile: plan.profile.name, dialog: dialog?.type, requests: requests.length, writes: requests.filter(request => request.method !== 'GET' && request.url !== '/auth/logout').length, browserAuthorization: requests.some(request => request.authorization), allSameOrigin: requests.every(request => request.cookies === 'same-origin'), storedCredentials: sessionStorage.getItem('flowtree-drive-session-v1') }
   return <><pre id="result">{JSON.stringify(result, null, 2)}</pre><button onClick={() => sync.connectDrive()}>Retry</button><button onClick={() => sync.chooseDriveRestoreCandidate('two')}>Choose older plan</button><button onClick={() => sync.disconnectDrive()}>Sign out</button></>
 }
 export function Fixture() {

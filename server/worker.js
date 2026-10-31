@@ -15,6 +15,7 @@ function redirect(config, error, cookies = []) {
 
 async function callback(request, env, config) {
   const clear = cookie('oauth', '', 0, config)
+  let failure = 'callback_state'
   try {
     const url = new URL(request.url)
     const state = readCookie(request, 'oauth', config)
@@ -25,20 +26,32 @@ async function callback(request, env, config) {
     if (url.searchParams.has('error')) return redirect(config, 'denied', [clear])
     const code = url.searchParams.get('code')
     if (!code || code.length > 4096 || url.searchParams.getAll('code').length !== 1) return redirect(config, 'invalid', [clear])
+    failure = 'token_connection'
     const response = await googleFetch('https://oauth2.googleapis.com/token', { method: 'POST', body: new URLSearchParams({ code, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET, redirect_uri: `${config.origin}/auth/callback`, grant_type: 'authorization_code', code_verifier: verifier }) })
-    if (!response.ok) return redirect(config, 'failed', [clear])
-    const tokens = validateTokens(await response.json())
+    failure = 'token_response'
+    const tokenResponse = await response.json()
+    if (!response.ok) {
+      // Only fixed protocol categories can leave the server. Never forward
+      // Google's description, the code, credentials, tokens, or response body.
+      const known = ['invalid_client', 'invalid_grant', 'unauthorized_client', 'redirect_uri_mismatch', 'invalid_request', 'temporarily_unavailable']
+      return redirect(config, known.includes(tokenResponse.error) ? `token_${tokenResponse.error}` : 'token_rejected', [clear])
+    }
+    if (!tokenResponse.refresh_token) return redirect(config, 'refresh_missing', [clear])
+    const tokens = validateTokens(tokenResponse)
+    failure = 'user_connection'
     const about = await googleFetch('https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress,photoLink)', { headers: { Authorization: `Bearer ${tokens.accessToken}` } })
-    if (!about.ok) return redirect(config, 'failed', [clear])
+    if (!about.ok) return redirect(config, 'user_rejected', [clear])
+    failure = 'user_response'
     const user = (await about.json()).user
-    if (!user?.emailAddress) return redirect(config, 'failed', [clear])
+    if (!user?.emailAddress) return redirect(config, 'user_missing', [clear])
     const secret = randomSecret()
+    failure = 'session_storage'
     const created = await store(env, secret, 'create', { kind: 'session', expiresAt: Date.now() + SESSION_SECONDS * 1000, payload: { ...tokens, user } })
-    if (!created.ok) return redirect(config, 'failed', [clear])
+    if (!created.ok) return redirect(config, 'session_storage', [clear])
     const previous = readCookie(request, 'session', config)
     if (previous) await store(env, previous, 'destroy')
     return redirect(config, '', [clear, cookie('session', secret, SESSION_SECONDS, config)])
-  } catch { return redirect(config, 'failed', [clear]) }
+  } catch { return redirect(config, failure, [clear]) }
 }
 
 export default {
