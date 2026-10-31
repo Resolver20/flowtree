@@ -1,4 +1,5 @@
 import { goalCardPreview } from './goalCardPreview'
+import { useId, useState } from 'react'
 import InactiveMarker from './InactiveMarker'
 import MonthlyPlanShare from './MonthlyPlanShare'
 import { monthlyPlanShare } from '../../domain/monthlyPlanShare'
@@ -18,11 +19,17 @@ function MobileIncomeSource({ source, onManage }) {
   </div>
 }
 
-function MobileIncomeSummary({ income, onInspectIncome }) {
-  return <div className="mobile-income-source" aria-label={`Income, ${formatMoney(income)} per month`}>
+function MobileIncomeSummary({ income, onInspectIncome, hasChildren, expanded, onToggle, childrenId }) {
+  const content = <>
     <span className="material-symbols-rounded" aria-hidden="true">payments</span>
     <span><strong>Income</strong><small>{formatMoney(income)} /mo</small></span>
-    <button type="button" onClick={onInspectIncome} aria-label="View income information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button>
+    {hasChildren && <span className="mobile-tree-cue material-symbols-rounded" aria-hidden="true">{expanded ? 'expand_less' : 'expand_more'}</span>}
+  </>
+  return <div className="mobile-tree-node-row mobile-income-root">
+    {hasChildren
+      ? <button type="button" className="mobile-income-source" onClick={onToggle} aria-expanded={expanded} aria-controls={childrenId} aria-label={`${expanded ? 'Collapse' : 'Show'} Income, ${formatMoney(income)} per month`}>{content}</button>
+      : <div className="mobile-income-source" aria-label={`Income, ${formatMoney(income)} per month`}>{content}</div>}
+    <button type="button" className="mobile-tree-manage" onClick={onInspectIncome} aria-label="View income information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button>
   </div>
 }
 
@@ -75,13 +82,15 @@ function MobileNode({ entry, tree, monthlyIncome, selectedPath, expandAll, colla
 }
 
 export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, monthlyDeductions, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onInspectIncome, onNavigate, onInspect, onInspectPlan }) {
+  const [incomeExpanded, setIncomeExpanded] = useState(true)
+  const incomeChildrenId = useId()
   const rootLabel = sinking ? 'Sinking funds' : 'Monthly plan'
   return <div className="mobile-tree" aria-label={`${rootLabel} flow`}>
     {!sinking && <><section className="mobile-tree-income" aria-label="Income">
-      <span className="mobile-tree-step"><span>Income</span><button type="button" onClick={onInspectIncome} aria-label="View income information"><span className="material-symbols-rounded" aria-hidden="true">info</span><span>Info</span></button></span>
-      {incomeSources.length
-        ? incomeSources.map(source => <MobileIncomeSource key={source.id} source={source} onManage={onManageIncomeSource} />)
-        : <MobileIncomeSummary income={income} onInspectIncome={onInspectIncome} />}
+      <MobileIncomeSummary income={income} onInspectIncome={onInspectIncome} hasChildren={incomeSources.length > 0} expanded={incomeExpanded} onToggle={() => setIncomeExpanded(expanded => !expanded)} childrenId={incomeChildrenId} />
+      {incomeSources.length > 0 && <div id={incomeChildrenId} className="mobile-income-children" role="group" aria-label="Income sources" hidden={!incomeExpanded}>
+        {incomeSources.map(source => <MobileIncomeSource key={source.id} source={source} onManage={onManageIncomeSource} />)}
+      </div>}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" /></>}
     <section className="mobile-plan-root" aria-label={rootLabel}>

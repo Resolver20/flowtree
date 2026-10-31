@@ -2,10 +2,14 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import MobileTree from '/src/features/flowtree/MobileTree.jsx';
+import PlanDialog from '/src/features/flowtree/PlanDialog.jsx';
 import '/src/index.css'; import '/src/features/flowtree/EnergyExplorer.css';
 const root = createRoot(document.querySelector('#root'));
-window.renderCase = ({deductions,remaining,sinking,dark}) => root.render(React.createElement('div',{className: dark ? 'theme-dark' : 'theme-light'},React.createElement(MobileTree,{
+window.renderCase = ({deductions,remaining,sinking,dark,incomeSources=[]}) => root.render(React.createElement('div',{className: dark ? 'theme-dark' : 'theme-light'},React.createElement(MobileTree,{
 monthlyDeductions:deductions,monthlyOutcome:remaining,sinking,income:60000,monthlyIncome:60000,
-incomeSources:[],tree:[],allocations:[],path:[],collapsedPaths:new Set(),onInspectPlan:()=>{},onInspectIncome:()=>{}
+incomeSources,tree:[],allocations:[],path:[],collapsedPaths:new Set(),onInspectPlan:()=>{},onInspectIncome:()=>{},onManageIncomeSource:()=>{}
 })));
+window.renderIncomeOverview = incomeSources => root.render(React.createElement(PlanDialog,{
+dialog:{type:'incomeOverview'},incomeSources,onClose:()=>{},onRequestAddIncomeSource:()=>{document.body.dataset.addRequested='yes'}
+}));
 </script></html>

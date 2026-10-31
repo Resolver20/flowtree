@@ -23,9 +23,31 @@ try {
       assert(frame.contentWindow.getComputedStyle(deductions).color !== frame.contentWindow.getComputedStyle(available).color, `${width}/${dark}/${remaining}: distinct summary colors`);
       assert(card.scrollWidth <= card.clientWidth, `${width}/${dark}/${remaining}: card does not overflow`);
     }
+    const incomeSources = [{id:'salary',name:'Salary',amount:50000},{id:'freelance',name:'Freelance income',amount:10000}];
+    frame.contentWindow.renderCase({deductions:1,remaining:1,incomeSources}); await wait();
+    const income = frame.contentDocument.querySelector('.mobile-tree-income');
+    assert(income.querySelector('.mobile-income-root .mobile-income-source strong').textContent === 'Income', `${width}: Income parent remains with sources present`);
+    assert(income.querySelector('.mobile-income-root .mobile-income-source small').textContent === '₹60,000 /mo', `${width}: parent shows combined income`);
+    const children = [...income.querySelectorAll('.mobile-income-children .mobile-income-source')];
+    assert(children.length === 2 && children[0].textContent.includes('Salary') && children[1].textContent.includes('Freelance income'), `${width}: sources are Income children`);
+    assert(children.every(child => child.getBoundingClientRect().left > income.getBoundingClientRect().left && child.scrollWidth <= child.clientWidth), `${width}: child indentation without card overflow`);
+    const toggle = income.querySelector('.mobile-income-root button.mobile-income-source');
+    toggle.click(); await wait();
+    assert(toggle.getAttribute('aria-expanded') === 'false' && income.querySelector('.mobile-income-children').hidden, `${width}: Income collapses its child group`);
+    income.querySelector('.mobile-income-root .mobile-tree-manage').click(); await wait();
+    assert(toggle.getAttribute('aria-expanded') === 'false', `${width}: Info does not toggle Income`);
+    toggle.click(); await wait();
+    assert(toggle.getAttribute('aria-expanded') === 'true' && !income.querySelector('.mobile-income-children').hidden, `${width}: Income expands its child group`);
     frame.contentWindow.renderCase({deductions:1,remaining:1,sinking:true}); await wait();
     assert(!frame.contentDocument.querySelector('.mobile-plan-summary'), `${width}: Sinking funds has no monthly summary`);
   }
+  frame.contentWindow.renderIncomeOverview([{id:'salary',name:'Salary',amount:50000}]); await wait();
+  const dialog = frame.contentDocument.querySelector('dialog');
+  assert(!dialog.textContent.includes('Edit Salary'), 'Income overview has no source edit action');
+  const add = [...dialog.querySelectorAll('button')].find(button => button.textContent === 'Add income source');
+  assert(Boolean(add), 'Income overview contains Add income source');
+  add.click();
+  assert(frame.contentDocument.body.dataset.addRequested === 'yes', 'Add income source invokes the add workflow');
   document.body.dataset.result = 'pass'; document.querySelector('#result').textContent = `PASS (${checks.length} checks)\n${checks.join('\n')}`;
 } catch(error) { document.body.dataset.result = 'fail'; document.querySelector('#result').textContent = `FAIL: ${error.message}`; }
 </script></body></html>
