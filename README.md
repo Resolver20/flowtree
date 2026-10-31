@@ -1,27 +1,80 @@
 # FlowTree
 
-FlowTree is a private, browser-first planning tool for understanding a monthly money plan as a hierarchy:
+**See where your monthly money is planned to go.**
 
-`income -> categories -> child destinations`
+FlowTree turns your income, bills, loans, and goals into a visual money plan. Follow the branches from income to categories to individual expenses, and see what remains after your targets and safety buffer.
 
-It shows where planned income would go, which target would be funded next, and what remains after the safety buffer and monthly targets. It includes dedicated views for sinking funds, loans, life goals, and investments. It does not connect to a bank, move money, or claim that planned amounts are actual savings.
+**[Open FlowTree](https://resolver20.github.io/flowtree/)** · [User guide](./docs/USER_GUIDE.md) · [PDF guide](./docs/FlowTree-User-Guide.pdf)
 
-## Live site
+![FlowTree Home: income flows into a monthly plan, then into categories and individual expenses.](./docs/images/home.png)
 
-After GitHub Pages finishes its first deployment, Flowtree is available at [resolver20.github.io/flowtree](https://resolver20.github.io/flowtree/).
+*Screenshots use made-up example data in a local test copy. The live app uses Google Drive for saving.*
 
-## Quick start
+## What can I do with it?
 
-Use a Node.js version supported by the installed Vite release. Then run:
+| View | What it helps you do |
+| --- | --- |
+| **Home** | See your whole monthly plan and the money remaining after targets and your safety buffer. |
+| **Sinking funds** | Plan monthly set-asides for upcoming yearly expenses, such as insurance. |
+| **Loans** | Review monthly commitments and explore repayment projections. |
+| **Life goals** | Plan towards a target amount and date. |
+| **Recurring payments** | Review regular planned payments. |
+| **Investments** | Track monthly contributions and values you enter yourself. |
+| **General ledger** | Record expenses separately from your monthly plan. |
+
+### A closer look at loans
+
+See what you still owe, the scheduled monthly payment, and the amount you have included in your plan. Open a loan to review its repayment schedule.
+
+![FlowTree Loans: a sample car loan with remaining principal, scheduled payment, and monthly contribution.](./docs/images/loans.png)
+
+## Get started
+
+1. **Open the app** and use **Account** to sign in to Google Drive to restore or save your plan.
+2. **Add your income and safety buffer**, then add expenses and goals under the relevant categories.
+3. **Explore your plan.** Open or close branches on Home, or switch to a dedicated view for more detail.
+4. **Save your changes** with **Save to Google Drive** before closing the app. You can also download a JSON backup.
+
+Your plan is a preview: FlowTree does not connect to your bank or move money. Investment values and savings progress are manually entered or projected, rather than live account balances.
+
+## Your data and saving
+
+- Your active plan stays in memory while the tab is open. Save before closing it.
+- Google Drive saves a plan in your own account. Changes are saved when you choose **Save**.
+- Download a JSON backup when you want a separate copy.
+- Switching between views does not save the plan.
+
+Read the [privacy policy](./public/privacy.html) and [terms](./public/terms.html) for details.
+
+## Use it like a phone app
+
+Choose **Account → Install Flowtree** when available. On iPhone or iPad, open the site in Safari and choose **Share → Add to Home Screen**. On Android, use your browser's **Install app** or **Add to Home screen** option.
+
+An internet connection is needed for Google sign-in, restoring, and saving. Opening the app offline shows a reconnect screen. If you lose connection while editing, keep the app open and reconnect before saving.
+
+When **Update ready** appears, save your changes, close all FlowTree windows, and reopen the app.
+
+---
+
+## Technical details
+
+Everything below is for developers and readers who want implementation details.
+
+### Stack and local setup
+
+React 19, plain JavaScript/JSX, Vite, component CSS, Node's built-in test runner, and Oxlint. There is no custom backend. Google Drive integration uses Google Identity Services and the Drive API.
+
+Use Node.js 22, as in the deployment workflow:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open the URL printed by Vite. The port may differ when the default port is already occupied.
+Open the URL printed by Vite; the port can vary.
 
-## Commands
+### Commands
+
 
 | Command | Purpose |
 | --- | --- |
@@ -39,46 +92,8 @@ npm run lint
 npm run build
 ```
 
-## Current experience
+### Financial model
 
-- The compact touch navigation retains every planning view and account access on phone portrait and short landscape screens.
-- Mobile starts at the person and income side of the flow; management, breadcrumb, and dialog actions use touch-friendly targets with keyboard-visible focus.
-- The home screen keeps the income source on the left and reveals deeper levels to the right.
-- The **Monthly plan** root is always visible and expanded. Only category and destination branches can be opened or collapsed.
-- Every sibling level is ordered by monthly total from highest to lowest, including children revealed when a node expands.
-- Selecting a parent opens its children without moving already visible columns.
-- **Full tree overview** lays out the hierarchy in disjoint subtree bands and scales it to the viewport. In **Sinking funds**, the same control expands or collapses that view's yearly-target tree without taking you back Home.
-- Each node card shows a distinct Material Symbol, its name, and its monthly target.
-- Yearly entries support a target date. Dated Life goals also record their start date and amount already accumulated, so Flowtree shows progress to the end date and divides the remaining target across the months left. Goals and general ledgers each support a user-selected Material Symbol icon.
-- Every destination has one subtle info button beside its icon. It uses the same semantic color as the item icon in the read-first management dialog, which offers **Add child**, **Edit details**, and **Delete**.
-- Options contains only plan-level controls such as income, buffer, top-level categories, expansion, and sample mode.
-- The footer explains the next unfunded target or the amount left after targets and buffer.
-- Options allow income and buffer editing, destination creation, full-tree expansion, and a temporary sample flow.
-- The profile menu contains Google Drive sign-in, JSON editing for connected accounts, account switching, and the light/dark appearance control. A connected user's Google profile photo also appears on the Home flow. A connected user’s Drive plan is restored and later changes are saved only with **Save to Google Drive**.
-- Loans include a live **Draft payoff sketch** so a proposed rate, tenure, or extra principal amount can be reviewed before it is saved. Saving a loan updates its monthly payment in Home and stays in the open plan until you choose **Save to Google Drive**.
-- **Investments** keeps Long-Term Growth entries together. Record an investment type, a manually entered current value, and its monthly contribution; the contribution appears in Home, while the value is never treated as live market data or allocatable money.
-- **General ledger** keeps named expense records such as Home GL separate from monthly planning. Each ledger records its assigned amount, total expenses, and remaining amount; creating a GL or adding an expense is included in the same Drive JSON sync.
-- Pinning Home or Sinking funds locks only its zoom level; scrolling and panning stay available. The plan JSON keeps the pin's zoom, starting position, and open branches under `canvasPins`. Choose **Save** to keep the pin for later sessions. Restoring a saved plan opens its most recently pinned view; each canvas keeps its own pin. Unpinning is also a plan change to save. Older JSON plans without pins continue to open normally.
-- On mobile (760px wide or narrower), the tree uses normal-size responsive cards with vertical scrolling. Canvas zoom and pin controls are omitted, and desktop zoom/pins do not scale the mobile layout. Saved desktop pins remain intact.
-- Financial plan data is kept only in active React memory while the page is open. Old browser-local plan copies are removed.
-- Options can export a portable JSON backup and import a validated JSON plan after a replacement preview.
-- A destination picker provides direct keyboard/touch access to every nested item, with unscaled Edit and Add child actions.
-- Forms preview monthly branch totals, support decimals and icon selection, and trap keyboard focus until closed (Escape cancels).
-- The icon picker groups Material Symbols across banking, income, spending, housing, debt, protection, tax, life goals, investing, transport, and lifestyle categories.
-- Subscription presets cover major streaming, music, cloud, productivity, AI, gaming, news, fitness, food, transport, telecom, and software memberships.
-- Deletion explicitly previews the entire affected branch. Undo is available in the notification until it is dismissed, another plan change occurs, or the page reloads.
-- New items are automatically selected. Custom category names and removed categories remain unchanged on reload; storage failures show a warning.
-
-### How to use FlowTree
-
-1. Start on **Home** and add income sources plus a safety buffer.
-2. Add monthly destinations to the appropriate planning category.
-3. Use **Sinking funds** for dated yearly payments, **Loans** for payoff projections, **Life goals** for end-dated goal targets, **Investments** for Long-Term Growth contributions, and **General ledger** for separate expense tracking.
-4. Use the profile menu to choose light or dark mode, then sign in with Google Drive when you want to restore or save your plan in your own Drive.
-
-Read the full [user guide](./docs/USER_GUIDE.md) or download the [PDF guide](./docs/FlowTree-User-Guide.pdf). For implementation details, see the [technical architecture](./docs/ARCHITECTURE.md).
-
-## Financial model
 
 The allocation preview is deterministic:
 
@@ -96,9 +111,13 @@ The useful plan summary is:
 available = income - safety buffer - monthly targets
 ```
 
-Show a positive result as **Available** or **Unassigned**. If the result is negative, show **Over-planned by ...**. This is planning information, not an account balance.
+The interface shows **Deductions** in green and signed **Remaining** in purple, including negative values. These are plan-preview amounts, not an account balance.
 
-## JSON backup and import
+### JSON backup and import
+
+<details>
+<summary>Plan format, validation, and example JSON</summary>
+
 
 Use **Account → Edit plan JSON** to open the current plan in Flowtree. You can edit it directly; Flowtree validates the JSON before replacing the active plan, then lets you save the validated version using **Save to Google Drive**.
 
@@ -140,7 +159,10 @@ Authoring rules:
 - An investment can include optional metadata: `"investment": { "type": "Mutual fund", "currentValue": 125000 }`. Its node `amount` remains the monthly contribution; `currentValue` is a user-entered record only.
 - Versioned Flowtree exports from earlier releases are still accepted for compatibility.
 
-## Google Drive sync
+</details>
+
+### Google Drive configuration
+
 
 Google Drive sign-in is optional. The app asks the user to sign in with their own Google account, creates or uses an app-owned private `gpt` folder, restores a valid `flowtree-plan.json` when it exists, and saves later plan changes only when you choose **Save to Google Drive**. If duplicates exist, the newest valid files are shown first for an explicit restore choice. No Google credentials are stored in FlowTree data or committed to the repository.
 
@@ -148,17 +170,28 @@ The public [privacy policy](./public/privacy.html) and [terms](./public/terms.ht
 
 To enable the feature for a deployed site, create a Google OAuth web client, add the deployed site origin to its authorised JavaScript origins, then add its client ID in the GitHub repository variable `GOOGLE_OAUTH_CLIENT_ID`. The deploy workflow passes that public OAuth client ID to Vite as `VITE_GOOGLE_CLIENT_ID`. See [Google Drive sync setup](./docs/GOOGLE_DRIVE_SYNC.md).
 
-## Deployment
+### Deployment and PWA
 
-Pushing to `main` runs the included GitHub Pages workflow. It builds the Vite app with the `/flowtree/` base path and publishes `dist/`. In repository settings, set **Pages → Build and deployment → Source** to **GitHub Actions** once; future pushes deploy automatically.
+Pushing to `main` runs the GitHub Pages workflow, builds with the `/flowtree/` base path, and publishes `dist/`. Set **Settings → Pages → Source** to **GitHub Actions**.
 
-## Project map
+The service worker caches static app assets only. Google requests, credentials, and plan JSON are not cached. Unsaved plans are not persisted offline and uploads are not queued. Updates wait until existing app windows close.
+
+PWA registration runs only in production builds. To test the GitHub Pages path locally:
+
+```sh
+VITE_BASE_PATH=/flowtree/ npm run build
+VITE_BASE_PATH=/flowtree/ npm run preview -- --host 127.0.0.1 --port 4173
+```
+
+Open `http://127.0.0.1:4173/flowtree/`. The normal Vite development server and private offline test copy do not register a worker. Icons can be regenerated with `python3 scripts/generate-icons.py` (no dependencies).
+### Project map
+
 
 | Path | Role |
 | --- | --- |
 | `src/main.jsx` | React root and Strict Mode |
 | `src/App.jsx` | App composition, dialogs, and persistent actions |
-| `src/features/flowtree/EnergyExplorer.jsx` | Feature composition, navigation, demo state, and allocation-derived view state |
+| `src/features/flowtree/EnergyExplorer.jsx` | View composition, navigation, and allocation-derived presentation |
 | `src/features/flowtree/TreeCanvas.jsx` | SVG connectors, root node, and positioned tree cards |
 | `src/features/flowtree/treeLayout.js` | Pure column, subtree-band, and connector layout calculation |
 | `src/features/flowtree/PlanDialog.jsx` | Income, buffer, node-editing, and child-creation dialogs |
@@ -182,26 +215,3 @@ The earlier prototype screens, styles, and unused assets were removed. The activ
 - [`DESIGN.md`](./DESIGN.md) — accepted visual and interaction system
 - [`docs/USER_GUIDE.md`](./docs/USER_GUIDE.md) — non-technical product guide
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — technical architecture
-
-## Framework references
-
-- [React documentation](https://react.dev/learn)
-- [Vite guide](https://vite.dev/guide/)
-- [Vite CLI](https://vite.dev/guide/cli)
-
-## Install on your phone
-
-Flowtree supports installation from its HTTPS website. In **Account → Install Flowtree**, use the browser's installation prompt when available. On iPhone/iPad, open the site in Safari and choose **Share → Add to Home Screen → Add**. On Android, use **Install app** or **Add to Home screen** in the browser menu. The installed app opens in its own window with a Flowtree icon.
-
-The app shell is available offline after the first successful online visit. Opening it offline shows a reconnect screen: Google sign-in, plan restoration, and Drive saves require internet. If connectivity drops during editing, keep the window open and reconnect before saving. This release does not persist unsaved financial plans offline or queue background uploads.
-
-Updates wait until all existing Flowtree windows are closed. When **Update ready** appears, save your changes, close the app/browser windows, and reopen. An update never automatically reloads your open plan. The service worker caches only the app's static assets; Google requests, credentials, and plan JSON are not cached.
-
-PWA registration runs only in production builds. To test the GitHub Pages path locally:
-
-```sh
-VITE_BASE_PATH=/flowtree/ npm run build
-VITE_BASE_PATH=/flowtree/ npm run preview -- --host 127.0.0.1 --port 4173
-```
-
-Open `http://127.0.0.1:4173/flowtree/`. The normal Vite development server and private offline test copy do not register a worker. Icons can be regenerated with `python3 scripts/generate-icons.py` (no dependencies).
