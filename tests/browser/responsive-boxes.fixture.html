@@ -1,0 +1,26 @@
+<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><div id="root"></div><script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {flushSync} from 'react-dom';
+import GoalsView from '/src/features/flowtree/GoalsView.jsx';
+import LoansView from '/src/features/flowtree/LoansView.jsx';
+import InvestmentsView from '/src/features/flowtree/InvestmentsView.jsx';
+import GeneralLedgerView from '/src/features/flowtree/GeneralLedgerView.jsx';
+import RecurringPaymentsView from '/src/features/flowtree/RecurringPaymentsView.jsx';
+import {createExamplePlan} from '/src/domain/examplePlan.js';
+import '/src/index.css';
+import '/src/features/flowtree/EnergyExplorer.css';
+const root=createRoot(document.querySelector('#root')),noop=()=>{};
+window.renderCase=({screen,dark,long})=>{
+ const plan=createExamplePlan(),name=long?'LongGoalNameWithoutSpaces'.repeat(4):'Family holiday and future plans';
+ const node={id:'test',name,amount:999999999,period:'year',startDate:'2026-10-01',dueDate:'2028-10-31',savedAmount:0,status:'active',symbol:'flag',children:[]};
+ const views={
+ goals:[GoalsView,{goals:[node],onSaveGoal:noop}],
+ loans:[LoansView,{loans:[{...node,period:'month',loan:{principal:999999999,remainingPrincipal:999999999,annualRate:8,tenureMonths:240,userMonthlyContribution:999999,extraPayment:1000}}],onSaveLoan:noop,onDeleteLoan:noop}],
+ investments:[InvestmentsView,{investments:[{...node,period:'month',investment:{type:'Mutual fund',currentValue:999999999}}],onSaveInvestment:noop}],
+ ledger:[GeneralLedgerView,{ledgers:[{id:'test',name,budget:999999999,amount:999999999,entries:[{id:'expense',date:'2026-10-31',description:name,amount:999999999}]}],onSaveLedger:noop,onDeleteLedger:noop,onSaveExpense:noop,onDeleteEntry:noop}],
+ recurring:[RecurringPaymentsView,{plan}]
+ };
+ const [Component,props]=views[screen];flushSync(()=>root.render(React.createElement('main',{className:`energy-mode ${dark?'theme-dark':'theme-light'}`},React.createElement(Component,{...props,key:`${screen}/${dark}/${long}`}))));
+};
+</script></html>

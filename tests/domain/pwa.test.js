@@ -33,6 +33,22 @@ test('PWA precaches the Pages app shell and opens it offline without a network r
   assert.ok(w.requests.every(request => request.cache === 'reload'))
 })
 
+test('cached launches work at root and Pages scope, including launch query strings', async () => {
+  for (const base of ['/', '/flowtree/']) {
+    const w = worker(base)
+    let pending
+    w.handlers.install({ waitUntil: promise => { pending = promise } })
+    await pending
+    w.options.offline = true
+    for (const path of [base, `${base}index.html`, `${base}?source=homescreen`]) {
+      const response = await w.request(path, { mode: 'navigate' })
+      assert.equal(response.status, 200)
+      assert.match(await response.text(), /assets\/app.js/)
+    }
+    assert.equal(w.fetched(), 2)
+  }
+})
+
 test('PWA never intercepts Google credentials, API requests, writes, or unrelated sites', () => {
   const w = worker()
   for (const [path, options] of [
@@ -68,6 +84,13 @@ test('manifest supports root and Pages paths with correctly sized phone icons', 
     assert.equal(png.readUInt32BE(20), size)
   }
   assert.ok(manifest.icons.some(icon => icon.purpose === 'maskable'))
+  const appleIcon = readFileSync(new URL('../../public/icons/apple-touch-icon.png', import.meta.url))
+  assert.equal(appleIcon.readUInt32BE(16), 180)
+  assert.equal(appleIcon.readUInt32BE(20), 180)
+  const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')
+  assert.match(html, /name="viewport"[^>]*viewport-fit=cover/)
+  assert.doesNotMatch(html, /user-scalable=no|maximum-scale=1/)
+  assert.match(html, /name="apple-mobile-web-app-capable" content="yes"/)
 })
 
 

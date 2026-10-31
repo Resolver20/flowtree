@@ -1,0 +1,10 @@
+<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><div id="root"></div><script type="module">
+import React from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
+import PwaShell from '/src/pwa/PwaShell.jsx';import '/src/index.css';
+let online=false,theme='light';
+Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>online});
+Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:key=>key==='flowtree-theme'?theme:null}});
+const root=createRoot(document.querySelector('#root'));
+window.renderCase=dark=>{online=false;theme=dark?'dark':'light';flushSync(()=>root.render(React.createElement(PwaShell,{key:theme})))};
+window.reconnect=()=>{online=true;flushSync(()=>window.dispatchEvent(new Event('online')))};
+</script></html>

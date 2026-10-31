@@ -4,5 +4,7 @@
 .pwa-offline-screen p { max-width: 360px; line-height: 1.5; }
 .pwa-offline-screen button { min-height: 44px; padding: 10px 18px; border: 0; border-radius: 8px; background: #5366c8; color: white; }
 .pwa-offline-screen button:disabled { opacity: .55; cursor: default; }
+.pwa-offline-screen { padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); }
+.pwa-offline-screen.theme-dark { background: #15191f; color: #e4ebff; }
 .pwa-status { position: fixed; z-index: 40; bottom: 12px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); padding: 10px 14px; border: 1px solid #cbd3e0; border-radius: 8px; background: #fff; color: #334158; font-size: 12px; line-height: 1.5; box-shadow: 0 3px 12px #26324714; }
 @media (max-width: 760px) { .pwa-status { bottom: var(--mobile-nav-clearance, calc(88px + env(safe-area-inset-bottom))); } }

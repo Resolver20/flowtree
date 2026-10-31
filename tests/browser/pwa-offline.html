@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>PWA offline screen regression</title><pre id="result">Running…</pre><iframe title="Offline screen" style="border:0" src="/tests/browser/pwa-offline.fixture.html"></iframe><script type="module">
+const frame=document.querySelector('iframe');let checks=0;const errors=[];const check=(ok,msg)=>{checks++;if(!ok)errors.push(msg)};
+await new Promise(resolve=>frame.onload=resolve);
+for(const [width,height] of [[320,740],[390,844],[430,932],[568,320],[740,360],[768,1024]])for(const dark of [false,true]){
+frame.style.width=`${width}px`;frame.style.height=`${height}px`;frame.contentWindow.renderCase(dark);
+const doc=frame.contentDocument,panel=doc.querySelector('.pwa-offline-screen'),button=panel.querySelector('button');
+check(panel.classList.contains(dark?'theme-dark':'theme-light'),`${width}: offline screen keeps saved theme`);
+check(button.disabled&&panel.textContent.includes('You’re offline'),`${width}: cold offline launch explains connection requirement`);
+check(panel.scrollWidth<=panel.clientWidth&&button.getBoundingClientRect().height>=44,`${width}: screen fits with usable action`);
+frame.contentWindow.reconnect();check(!button.disabled&&panel.textContent.includes('Ready to open Flowtree'),`${width}: reconnect enables launch`);
+}
+document.body.dataset.result=errors.length?'fail':'pass';document.querySelector('#result').textContent=`${errors.length?'FAIL':'PASS'} (${checks} checks)\n${errors.join('\n')}`;
+</script></html>

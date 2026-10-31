@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import App from '../App'
+import { readDeviceTheme } from '../domain/devicePreferences'
 import './pwa.css'
 
 export default function PwaShell() {
@@ -32,7 +33,7 @@ export default function PwaShell() {
     }).catch(() => { /* Installation is optional; ordinary browser use continues. */ })
     return () => { active = false; registration?.removeEventListener('updatefound', found); worker?.removeEventListener('statechange', changed) }
   }, [])
-  if (!started) return <main className="pwa-offline-screen">
+  if (!started) return <main className={`pwa-offline-screen theme-${readDeviceTheme(window)}`}>
     <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" width="72" height="72" />
     <h1>{online ? 'Ready to open Flowtree' : 'You’re offline'}</h1>
     <p>Connect to the internet to open your Google Drive plan.</p>

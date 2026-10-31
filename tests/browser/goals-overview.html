@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Goals overview layout regression</title><pre id="result">Running…</pre><iframe title="Goals overview" style="border:0"></iframe><script type="module">
+const frame=document.querySelector('iframe');
+frame.src='/tests/browser/goals-overview.fixture.html';
+const wait=()=>new Promise(resolve=>setTimeout(resolve,70));
+let checks=0;
+const assert=(ok,message)=>{if(!ok)throw Error(message);checks++};
+try {
+  for(let i=0;i<100&&!frame.contentWindow.renderCase;i++)await wait();
+  assert(!!frame.contentWindow.renderCase,'fixture mounts');
+  for(const width of [320,375,390,430,568,760,768,1024,1366,1920]) {
+    frame.style.width=`${width}px`;frame.style.height='844px';
+    for(const dark of [false,true]) {
+      frame.contentWindow.renderCase(dark);await wait();
+      const doc=frame.contentDocument;
+      const portfolio=doc.querySelector('.goal-portfolio');
+      assert(portfolio.scrollWidth<=portfolio.clientWidth,`${width}: overview contains its content`);
+      for(const el of portfolio.querySelectorAll('.goal-stat-grid > div, .goal-stat-grid > div > *, .goal-portfolio-list button, .goal-portfolio-list button > span:first-child')) {
+        assert(el.scrollWidth<=el.clientWidth+1,`${width}: ${el.textContent.slice(0,40)} overflows`);
+      }
+      assert(doc.querySelector('.goals-view').scrollWidth<=doc.querySelector('.goals-view').clientWidth,`${width}: no horizontal page scrolling`);
+      assert(portfolio.querySelector('.inactive-marker').textContent==='Paused',`${width}: inactive label remains visible`);
+      const button=portfolio.querySelector('button');button.focus();assert(doc.activeElement===button,`${width}: goal is keyboard focusable`);
+      button.click();await wait();assert(!!doc.querySelector('.goal-details'),`${width}: goal opens`);
+    }
+  }
+  document.body.dataset.result='pass';document.querySelector('#result').textContent=`PASS (${checks} checks)`;
+}catch(error){document.body.dataset.result='fail';document.querySelector('#result').textContent=`FAIL: ${error.message}`}
+</script></html>

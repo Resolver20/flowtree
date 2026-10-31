@@ -743,7 +743,29 @@ button.income-source-card { cursor: pointer; }
 .amount-node:has(> .inactive-marker) .amount-copy, .mobile-tree-card:has(> .inactive-marker) .mobile-tree-copy { flex: 1; }
 .has-children:not(.is-expanded) .amount-node > .inactive-marker { margin-right: 8px; }
 .goal-list button > span:nth-child(2) { display: grid; min-width: 0; flex: 1; gap: 3px; }
-.goal-portfolio-list button > span:first-child { flex: 1; }
+.goal-portfolio { min-width: 0; overflow-wrap: anywhere; }
+.goal-portfolio .goal-stat-grid > div { min-width: 0; }
+.goal-portfolio-list button { min-width: 0; }
+.goal-portfolio-list button > span:first-child { flex: 1; min-width: 0; }
+.goal-portfolio-list button > .material-symbols-rounded { flex-shrink: 0; }
+/* User names and exact amounts must fit the same panels in every section. */
+:is(.loan-portfolio, .loan-details, .loan-editor, .goal-details, .goal-editor, .ledger-details, .ledger-editor, .expense-editor) { min-width: 0; overflow-wrap: anywhere; }
+:is(.loan-details-heading, .loan-editor-heading, .goal-details-heading, .goal-editor-heading, .ledger-details-heading, .ledger-editor-heading) > div { min-width: 0; }
+:is(.loan-details-heading, .loan-editor-heading, .goal-details-heading, .goal-editor-heading, .ledger-details-heading, .ledger-editor-heading) { flex-wrap: wrap; }
+@media (min-width: 681px) {
+  :is(.loan-details-heading, .loan-editor-heading, .goal-details-heading, .goal-editor-heading, .ledger-details-heading, .ledger-editor-heading) > div:first-child { flex: 1 1 180px; }
+}
+:is(.loan-details-heading, .loan-editor-heading, .goal-details-heading, .goal-editor-heading, .ledger-details-heading, .ledger-editor-heading) button { flex-shrink: 0; white-space: nowrap; }
+:is(.loan-stat-grid, .goal-stat-grid, .ledger-stat-grid, .loan-payment-summary, .loan-form-grid, .goal-form-grid, .ledger-form-grid, .expense-form-grid) > * { min-width: 0; overflow-wrap: anywhere; }
+:is(.loan-editor, .goal-editor, .ledger-editor, .expense-editor) :is(input, select) { min-width: 0; }
+.loan-portfolio-list button { min-width: 0; }
+.loan-portfolio-list button > span:first-child { min-width: 0; flex: 1; }
+.loan-portfolio-list button > .material-symbols-rounded { flex-shrink: 0; }
+.goal-stat-grid, .goal-portfolio .goal-stat-grid, .ledger-overview.loan-portfolio .ledger-stat-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
+@media (max-width: 760px) {
+  .goal-portfolio { padding: 17px; }
+  .goal-portfolio .goal-stat-grid { grid-template-columns: minmax(0, 1fr); }
+}
 
 .goal-start-note { align-self: center; color: var(--muted, #748095); font-size: 11px; line-height: 1.5; }
 
@@ -796,11 +818,11 @@ button.income-source-card { cursor: pointer; }
 @media (max-width: 760px) {
   .energy-mode :is(input, select, textarea), .modal :is(input, select, textarea) { font-size: 16px !important; }
   .modal, .modal.is-wide {
-    inset: calc(var(--dialog-visible-top, 0px) + 12px) 16px auto;
+    inset: calc(max(var(--dialog-visible-top, 0px), var(--mobile-safe-top, 0px)) + 12px) calc(16px + var(--mobile-safe-right, 0px)) auto calc(16px + var(--mobile-safe-left, 0px));
     margin: 0 auto;
-    width: min(560px, calc(100% - 32px));
-    max-width: calc(100% - 32px);
-    max-height: calc(var(--dialog-visible-height, 100dvh) - 24px);
+    width: min(560px, calc(100% - 32px - var(--mobile-safe-left, 0px) - var(--mobile-safe-right, 0px)));
+    max-width: calc(100% - 32px - var(--mobile-safe-left, 0px) - var(--mobile-safe-right, 0px));
+    max-height: calc(var(--dialog-visible-height, 100dvh) - 24px - max(0px, calc(var(--mobile-safe-top, 0px) - var(--dialog-visible-top, 0px))) - var(--mobile-safe-bottom, 0px));
     padding: 20px 16px 0;
     overscroll-behavior: contain;
     scroll-padding-block: 16px 92px;
@@ -827,6 +849,7 @@ button.income-source-card { cursor: pointer; }
 @media (max-width: 760px) {
   .energy-home { min-height: 0; height: 100dvh; }
   :root {
+    --mobile-safe-top: env(safe-area-inset-top, 0px);
     --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
     --mobile-safe-left: env(safe-area-inset-left, 0px);
     --mobile-safe-right: env(safe-area-inset-right, 0px);
@@ -856,9 +879,11 @@ button.income-source-card { cursor: pointer; }
   }
   .mobile-bottom-nav button { min-width: 0; min-height: 48px; grid-template-rows: 28px 12px; align-content: center; gap: 2px; padding: 3px 2px; border-radius: 19px; }
   .mobile-bottom-nav button > :last-child { line-height: 12px; }
-  .plan-save-controls { padding-inline: 16px; }
-  .mobile-more-menu { left: 16px; right: 16px; }
-  .account-menu { right: 16px; max-width: calc(100% - 32px); }
+  .plan-save-controls { height: calc(56px + var(--mobile-safe-top)); padding-top: calc(8px + var(--mobile-safe-top)); padding-left: calc(16px + var(--mobile-safe-left)); padding-right: calc(16px + var(--mobile-safe-right)); }
+  .energy-viewport, .energy-viewport.is-sinking { top: calc(68px + var(--mobile-safe-top)); padding-left: calc(16px + var(--mobile-safe-left)); padding-right: calc(16px + var(--mobile-safe-right)); }
+  .loans-view, .goals-view, .recurring-view, .ledger-view { top: calc(56px + var(--mobile-safe-top)); padding-left: calc(20px + var(--mobile-safe-left)); padding-right: calc(20px + var(--mobile-safe-right)); }
+  .mobile-more-menu { left: calc(16px + var(--mobile-safe-left)); right: calc(16px + var(--mobile-safe-right)); }
+  .account-menu { right: calc(16px + var(--mobile-safe-right)); max-width: calc(100% - 32px - var(--mobile-safe-left) - var(--mobile-safe-right)); }
   .mobile-bottom-nav button.is-active { border-color: transparent; background: #e5ecfc; }
   .theme-dark .mobile-bottom-nav { background: #202938; border-color: #465063; box-shadow: 0 4px 16px #05091230; }
   .theme-dark .mobile-bottom-nav button.is-active { border-color: transparent; background: #344765; }
@@ -870,7 +895,7 @@ button.income-source-card { cursor: pointer; }
   }
   .account-menu, .mobile-more-menu {
     bottom: var(--mobile-nav-clearance);
-    max-height: calc(100dvh - var(--mobile-nav-clearance) - 16px);
+    max-height: calc(100dvh - var(--mobile-nav-clearance) - var(--mobile-safe-top) - 16px);
   }
   .change-notice { bottom: var(--mobile-nav-clearance); }
 }

@@ -8,6 +8,11 @@ const query = new URLSearchParams(location.search)
 const manage = query.get('mode') === 'manage'
 const adding = query.get('mode') === 'add'
 const keyboard = query.has('keyboard')
+const safe = query.has('safe')
+const safeTop = safe && innerHeight > 500 ? 59 : 0
+const safeSide = safe && innerHeight <= 500 ? 44 : 0
+const safeBottom = safe ? 34 : 0
+if (safe) for (const [edge, value] of Object.entries({top:safeTop,left:safeSide,right:safeSide,bottom:safeBottom})) document.documentElement.style.setProperty(`--mobile-safe-${edge}`, `${value}px`)
 const viewport = Object.assign(new EventTarget(), { height: innerHeight, offsetTop: 0 })
 // Simulate a keyboard that changes only the visual viewport, as on phones.
 Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport })
@@ -38,7 +43,7 @@ setTimeout(async () => {
       if (mobile) for (let i = 1; i < buttons.length; i++) check(buttons[i].getBoundingClientRect().top >= buttons[i - 1].getBoundingClientRect().bottom, 'Info buttons must stack without overlap')
     }
     if (keyboard && mobile && !manage) {
-      const input = dialog.querySelector('input[name="savedAmount"]')
+      const input = dialog.querySelector('input[name="savedAmount"]') || dialog.querySelector('input[name="name"]')
       input.focus()
       viewport.height = Math.min(320, innerHeight)
       viewport.offsetTop = 40
@@ -53,6 +58,7 @@ setTimeout(async () => {
     check(rect.left >= 0 && rect.right <= innerWidth, 'Dialog must fit width')
     check(dialog.scrollWidth <= dialog.clientWidth + 1, 'Dialog must not overflow horizontally')
     if (mobile) check(rect.top >= viewport.offsetTop && rect.bottom <= viewport.offsetTop + viewport.height, 'Dialog must fit visible keyboard area')
+    if (mobile && safe) check(rect.top >= Math.max(viewport.offsetTop, safeTop) + 12 && rect.bottom <= viewport.offsetTop + viewport.height - safeBottom - 12 && rect.left >= safeSide + 16 && rect.right <= innerWidth - safeSide - 16, 'Dialog must clear safe areas with keyboard open or closed')
     if (!manage) {
       const submit = dialog.querySelector('.dialog-actions .modal-submit')
       if (mobile) {

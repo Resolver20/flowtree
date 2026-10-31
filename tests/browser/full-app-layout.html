@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Full app responsive layout regression</title><pre id="result">Running…</pre><iframe title="Full app" src="/offline.local.html" style="border:0"></iframe><script type="module">
+const frame=document.querySelector('iframe'),wait=()=>new Promise(resolve=>setTimeout(resolve,70));let checks=0;const errors=[];
+const check=(ok,message)=>{checks++;if(!ok)errors.push(message)};
+await new Promise(resolve=>frame.onload=resolve);
+for(let i=0;i<100&&!frame.contentDocument.querySelector('.sidebar-nav');i++)await wait();
+for(const [width,height] of [[320,740],[390,844],[430,932],[568,320],[760,800],[768,1024],[1024,768],[1366,768],[1920,1080]]){
+ frame.style.width=`${width}px`;frame.style.height=`${height}px`;
+ for(const name of ['Home','Sinking funds','Loans','Life goals','Recurring payments','Investments','General ledger']){
+ const doc=frame.contentDocument;doc.querySelector(`.sidebar-nav [aria-label="${name}"]`).click();await wait();
+ const page=doc.querySelector('.loans-view,.goals-view,.ledger-view,.recurring-view,.energy-viewport');
+ check(!!page,`${width}/${name}: screen mounts`);
+ if(!page)continue;
+ if(name!=='Home'&&name!=='Sinking funds')check(page.scrollWidth<=page.clientWidth+1,`${width}/${name}: page overflows`);
+ for(const el of page.querySelectorAll('.monthly-plan-summary,.mobile-tree-card,.amount-node,.sinking-status,.sinking-saved,.loan-portfolio,.goal-portfolio,.payment-month-card'))check(el.scrollWidth<=el.clientWidth+1,`${width}/${name}: ${el.className} overflows`);
+ if(width<=760){const nav=doc.querySelector('.mobile-bottom-nav').getBoundingClientRect();check(nav.left>=16&&nav.right<=width-16,`${width}/${name}: dock side clearance`)}
+ }
+}
+document.body.dataset.result=errors.length?'fail':'pass';document.querySelector('#result').textContent=`${errors.length?'FAIL':'PASS'} (${checks} checks)\n${errors.join('\n')}`;
+</script></html>

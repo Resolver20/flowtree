@@ -27,8 +27,8 @@ function Fixture() {
           check(rect.bottom <= bounds.bottom - 1, 'Summary content extends below panel')
         }
         const cards = [...panel.querySelectorAll('.plan-totals > div')].map(element => element.getBoundingClientRect())
-        check(cards[0].right < cards[1].left, 'Deductions overlaps Remaining')
-        check(panel.querySelector('.plan-totals > div:last-child span').textContent === 'Remaining', 'Signed remaining label changed')
+        check(cards[0].right < cards[1].left, 'Deductions overlaps Available')
+        check(panel.querySelector('.plan-totals > div:last-child span').textContent === 'Available', 'Signed available label changed')
       }
       parent.postMessage({ type: 'monthly-outlook-result', id: query.get('case'), errors }, location.origin)
     }))

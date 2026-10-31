@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Card editor size matrix</title><pre id="result">Running…</pre><iframe title="Editor" style="border:0"></iframe><script type="module">
+const frame=document.querySelector('iframe'),wait=()=>new Promise(resolve=>setTimeout(resolve,50));let checks=0;const errors=[];
+for(const [width,height] of [[320,740],[390,844],[430,932],[568,320],[768,1024],[1366,768],[1920,1080]])for(const mode of ['edit','add','manage'])for(const keyboard of [false,true])for(const safe of width<=760?[false,true]:[false]){
+ frame.style.width=`${width}px`;frame.style.height=`${height}px`;frame.src=`/tests/browser/mobile-card-editor.html?mode=${mode}${keyboard?'&keyboard':''}${safe?'&safe':''}&case=${checks}`;
+ await new Promise(resolve=>frame.onload=resolve);
+ for(let i=0;i<100&&!frame.contentDocument.querySelector('#test-result');i++)await wait();
+ const output=frame.contentDocument.querySelector('#test-result');checks++;
+ if(!output)errors.push(`${width}/${mode}: did not finish`);else {const result=JSON.parse(output.textContent);errors.push(...result.errors.map(error=>`${width}/${mode}/keyboard=${keyboard}/safe=${safe}: ${error}`))}
+}
+document.body.dataset.result=errors.length?'fail':'pass';document.querySelector('#result').textContent=`${errors.length?'FAIL':'PASS'} (${checks} scenarios)\n${errors.join('\n')}`;
+</script></html>

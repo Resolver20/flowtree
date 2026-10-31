@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>PWA safe area regression</title><pre id="result">Running…</pre><iframe title="Phone safe areas" src="/offline.local.html" style="border:0"></iframe><script type="module">
+const frame=document.querySelector('iframe'),wait=()=>new Promise(resolve=>setTimeout(resolve,60));let checks=0;const errors=[];
+const check=(ok,message)=>{checks++;if(!ok)errors.push(message)};
+await new Promise(resolve=>frame.onload=resolve);
+for(let i=0;i<100&&!frame.contentDocument.querySelector('.sidebar-nav');i++)await wait();
+for(const [width,height,top,side,bottom] of [[320,740,0,0,0],[390,844,59,0,34],[430,932,62,0,34],[568,320,0,44,21],[740,360,0,44,21]]){
+ frame.style.width=`${width}px`;frame.style.height=`${height}px`;const doc=frame.contentDocument;
+ for(const [key,value] of Object.entries({top,left:side,right:side,bottom}))doc.documentElement.style.setProperty(`--mobile-safe-${key}`,`${value}px`);
+ for(const name of ['Home','Sinking funds','Loans','Life goals','Recurring payments','Investments','General ledger']){
+ doc.querySelector(`.sidebar-nav [aria-label="${name}"]`).click();await wait();
+ const toolbar=doc.querySelector('.plan-save-controls').getBoundingClientRect();
+ check([...doc.querySelectorAll('.plan-save-controls button')].every(button=>button.getBoundingClientRect().top>=top),`${width}/${name}: toolbar clears status area`);
+ const page=doc.querySelector('.energy-viewport,.loans-view,.goals-view,.ledger-view,.recurring-view');
+ check(page.getBoundingClientRect().top>=toolbar.bottom,`${width}/${name}: content clears toolbar`);
+ const dock=doc.querySelector('.mobile-bottom-nav').getBoundingClientRect();check(dock.left>=side+16&&dock.right<=width-side-16&&dock.bottom<=height-bottom-20,`${width}/${name}: dock clears hardware edges`);
+ }
+ doc.querySelector('.sidebar-nav [aria-label="Home"]').click();await wait();
+ doc.querySelector('[aria-label="View monthly plan information"]').click();await wait();
+ const modal=doc.querySelector('dialog[open]'),rect=modal.getBoundingClientRect();
+ check(rect.top>=top+12&&rect.bottom<=height-bottom-12&&rect.left>=side+16&&rect.right<=width-side-16,`${width}: dialog clears notch and home indicator`);
+ modal.querySelector('.close').click();await wait();
+ const more=doc.querySelector('[aria-controls="mobile-more-menu"]');more.click();await wait();
+ const menu=doc.querySelector('.mobile-more-menu').getBoundingClientRect();check(menu.top>=top+16&&menu.left>=side+16&&menu.right<=width-side-16,`${width}: More menu clears safe areas`);more.click();await wait();
+}
+document.body.dataset.result=errors.length?'fail':'pass';document.querySelector('#result').textContent=`${errors.length?'FAIL':'PASS'} (${checks} checks)\n${errors.join('\n')}`;
+</script></html>

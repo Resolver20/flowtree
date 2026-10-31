@@ -457,3 +457,22 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 - Repeatable scenario: add two income sources, verify the Info circles are to the right of their card borders, and activate the second source's Info using Enter. Expect that source's details; opening it must not collapse Income. Check the 320px portrait and 568px landscape layouts for clipping.
 - Browser regression `/tests/browser/monthly-plan-summary.html` checks outside placement, containment within the Income column, and correct source selection at 320, 390, 568 and 760px.
 - Verified: browser regression PASS (248 checks); domain tests, lint and build passed. In the full app at 390×844, keyboard activation of Salary's outside Info button opened Salary details and returned focus on close. The broader desktop/connector/new-node matrix was not repeated for this source-row-only change.
+
+### Goals at a glance containment — 2026-10-31
+
+- Open Life goals in the phone/PWA layout without selecting a goal. Use a long goal name, a 100-character name without spaces, a paused goal and a large Indian-formatted target. Expect all overview text, amounts and Paused labels inside their cards, with no horizontal page scroll. Phone overview statistics stack vertically; goal selection still opens its details.
+- Browser regression `/tests/browser/goals-overview.html` checks containment and focus/selection at 320, 375, 390, 430, 568, 760, 768, 1024, 1366 and 1920px in both themes. Verified PASS (421 checks), plus 134 domain tests, lint and build. Visually inspected the 390px phone fixture. Installed iPhone PWA and unrelated tree/connector scenarios were not retested for this scoped CSS fix.
+
+### Cross-section box audit — 2026-10-31
+
+- Regression `/tests/browser/responsive-boxes.html` renders Goals, Loans, Investments, General ledger and Recurring payments with large Indian-formatted amounts and long names, including names without spaces. It opens details, editors and add forms, checking panel/stat-box containment and readable heading actions. All 5,220 checks pass at 320×740, 390×844, 430×932, 568×320, 760×800, 768×1024, 1024×768, 1366×768 and 1920×1080 in both themes.
+- `/tests/browser/full-app-layout.html` checks all seven integrated screens, visible card containment and phone dock gutters using the private offline test plan. All 593 checks pass at the same nine sizes. `/tests/browser/editor-sizes.html` passes 42 edit/add/manage scenarios at seven sizes, including simulated keyboard viewport changes. These tests use rendered browser layout; they do not emulate a real iOS keyboard or installed PWA lifecycle.
+- Existing Goals overview (421), Monthly plan (673), Sinking funds summary (193), monthly outlook (28 cases), footer, independent branch expansion, loan schedule and breadcrumb regressions all pass after the shared sizing changes. The older outlook fixture now expects the accepted Available label. The add-dialog keyboard test now focuses the Name input when Saved so far is absent.
+- Visual spot checks: 390px phone loan overview/details and 768px dark goal details. Confirmed wrapped long headings, contained amounts and readable Edit labels. Repeat on an installed phone PWA after deployment: open every section, edit a card with the keyboard visible, and confirm Cancel/Save plus the bottom dock remain reachable. Real-device sign-in, update lifecycle and exhaustive connector geometry were not verified in this audit.
+- Final automated validation: 134 domain tests, lint and production build pass. No publication is part of this audit.
+
+### Mobile PWA lifecycle audit — 2026-10-31
+
+- Full evidence, repeatable production tests and remaining physical-device checks are recorded in [PWA.md](./PWA.md). Actual local production service-worker installation, waiting-update activation, retained drafts, dark-mode reopen and cold offline/reconnect states were checked at root; the Pages subpath was also checked for scope and cached launch.
+- Fixed missing `viewport-fit=cover`, safe-area clearance for the toolbar/content/dialogs, and a light offline screen despite saved dark mode. Safe-area regression: 115 checks; offline-screen regression: 48 checks. Expanded editor matrix: 66 scenarios. Shared section-box/full-app/footer checks still pass. Synthetic OAuth/Drive checks made no writes.
+- Physical Safari/Android installation, real Google authentication, OS force-close/eviction and real keyboards remain unverified; do not label these browser simulations as device certification.

@@ -1,0 +1,11 @@
+<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><div id="root"></div><script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import GoalsView from '/src/features/flowtree/GoalsView.jsx';
+import '/src/index.css';
+import '/src/features/flowtree/EnergyExplorer.css';
+const root = createRoot(document.querySelector('#root'));
+const goals = [{id:'holiday',name:'Family holiday and a very long destination name',amount:2000000,savedAmount:0,period:'year',startDate:'2026-10-01',dueDate:'2028-10-31',status:'inactive',children:[]}, {id:'long',name:'A'.repeat(100),amount:999999999,period:'year',startDate:'2026-10-01',dueDate:'2028-10-31',status:'active',children:[]}];
+window.renderCase = dark => root.render(React.createElement('main',{className:`energy-mode ${dark?'theme-dark':'theme-light'}`},React.createElement(GoalsView,{key:String(dark),goals,onSaveGoal:()=>{}})));
+window.renderCase(false);
+</script></html>
