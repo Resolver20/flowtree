@@ -6,9 +6,17 @@ export function serviceWorkerSource({ base, assets, version }) {
 const CACHE = CACHE_PREFIX + ${JSON.stringify(version)};
 const ASSETS = ${JSON.stringify(assets)};
 const SHELL = ${JSON.stringify(base + 'index.html')};
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
-});
+async function installShell() {
+  // Bypass the HTTP cache: a deployment must not pair stale HTML with new assets.
+  const responses = await Promise.all(ASSETS.map(path => fetch(new Request(path, { cache: 'reload' }))));
+  if (responses.some(response => !response.ok)) throw new Error('Incomplete app release');
+  const html = await responses[ASSETS.indexOf(SHELL)].clone().text();
+  const codeAssets = ASSETS.filter(path => /[.](js|css)$/.test(path));
+  if (!codeAssets.every(path => html.includes(path))) throw new Error('App shell release mismatch');
+  const cache = await caches.open(CACHE);
+  await Promise.all(ASSETS.map((path, index) => cache.put(path, responses[index])));
+}
+self.addEventListener('install', event => { event.waitUntil(installShell()); });
 // Wait for all existing windows to close before activating an update.
 // Never reload a window that may contain an unsaved plan.
 self.addEventListener('activate', event => {
@@ -20,7 +28,19 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET' || url.origin !== self.location.origin || request.headers.has('Authorization')) return;
   const navigation = request.mode === 'navigate' && (url.pathname === ${JSON.stringify(base)} || url.pathname === SHELL);
   if (!navigation && (url.search || !ASSETS.includes(url.pathname))) return;
-  event.respondWith(caches.open(CACHE).then(cache => cache.match(navigation ? SHELL : url.pathname)).then(cached => cached || fetch(request)));
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(navigation ? SHELL : url.pathname);
+    if (!navigation) return cached || fetch(request);
+    // Storage eviction must not leave cached HTML pointing at missing old bundles.
+    const complete = cached && (await Promise.all(ASSETS.filter(path => /[.](js|css)$/.test(path)).map(path => cache.match(path)))).every(Boolean);
+    if (complete) return cached;
+    try {
+      const response = await fetch(new Request(request, { cache: 'reload' }));
+      if (response.ok) return response;
+    } catch { /* Fall through to an offline recovery page. */ }
+    return new Response('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Flowtree</title><main style="font:16px system-ui;padding:32px;max-width:480px;margin:auto"><h1>Flowtree needs to reconnect</h1><p>The app files are unavailable. Connect to the internet and try again. Your saved plan has not been cleared.</p><a href="' + SHELL + '">Try again</a></main>', { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 503 });
+  })());
 });
 `
 }
