@@ -272,6 +272,9 @@
   .mobile-tree { display: grid; gap: 12px; max-width: 640px; margin: 0 auto; padding-bottom: 8px; }
   .mobile-tree-income, .mobile-tree-categories { display: grid; gap: 10px; }
   .mobile-tree-step { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
+  .mobile-tree-step { display: flex; align-items: center; gap: 6px; }
+  .mobile-tree-step button { display: grid; width: 24px; height: 24px; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--muted); }
+  .mobile-tree-step button .material-symbols-rounded { font-size: 15px; }
   .mobile-income-source, .mobile-plan-root, .mobile-tree-card { display: flex; width: 100%; min-height: 64px; align-items: center; gap: 11px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); text-align: left; }
   .mobile-income-source > .material-symbols-rounded, .mobile-plan-root > .material-symbols-rounded { color: #5366c8; font-size: 24px; }
   .mobile-income-source > span:nth-child(2), .mobile-plan-root > span:last-child { display: grid; min-width: 0; gap: 3px; }
