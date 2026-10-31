@@ -188,3 +188,20 @@ The earlier prototype screens, styles, and unused assets were removed. The activ
 - [React documentation](https://react.dev/learn)
 - [Vite guide](https://vite.dev/guide/)
 - [Vite CLI](https://vite.dev/guide/cli)
+
+## Install on your phone
+
+Flowtree supports installation from its HTTPS website. In **Account → Install Flowtree**, use the browser's installation prompt when available. On iPhone/iPad, open the site in Safari and choose **Share → Add to Home Screen → Add**. On Android, use **Install app** or **Add to Home screen** in the browser menu. The installed app opens in its own window with a Flowtree icon.
+
+The app shell is available offline after the first successful online visit. Opening it offline shows a reconnect screen: Google sign-in, plan restoration, and Drive saves require internet. If connectivity drops during editing, keep the window open and reconnect before saving. This release does not persist unsaved financial plans offline or queue background uploads.
+
+Updates wait until all existing Flowtree windows are closed. When **Update ready** appears, save your changes, close the app/browser windows, and reopen. An update never automatically reloads your open plan. The service worker caches only the app's static assets; Google requests, credentials, and plan JSON are not cached.
+
+PWA registration runs only in production builds. To test the GitHub Pages path locally:
+
+```sh
+VITE_BASE_PATH=/flowtree/ npm run build
+VITE_BASE_PATH=/flowtree/ npm run preview -- --host 127.0.0.1 --port 4173
+```
+
+Open `http://127.0.0.1:4173/flowtree/`. The normal Vite development server and private offline test copy do not register a worker. Icons can be regenerated with `python3 scripts/generate-icons.py` (no dependencies).

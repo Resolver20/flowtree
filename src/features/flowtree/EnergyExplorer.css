@@ -740,3 +740,31 @@
   .ledger-overview { padding: 17px; }
   .ledger-overview .ledger-stat-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Keep phone form controls readable without triggering input-focus zoom. */
+@media (max-width: 760px) {
+  .energy-mode :is(input, select, textarea), .modal :is(input, select, textarea) { font-size: 16px !important; }
+  .modal, .modal.is-wide {
+    inset: calc(var(--dialog-visible-top, 0px) + 12px) 12px auto;
+    margin: 0 auto;
+    width: min(560px, calc(100% - 24px));
+    max-height: calc(var(--dialog-visible-height, 100dvh) - 24px);
+    padding: 20px 16px;
+    overscroll-behavior: contain;
+    scroll-padding-block: 16px 92px;
+  }
+  .modal .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .modal label, .modal input, .modal select, .modal textarea { min-width: 0; }
+  .modal input:not([type='radio']):not([type='checkbox']), .modal select { min-height: 44px; }
+  .modal .close { min-width: 44px; min-height: 44px; top: 4px; right: 4px; }
+  .modal h2 { padding-right: 32px; font-size: 20px; }
+  .modal p { margin-bottom: 16px; }
+  .modal .dialog-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
+  .modal .dialog-actions button { min-height: 44px; margin: 0; white-space: normal; overflow-wrap: anywhere; }
+  .modal form > .dialog-actions { position: sticky; bottom: -20px; z-index: 2; margin: 0 -1px -1px; padding: 12px 0 4px; background: var(--surface); border-top: 1px solid var(--line); }
+  .modal form > .dialog-actions .delete-link { grid-column: 1 / -1; }
+  .modal .manage-actions { grid-template-columns: minmax(0, 1fr); }
+  .modal .manage-actions .delete-link { margin-top: 4px; }
+  .modal .annual-target-list { max-height: none; overflow: visible; padding-right: 0; }
+  .modal .card-overview strong, .modal .card-facts dd { overflow-wrap: anywhere; }
+}

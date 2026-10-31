@@ -1,7 +1,14 @@
+import { usePwaInstall } from '../../hooks/usePwaInstall'
+import InstallDialog from './InstallDialog'
 import { useEffect, useRef, useState } from 'react'
 import { isSaveShortcut } from '../../domain/saveShortcut'
 
 export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, canUndo, canRedo, onUndo, onRedo, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onShowSinkingFunds, onShowLoans, onShowGoals, onShowRecurringPayments, onShowInvestments, onShowGeneralLedger, onToggleTheme }) {
+  const { installed, install } = usePwaInstall()
+  const [installHelp, setInstallHelp] = useState(false)
+  async function installApp() {
+    if (!await install()) setInstallHelp(true)
+  }
   const homeActive = view === 'home'
   const [accountOpen, setAccountOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -95,6 +102,7 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
   }
 
   return <>
+    {installHelp && <InstallDialog onClose={() => setInstallHelp(false)} />}
     <div className="plan-save-controls" role="group" aria-label="Plan saving">
       {offline && <span className="offline-test-label">Offline test copy</span>}
       <button className="mobile-history-action" type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo last plan change"><span className="material-symbols-rounded" aria-hidden="true">undo</span></button>
@@ -158,6 +166,7 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
         <span className="material-symbols-rounded" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
         <span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</span>
       </button>
+      {!offline && !installed && <button type="button" onClick={installApp}>Install Flowtree</button>}
       {offline ? <small className="account-menu-status">Test edits save only in this browser. Google Drive is disconnected.</small> : connected ? <>
         <small className="account-menu-status">{driveStatus === 'saving' ? 'Saving to Google Drive…' : driveStatus === 'error' ? 'Google Drive save needs attention.' : driveStatus === 'needs-plan-choice' ? 'Choose how to set up this Google Drive account.' : 'Changes stay in this tab until you save them to Google Drive.'}</small>
         <button type="button" className="account-menu-primary" disabled={driveStatus === 'saving'} onClick={() => closeMenuThen(onSaveDrivePlan)}>{driveStatus === 'saving' ? 'Saving…' : 'Save to Google Drive'}</button>

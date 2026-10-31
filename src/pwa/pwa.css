@@ -1,0 +1,8 @@
+.pwa-offline-screen { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; background: #f7f8fa; color: #303b4f; }
+.pwa-offline-screen img { border-radius: 16px; }
+.pwa-offline-screen h1 { font-size: 24px; }
+.pwa-offline-screen p { max-width: 360px; line-height: 1.5; }
+.pwa-offline-screen button { min-height: 44px; padding: 10px 18px; border: 0; border-radius: 8px; background: #5366c8; color: white; }
+.pwa-offline-screen button:disabled { opacity: .55; cursor: default; }
+.pwa-status { position: fixed; z-index: 40; bottom: 12px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); padding: 10px 14px; border: 1px solid #cbd3e0; border-radius: 8px; background: #fff; color: #334158; font-size: 12px; line-height: 1.5; box-shadow: 0 3px 12px #26324714; }
+@media (max-width: 760px) { .pwa-status { bottom: calc(78px + env(safe-area-inset-bottom)); } }

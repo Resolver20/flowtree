@@ -1,3 +1,4 @@
+import { bindDialogViewport } from './dialogViewport'
 import { cardStartDate } from '../../domain/cardStart'
 import CardStartSetup from './CardStartSetup'
 import GoalSavingsSummary from './GoalSavingsSummary'
@@ -63,9 +64,13 @@ function DialogShell({ title, children, onClose, wide = false, dismissOnOutside 
   useEffect(() => {
     const opener = document.activeElement
     const element = ref.current
+    const releaseViewport = bindDialogViewport(element)
     element.showModal()
-    element.querySelector('input, select, textarea')?.focus()
-    return () => { element.close(); if (opener?.isConnected) opener.focus() }
+    const focusTarget = window.matchMedia('(max-width: 760px)').matches
+      ? element.querySelector('.close')
+      : element.querySelector('input, select, textarea')
+    focusTarget?.focus({ preventScroll: true })
+    return () => { releaseViewport(); element.close(); if (opener?.isConnected) opener.focus({ preventScroll: true }) }
   }, [])
   return <dialog ref={ref} className={`modal ${wide ? 'is-wide' : ''}`} aria-labelledby="dialog-title" onPointerDown={event => { pressedOutside.current = dismissOnOutside && isOutside(event) }} onClick={event => { if (pressedOutside.current && isOutside(event)) onClose(); pressedOutside.current = false }} onCancel={event => { event.preventDefault(); onClose() }}>
       <button type="button" className="close" aria-label="Close" onClick={onClose}>×</button>
@@ -84,7 +89,7 @@ function ProfileManageDialog({ profile, onClose, onDelete, onRequestEdit, onRequ
   return <DialogShell title={profile.name} onClose={onClose}>
     <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">person</span><div><span>Profile marker</span><strong>{profile.name}</strong></div></div>
     <div className="dialog-actions manage-actions">
-      <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Remove…</button><button type="button" onClick={onRequestAddIncome}>Add income source</button><button type="button" onClick={onRequestSinkingFunds}>Sinking funds</button><button type="button" className="modal-submit" onClick={onRequestEdit}>Edit name</button></div>
+      <button type="button" className="modal-submit" onClick={onRequestEdit}>Edit name</button><button type="button" onClick={onRequestAddIncome}>Add income source</button><button type="button" onClick={onRequestSinkingFunds}>Sinking funds</button><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Remove…</button></div>
   </DialogShell>
 }
 
@@ -92,7 +97,7 @@ function ProfileDialog({ profile, onClose, onSave }) {
   return <DialogShell title="Edit profile" onClose={onClose}>
     <p>This label identifies the starting point of your money flow.</p>
     <form onSubmit={event => { event.preventDefault(); const name = String(new FormData(event.currentTarget).get('name') || '').trim(); if (!name) return; onSave(name); onClose() }}>
-      <label>Name<input autoFocus name="name" maxLength="50" defaultValue={profile.name} required /></label>
+      <label>Name<input name="name" maxLength="50" defaultValue={profile.name} required /></label>
       <div className="dialog-actions"><button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">Save profile</button></div>
     </form>
   </DialogShell>
@@ -108,7 +113,7 @@ function IncomeSourceManageDialog({ source, onClose, onDelete, onRequestEdit }) 
   return <DialogShell title={source.name} onClose={onClose}>
     <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">{source.icon || 'payments'}</span><div><span>Monthly income source</span><strong>{formatMoney(source.amount)} <small>/month</small></strong><small>{formatIncomeStart(source.startDate)} · paid on the {source.dayOfMonth || 1}{(source.dayOfMonth || 1) === 1 ? 'st' : (source.dayOfMonth || 1) === 2 ? 'nd' : (source.dayOfMonth || 1) === 3 ? 'rd' : 'th'} of each month</small></div></div>
     <div className="dialog-actions manage-actions">
-      <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button><button type="button" className="modal-submit" onClick={() => onRequestEdit(source.id)}>Edit details</button></div>
+      <button type="button" className="modal-submit" onClick={() => onRequestEdit(source.id)}>Edit details</button><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button></div>
   </DialogShell>
 }
 
@@ -119,7 +124,7 @@ function IncomeSourceDialog({ source, onClose, onSave }) {
   return <DialogShell title={source ? 'Edit income source' : 'Add income source'} onClose={onClose}>
     <p>Every active income source flows into the shared monthly plan. The date is a planning marker; Flowtree never moves money automatically.</p>
     <form onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); const name = String(form.get('name') || '').trim(); if (!name) { setError('Enter a name, not just spaces.'); return } onSave({ sourceId: source?.id, name, amount: Math.max(0, Number(form.get('amount')) || 0), icon: symbol, startDate: String(form.get('startDate') || ''), dayOfMonth: Math.min(31, Math.max(1, Number(form.get('dayOfMonth')) || 1)) }); onClose() }}>
-      <label>Name<input autoFocus name="name" maxLength="100" defaultValue={source?.name || ''} placeholder="e.g. Salary" onChange={() => setError('')} required /></label>
+      <label>Name<input name="name" maxLength="100" defaultValue={source?.name || ''} placeholder="e.g. Salary" onChange={() => setError('')} required /></label>
       {error && <span role="alert" className="field-error">{error}</span>}
       <div className="form-grid">
         <label>Amount per month (₹)<input name="amount" type="number" min="0" step="0.01" defaultValue={source?.amount ?? ''} required /></label>
@@ -136,7 +141,7 @@ function BufferDialog({ buffer, onClose, onSave }) {
   return <DialogShell title="Safety buffer" onClose={onClose}>
     <p>This amount is reserved before your monthly destinations are planned.</p>
     <form onSubmit={event => { event.preventDefault(); onSave(Math.max(0, Number(new FormData(event.currentTarget).get('buffer')))); onClose() }}>
-      <label>Buffer per month (₹)<input autoFocus type="number" name="buffer" min="0" step="0.01" defaultValue={buffer} required /></label>
+      <label>Buffer per month (₹)<input type="number" name="buffer" min="0" step="0.01" defaultValue={buffer} required /></label>
       <button className="modal-submit">Save buffer</button>
     </form>
   </DialogShell>
@@ -269,10 +274,10 @@ function ManageDialog({ onViewOverview, isGoal, node, onClose, onDelete, onReque
       <div><dt>Direct children</dt><dd>{children.length}</dd></div>
     </dl>
     <div className="dialog-actions manage-actions">
+      <button type="button" className="modal-submit" onClick={() => onRequestEdit(node.id)}>Edit details</button>
+      <button type="button" onClick={() => onRequestAdd(node.id)}>Add child</button>
       {onViewOverview && <button type="button" onClick={() => onViewOverview(node.id)}>View overview</button>}
       {canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button>}
-      <button type="button" onClick={() => onRequestAdd(node.id)}>Add child</button>
-      <button type="button" className="modal-submit" onClick={() => onRequestEdit(node.id)}>Edit details</button>
     </div>
   </DialogShell>
 }
@@ -302,7 +307,7 @@ function LoanNodeDialog({ node, onClose, onSave }) {
   return <DialogShell title={`Edit ${node.name}`} onClose={onClose}>
     <p>Update the core loan settings here. The monthly amount in Home updates from this payoff estimate.</p>
     <form onSubmit={submit}>
-      <label>Loan name<input autoFocus value={name} onChange={event => { setName(event.target.value); setError('') }} maxLength="100" required /></label>
+      <label>Loan name<input value={name} onChange={event => { setName(event.target.value); setError('') }} maxLength="100" required /></label>
       <div className="form-grid">
         <label>Original principal (₹)<input value={principal} onChange={event => { setPrincipal(event.target.value); setError('') }} type="number" min="0" step="0.01" /></label>
         <label>Principal remaining (₹)<input value={remainingPrincipal} onChange={event => { setRemainingPrincipal(event.target.value); setError('') }} type="number" step="0.01" /></label>
@@ -376,7 +381,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   return <DialogShell title={isEditing ? 'Edit destination' : parent ? 'Add destination' : 'Add category'} onClose={onClose}>
     <p>{isEditing ? 'Changes update this node and its parent totals.' : `This node will sit under ${parent?.name || 'Monthly income'}.`}</p>
     <form onSubmit={submit}>
-      <label>Name<input autoFocus name="name" maxLength={100} defaultValue={node?.name || ''} placeholder="e.g. Subscriptions" onChange={() => setError('')} required aria-invalid={Boolean(error)} aria-describedby={error ? 'name-error' : undefined} /></label>
+      <label>Name<input name="name" maxLength={100} defaultValue={node?.name || ''} placeholder="e.g. Subscriptions" onChange={() => setError('')} required aria-invalid={Boolean(error)} aria-describedby={error ? 'name-error' : undefined} /></label>
       {error && <span id="name-error" role="alert" className="field-error">{error}</span>}
       <div className="form-grid">
         <label>{isGoal ? 'Target amount (₹)' : 'Own amount (₹)'}<input name="amount" type="number" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-describedby="amount-help" /></label>

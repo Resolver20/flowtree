@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Mobile card editor regression</title></head><body><div id="root"></div><script type="module">
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import PlanDialog from '/src/features/flowtree/PlanDialog.jsx'
+import '/src/index.css'
+import '/src/features/flowtree/EnergyExplorer.css'
+const query = new URLSearchParams(location.search)
+const manage = query.get('mode') === 'manage'
+const keyboard = query.has('keyboard')
+const viewport = Object.assign(new EventTarget(), { height: innerHeight, offsetTop: 0 })
+// Simulate a keyboard that changes only the visual viewport, as on phones.
+Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport })
+const tree = [{ id:'obligations', amount:0, children:[{id:'test-card', name:'A long card name for mobile editing', amount:24000, period:'year', dueDate:'2028-10-31', startDate:'2026-10-31', status:'active', children:[]}] }]
+const noop = () => {}
+createRoot(document.getElementById('root')).render(React.createElement('main', {className:'energy-mode theme-light'}, React.createElement(PlanDialog, { dialog:{type:manage ? 'manage' : 'node', nodeId:'test-card'}, tree, onClose:noop, onSaveNode:noop, onRequestEdit:noop, onRequestAdd:noop, onViewOverview:noop })))
+const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+setTimeout(async () => {
+  const errors = []
+  const check = (condition, message) => { if (!condition) errors.push(message) }
+  const dialog = document.querySelector('dialog[open]')
+  try {
+    check(Boolean(dialog), 'Dialog must open')
+    const mobile = innerWidth <= 760
+    if (mobile) {
+      check(document.activeElement?.tagName === 'BUTTON', 'Opening must not focus a text input')
+      for (const input of dialog.querySelectorAll('input, select, textarea')) check(parseFloat(getComputedStyle(input).fontSize) >= 16, 'Input font must be at least 16px')
+    }
+    if (manage) {
+      const buttons = [...dialog.querySelectorAll('.manage-actions button')]
+      check(buttons.map(button => button.textContent).join('|') === 'Edit details|Add child|View overview|Delete…', 'Actions must have consistent DOM order')
+      if (mobile) for (let i = 1; i < buttons.length; i++) check(buttons[i].getBoundingClientRect().top >= buttons[i - 1].getBoundingClientRect().bottom, 'Info buttons must stack without overlap')
+    }
+    if (keyboard && mobile && !manage) {
+      const input = dialog.querySelector('input[name="savedAmount"]')
+      input.focus()
+      viewport.height = Math.min(320, innerHeight)
+      viewport.offsetTop = 40
+      viewport.dispatchEvent(new Event('resize'))
+      await settle()
+      const bounds = input.getBoundingClientRect()
+      check(bounds.top >= viewport.offsetTop && bounds.bottom <= viewport.offsetTop + viewport.height, 'Focused input must remain above keyboard')
+      check(bounds.bottom <= dialog.querySelector('.dialog-actions').getBoundingClientRect().top, 'Sticky actions must not cover the focused input')
+    }
+    await settle()
+    const rect = dialog.getBoundingClientRect()
+    check(rect.left >= 0 && rect.right <= innerWidth, 'Dialog must fit width')
+    check(dialog.scrollWidth <= dialog.clientWidth + 1, 'Dialog must not overflow horizontally')
+    if (mobile) check(rect.top >= viewport.offsetTop && rect.bottom <= viewport.offsetTop + viewport.height, 'Dialog must fit visible keyboard area')
+    if (!manage) {
+      const submit = dialog.querySelector('.dialog-actions .modal-submit')
+      submit.scrollIntoView({block:'nearest'})
+      await settle()
+      const rect = submit.getBoundingClientRect()
+      check(rect.top >= (mobile ? viewport.offsetTop : 0) && rect.bottom <= (mobile ? viewport.offsetTop + viewport.height : innerHeight), 'Save must be reachable')
+    }
+  } catch (error) { errors.push(error.message) }
+  document.body.dataset.result = errors.length ? 'fail' : 'pass'
+  const output = document.createElement('output')
+  output.id = 'test-result'
+  output.textContent = JSON.stringify({ width:innerWidth, height:innerHeight, manage, keyboard, errors })
+  document.body.append(output)
+}, 100)
+</script></body></html>
