@@ -93,13 +93,19 @@ export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutc
       </div>}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" /></>}
-    <section className="mobile-plan-root" aria-label={rootLabel}>
-      <span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
-      <div className="mobile-plan-copy"><strong>{rootLabel}</strong>{!sinking && <div className="mobile-plan-summary" aria-label="Monthly plan summary">
+    <section className={`mobile-plan-root${!sinking ? ' is-monthly-plan' : ''}`} aria-label={rootLabel}>
+      {sinking ? <><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span><div className="mobile-plan-copy"><strong>{rootLabel}</strong></div></> : <>
+      <div className="mobile-plan-heading">
+        <button type="button" className="mobile-plan-hub" onClick={onInspectPlan} aria-label="View monthly plan information">
+          <span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
+          <span className="mobile-plan-hub-info material-symbols-rounded" aria-hidden="true">info</span>
+        </button>
+        <strong>{rootLabel}</strong>
+      </div>
+      <div className="mobile-plan-summary" aria-label="Monthly plan summary">
         <small className="is-deductions">Deductions <span>{formatMoney(monthlyDeductions)}</span></small>
         <small className="is-remaining">Remaining <span>{formatMoney(monthlyOutcome)}</span></small>
-      </div>}</div>
-      {!sinking && <button type="button" className="mobile-tree-manage" onClick={onInspectPlan} aria-label="View monthly plan information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button>}
+      </div></>}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" />
     <section className="mobile-tree-categories" aria-label="Plan categories">

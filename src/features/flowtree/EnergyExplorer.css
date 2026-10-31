@@ -297,6 +297,16 @@
   .mobile-tree-connector { width: 1px; height: 16px; margin: -6px auto; background: #c8ced8; }
   .mobile-plan-root { min-height: 72px; border-color: #cce5d5; background: #f5fbf7; }
   .mobile-plan-root > .material-symbols-rounded { color: #28734d; }
+  .mobile-plan-root.is-monthly-plan { display: grid; justify-items: center; gap: 12px; padding: 6px 0; border: 0; background: transparent; text-align: center; }
+  .mobile-plan-heading { display: grid; justify-items: center; gap: 8px; }
+  .mobile-plan-hub { position: relative; display: grid; place-items: center; width: 76px; height: 76px; padding: 0; border: 1px solid #b9dec9; border-radius: 50%; background: #f5fbf7; color: #28734d; cursor: pointer; }
+  .mobile-plan-hub > .material-symbols-rounded { font-size: 30px; }
+  .mobile-plan-hub > .mobile-plan-hub-info { position: absolute; right: -2px; bottom: 0; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid #b9dec9; border-radius: 50%; background: var(--surface); font-size: 15px; }
+  .is-monthly-plan .mobile-plan-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; width: min(100%, 320px); }
+  .is-monthly-plan .mobile-plan-summary small { padding: 2px 4px; }
+  .theme-dark .mobile-plan-root.is-monthly-plan { background: transparent; }
+  .theme-dark .mobile-plan-hub { border-color: #356d57; background: #193a31; color: #98dbb6; }
+  .theme-dark .mobile-plan-hub-info { border-color: #356d57; }
   .mobile-tree-node { position: relative; display: grid; gap: 10px; }
   .mobile-tree-node-row { display: flex; align-items: center; gap: 8px; }
   .mobile-tree-card { border-color: #dce1e8; }
@@ -445,6 +455,7 @@
 .manage-actions { margin-top: 4px; }
 .icon-select { display: flex; align-items: center; gap: 8px; }
 .icon-select > span { color: #5366c8; }
+.icon-select > input { flex: 1; min-width: 0; width: 100%; }
 .field-error { color: #b42332; font-size: 12px; }
 .annual-target-list { display: grid; gap: 10px; max-height: min(58dvh, 560px); overflow: auto; padding-right: 4px; }
 .annual-target-row { display: grid; grid-template-columns: minmax(150px, 1.25fr) repeat(2, minmax(110px, .8fr)) minmax(140px, 1fr) minmax(105px, .72fr); gap: 10px; padding: 13px; border: 1px solid #e0e5ed; border-radius: 12px; background: #fafbfc; }

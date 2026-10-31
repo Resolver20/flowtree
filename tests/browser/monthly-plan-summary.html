@@ -17,9 +17,14 @@ try {
       const title = card.querySelector('strong').getBoundingClientRect();
       const summary = card.querySelector('.mobile-plan-summary').getBoundingClientRect();
       const deductions = card.querySelector('.is-deductions'), available = card.querySelector('.is-remaining');
+      const hub = card.querySelector('.mobile-plan-hub');
+      const hubBox = hub.getBoundingClientRect(), rootBox = card.getBoundingClientRect();
+      assert(Math.abs(hubBox.width - hubBox.height) < 1 && frame.contentWindow.getComputedStyle(hub).borderRadius === '50%', `${width}/${dark}/${remaining}: circular Monthly plan hub`);
+      assert(Math.abs((hubBox.left + hubBox.right) / 2 - (rootBox.left + rootBox.right) / 2) < 1, `${width}/${dark}/${remaining}: hub centered above totals`);
+
       const format = n => `₹${new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(n)}`;
       assert(deductions.textContent === `Deductions ${format(12345678)}` && available.textContent === `Remaining ${format(remaining)}`, `${width}/${dark}/${remaining}: exact totals and signed remaining`);
-      assert(summary.top >= title.bottom && summary.right <= card.querySelector('button').getBoundingClientRect().left, `${width}/${dark}/${remaining}: summary below title and clear of Info`);
+      assert(summary.top >= title.bottom && summary.right <= card.getBoundingClientRect().right, `${width}/${dark}/${remaining}: summary below title and inside root`);
       assert(frame.contentWindow.getComputedStyle(deductions).color !== frame.contentWindow.getComputedStyle(available).color, `${width}/${dark}/${remaining}: distinct summary colors`);
       assert(card.scrollWidth <= card.clientWidth, `${width}/${dark}/${remaining}: card does not overflow`);
     }
