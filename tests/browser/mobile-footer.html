@@ -9,7 +9,7 @@ const assert = (condition, message) => { if (!condition) throw Error(message); c
 await new Promise(resolve => frame.addEventListener('load', resolve));
 try {
   for (let i=0;i<100 && !frame.contentDocument.querySelector('.sidebar-nav');i++) await wait();
-  for (const [width,height] of [[320,740],[360,800],[390,844],[430,932],[568,320],[740,360],[768,1024],[1366,768],[1920,1080]]) {
+  for (const [width,height] of [[320,568],[360,800],[390,844],[430,932],[568,320],[740,360],[760,1024],[761,1024],[768,1024],[1366,768],[1920,1080]]) {
     frame.style.width=`${width}px`;frame.style.height=`${height}px`;await wait();
     const doc=frame.contentDocument, win=frame.contentWindow;
     const nav=doc.querySelector('.mobile-bottom-nav');
@@ -17,7 +17,7 @@ try {
     const buttons=[...nav.querySelectorAll('[data-section]')];
     buttons[0].click();await wait();
     const bounds=nav.getBoundingClientRect();
-    assert(bounds.left>=16 && bounds.right<=width-16 && bounds.bottom<=height-20,`${width}: dock fits safe gutters`);
+    assert(bounds.left>=16 && bounds.right<=width-16 && Math.abs(height-bounds.bottom-8)<=1,`${width}: dock fits safe gutters with an 8px bottom gap`);
     assert([...nav.querySelectorAll('button')].every(e=>e.getBoundingClientRect().width>=44 && e.getBoundingClientRect().height>=44),`${width}: usable touch targets`);
     const labelTops=[...nav.querySelectorAll('button > :last-child')].map(e=>e.getBoundingClientRect().top);
     assert(Math.max(...labelTops)-Math.min(...labelTops)<1,`${width}: labels align`);
@@ -57,8 +57,13 @@ try {
     assert(nav.querySelectorAll('.is-active').length===1 && /Use (light|dark) mode/.test(doc.querySelector('.account-menu-theme').textContent),`${width}: Account remains separate with theme control`);
     assert(doc.querySelector('.account-menu').getBoundingClientRect().bottom<=bounds.top,`${width}: Account clears dock`);
     nav.querySelector('.mobile-account-trigger').click();await wait();
-    doc.documentElement.style.setProperty('--mobile-safe-bottom','34px');
-    assert(nav.getBoundingClientRect().bottom<=height-54,`${width}: home-indicator clearance`);
+    for(const safeBottom of [21,34]) {
+      doc.documentElement.style.setProperty('--mobile-safe-bottom',`${safeBottom}px`);
+      const safeBounds=nav.getBoundingClientRect();
+      assert(Math.abs(height-safeBounds.bottom-safeBottom)<=1,`${width}: ${safeBottom}px home-indicator clearance without an added gap`);
+      const currentPage=doc.querySelector('.energy-viewport,.loans-view,.goals-view,.ledger-view,.recurring-view');
+      assert(parseFloat(win.getComputedStyle(currentPage).paddingBottom)>=height-safeBounds.top,`${width}: content clearance follows ${safeBottom}px safe area`);
+    }
     doc.documentElement.style.removeProperty('--mobile-safe-bottom');
     if(width>=568){
       doc.documentElement.style.setProperty('--mobile-safe-left','44px');doc.documentElement.style.setProperty('--mobile-safe-right','44px');

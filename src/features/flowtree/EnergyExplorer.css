@@ -84,6 +84,8 @@
 .account-menu-heading .account-menu-identity { min-width: 0; padding: 0; border: 0; }
 .account-menu .account-menu-close { display: grid; flex-shrink: 0; place-items: center; min-width: 32px; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--text); font-size: 22px; }
 .drive-sync-status .notice-content { display: flex; align-items: center; gap: 6px; }
+.drive-sync-status .notice-content > .material-symbols-rounded { flex-shrink: 0; }
+.drive-sync-status .notice-dismiss { flex: 0 0 auto; width: 32px; height: 32px; font-size: 22px; }
 .drive-sync-status .notice-content > span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .account-menu button:hover, .account-menu button:focus-visible { border-color: #aebbd0; background: #f0f4fb; color: #304e98; }
 .account-menu .account-menu-theme { display: flex; align-items: center; gap: 8px; }
@@ -859,7 +861,8 @@ button.income-source-card { cursor: pointer; }
     --mobile-safe-left: env(safe-area-inset-left, 0px);
     --mobile-safe-right: env(safe-area-inset-right, 0px);
     --mobile-edge: 16px;
-    --mobile-nav-bottom: calc(20px + var(--mobile-safe-bottom));
+    /* The safe area already clears the home indicator; avoid adding a second gap. */
+    --mobile-nav-bottom: max(8px, var(--mobile-safe-bottom));
     --mobile-nav-clearance: calc(66px + var(--mobile-nav-bottom) + 12px);
   }
   .mobile-bottom-nav {

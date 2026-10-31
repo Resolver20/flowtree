@@ -23,6 +23,14 @@ for(const [width,height] of [[320,740],[390,844],[568,320],[760,800],[768,1024],
   check(!!close&&!close.disabled&&close.getAttribute('aria-label'),`${label}: enabled named cross`);if(!close)continue;
   const r=close.getBoundingClientRect(),p=panel.getBoundingClientRect();
   check(r.left>=p.left&&r.right<=p.right&&r.top>=p.top&&r.bottom<=p.bottom,`${label}: cross fits panel`);
+  const scrollbar=panel.offsetWidth-panel.clientWidth;
+  check(p.right-r.right-scrollbar<=18,`${label}: cross stays at the right content edge of its panel`);
+  const content=panel.querySelector('.notice-content');
+  if(content){
+   const text=content.getBoundingClientRect();
+   check(text.right<=r.left,`${label}: notification text does not overlap cross`);
+   check(Math.abs((r.top+r.bottom)-(p.top+p.bottom))<=2,`${label}: notification cross is vertically centered`);
+  }
   check(r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=height,`${label}: cross fits screen`);
   if(width<=760)check(r.width>=44&&r.height>=44,`${label}: phone touch target`);
   check(panel.scrollWidth<=panel.clientWidth+1,`${label}: no horizontal overflow`);

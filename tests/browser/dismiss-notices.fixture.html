@@ -47,4 +47,6 @@ window.renderCase=options=>{
  for(const [edge,value]of Object.entries({top:options.safe&&innerHeight>500?59:0,bottom:options.safe?34:0,left:options.safe&&innerHeight<=500?44:0,right:options.safe&&innerHeight<=500?44:0}))document.documentElement.style.setProperty(`--mobile-safe-${edge}`,`${value}px`);
  document.querySelector('#opener').focus();flushSync(()=>root.render(React.createElement(Harness,{...options,key:options.testKey})));
 };
+const preview=new URLSearchParams(location.search);
+if(preview.has('kind'))window.renderCase({kind:preview.get('kind'),status:preview.get('status')||'saving',dark:preview.has('dark'),safe:preview.has('safe'),testKey:'preview'});
 </script></html>

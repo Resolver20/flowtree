@@ -12,7 +12,7 @@ for(const [width,height,top,side,bottom] of [[320,740,0,0,0],[390,844,59,0,34],[
  check([...doc.querySelectorAll('.plan-save-controls button')].every(button=>button.getBoundingClientRect().top>=top),`${width}/${name}: toolbar clears status area`);
  const page=doc.querySelector('.energy-viewport,.loans-view,.goals-view,.ledger-view,.recurring-view');
  check(page.getBoundingClientRect().top>=toolbar.bottom,`${width}/${name}: content clears toolbar`);
- const dock=doc.querySelector('.mobile-bottom-nav').getBoundingClientRect();check(dock.left>=side+16&&dock.right<=width-side-16&&dock.bottom<=height-bottom-20,`${width}/${name}: dock clears hardware edges`);
+ const dock=doc.querySelector('.mobile-bottom-nav').getBoundingClientRect();check(dock.left>=side+16&&dock.right<=width-side-16&&Math.abs(height-dock.bottom-Math.max(8,bottom))<=1,`${width}/${name}: dock clears hardware edges`);
  }
  doc.querySelector('.sidebar-nav [aria-label="Home"]').click();await wait();
  doc.querySelector('[aria-label="View monthly plan information"]').click();await wait();

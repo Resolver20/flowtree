@@ -1,5 +1,15 @@
 # Flowtree tests
 
+## Notification close-button alignment
+
+Run `/tests/browser/dismiss-notices.html`. In addition to dismissal and cancellation behavior, it checks the cross sits within 18px of each panel's right content edge (excluding its scrollbar), notification text stays clear of the cross, and notification crosses are vertically centered. Cases include Drive saving/saved/error, offline/update notices, wrapped toasts, Account, More, install, card editors, Drive dialogs and destructive confirmations, in light/dark themes and simulated safe areas at phone portrait, phone landscape, tablet and desktop widths. To inspect a persistent saving banner without signing in or writing to Drive, open `/tests/browser/dismiss-notices.fixture.html?kind=drive&status=saving` in a phone viewport. Verify the cross stays on the right for short and wrapped text, retains a 44px phone target, and only dismisses the message.
+
+Browser-verified PASS on 2026-10-31: 6,878 checks, zero failures. This fixture uses mock notices and performs no Google Drive writes.
+
+## Mobile footer bottom alignment
+
+The shared dock uses `max(8px, safe-area-inset-bottom)`: 8px above a plain screen edge, or the phone's safe area without an additional 20px gap. Content padding, More, Account and notices use the same dock clearance. Run `/tests/browser/mobile-footer.html` to check 320×568, 360×800, 390×844, 430×932, 568×320, 740×360, 760×1024, 761×1024, 768×1024, 1366×768 and 1920×1080. It verifies exact bottom spacing, simulated 21px/34px safe areas, touch targets, last-card reachability, menu clearance, Escape focus return and desktop hiding. Browser-verified PASS on 2026-10-31; `/tests/browser/full-app-layout.html` also passed 656 checks across all seven screens. Repeat on an installed iPhone in portrait and landscape: the dock must clear the home indicator and the last content item must scroll above it. Physical-device safe-area rendering remains unverified locally.
+
 ## Cloudflare request compatibility
 
 `npm run test:runtime` runs the real local workerd engine using Miniflare, with fetch mocked and no Google credentials or outbound traffic. It checks the actual Workers Request/AbortSignal implementations used by `googleFetch`. Workers supports `manual` and `follow`, and throws before network I/O for `redirect: 'error'`; that setting caused live login to return `token_connection`. The corrected helper uses manual mode and rejects every 3xx without following the Location. `tests/server/auth.test.js` also verifies a credential-bearing redirect is refused after one request. The runtime suite is separate from `npm test` and now runs in CI alongside the regular tests and lint.
