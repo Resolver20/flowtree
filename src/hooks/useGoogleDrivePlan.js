@@ -1,3 +1,4 @@
+import { rememberGoogleAccount, forgetGoogleAccount, googleReconnectOptions } from '../domain/devicePreferences'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from '../domain/flowDataTransfer'
 import { organizeSubscriptions } from '../domain/flowTree'
@@ -23,11 +24,12 @@ function readDriveSession() {
 }
 
 function writeDriveSession(session) {
-  window.sessionStorage.setItem(DRIVE_SESSION_KEY, JSON.stringify({ ...session, folderName: DRIVE_FOLDER_NAME }))
+  try { window.sessionStorage.setItem(DRIVE_SESSION_KEY, JSON.stringify({ ...session, folderName: DRIVE_FOLDER_NAME })) } catch { /* A storage restriction must not fail a successful restore. */ }
+  rememberGoogleAccount(window, session.user?.emailAddress)
 }
 
 function clearDriveSession() {
-  window.sessionStorage.removeItem(DRIVE_SESSION_KEY)
+  try { window.sessionStorage.removeItem(DRIVE_SESSION_KEY) } catch { /* Storage may be unavailable. */ }
 }
 
 // Owns the Drive connection and explicit save/recovery actions. Plan edits never upload.
@@ -116,7 +118,7 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
     return orderValidDriveRestoreCandidates(checkedCandidates, DRIVE_FOLDER_NAME)
   }
 
-  async function connectDrive({ prompt = 'select_account consent' } = {}) {
+  async function connectDrive({ prompt } = {}) {
     if (offline) return
     if (!allowDiscard()) return
     if (!googleClientId) {
@@ -136,11 +138,12 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
     if (startupState !== 'ready') setStartupState('loading')
     setDrive(previous => ({ ...previous, status: 'connecting', error: '' }))
     try {
-      const accessToken = await connectGoogleDrive({ clientId: googleClientId, prompt })
+      const accessToken = await connectGoogleDrive({ clientId: googleClientId, ...googleReconnectOptions(window, prompt) })
       const [user, discovery] = await Promise.all([
         getDriveUser({ accessToken }),
         listFlowtreeRestoreCandidates({ accessToken, folderName: DRIVE_FOLDER_NAME }),
       ])
+      rememberGoogleAccount(window, user.emailAddress)
       const candidates = await findValidDriveRestoreCandidates(accessToken, discovery.candidates)
       const mode = driveRestoreMode(candidates)
       if (mode !== 'restore') setStartupState('ready')
@@ -201,6 +204,7 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
     if (!allowDiscard() || savingRef.current) return
     await revokeGoogleDriveAccess(drive.accessToken)
     clearDriveSession()
+    forgetGoogleAccount(window)
     const blank = createBlankFlowData()
     replaceData(blank, { resetHistory: true })
     setSavedContents(serializeFlowData(blank))

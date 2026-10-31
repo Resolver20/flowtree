@@ -1,23 +1,8 @@
 import { useEffect, useState } from 'react'
-
-const THEME_SESSION_KEY = 'flowtree-theme'
-
-function readTheme() {
-  try {
-    return window.sessionStorage.getItem(THEME_SESSION_KEY) === 'dark' ? 'dark' : 'light'
-  } catch {
-    return 'light'
-  }
-}
+import { readDeviceTheme, writeDeviceTheme } from '../domain/devicePreferences'
 
 export function useTheme() {
-  const [theme, setTheme] = useState(readTheme)
-  useEffect(() => {
-    try {
-      window.sessionStorage.setItem(THEME_SESSION_KEY, theme)
-    } catch {
-      // Theme preference is optional; storage failure must not block the plan.
-    }
-  }, [theme])
+  const [theme, setTheme] = useState(() => readDeviceTheme(window))
+  useEffect(() => { writeDeviceTheme(window, theme) }, [theme])
   return [theme, () => setTheme(current => current === 'light' ? 'dark' : 'light')]
 }

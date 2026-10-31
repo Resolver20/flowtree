@@ -32,3 +32,18 @@ test('opening the next child reveals one more level and leaves other branches al
   const closedChild = toggleBranch(tree, openedChild, ['parent', 'child'])
   assert.deepEqual(visibleIds(closedChild), visibleIds(reopened))
 })
+
+test('opening multiple sinking sections retains earlier sections and nested expansion', () => {
+  const initial = new Set(['parent', 'other'])
+  const first = toggleBranch(tree, initial, ['parent'])
+  const nested = toggleBranch(tree, first, ['parent', 'child'])
+  const second = toggleBranch(tree, nested, ['other'])
+  assert.ok(visibleIds(second).includes('grandchild'))
+  assert.ok(visibleIds(second).includes('other-child'))
+  assert.equal(second.has('parent'), false)
+  assert.equal(second.has('parent/child'), false)
+  const closedOther = toggleBranch(tree, second, ['other'])
+  assert.ok(visibleIds(closedOther).includes('grandchild'))
+  assert.ok(!visibleIds(closedOther).includes('other-child'))
+  assert.deepEqual([...initial], ['parent', 'other'])
+})

@@ -1,4 +1,5 @@
-import useFooterSwipe from './useFooterSwipe'
+import useSectionSwipe from './useSectionSwipe'
+import { MOBILE_SECTIONS } from '../../domain/sectionNavigation'
 import { usePwaInstall } from '../../hooks/usePwaInstall'
 import InstallDialog from './InstallDialog'
 import { useEffect, useRef, useState } from 'react'
@@ -10,16 +11,12 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
   async function installApp() {
     if (!await install()) setInstallHelp(true)
   }
-  const { preview: footerPreview, handlers: footerSwipe } = useFooterSwipe()
-  const footerActive = (index, active) => footerPreview === null ? active : footerPreview === index
   const homeActive = view === 'home'
   const [accountOpen, setAccountOpen] = useState(false)
-  const [moreOpen, setMoreOpen] = useState(false)
   const accountMenuRef = useRef(null)
   const desktopAccountButtonRef = useRef(null)
   const mobileAccountButtonRef = useRef(null)
-  const mobileMoreRef = useRef(null)
-  const mobileMoreButtonRef = useRef(null)
+  const mobileSectionsRef = useRef(null)
   const connected = Boolean(driveUser)
   const offline = driveStatus === 'offline'
   const saving = driveStatus === 'saving' || driveStatus === 'restoring'
@@ -59,50 +56,25 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
     }
   }, [accountOpen])
 
-  function closeMore() {
-    setMoreOpen(false)
-    window.requestAnimationFrame(() => mobileMoreButtonRef.current?.focus())
-  }
-
-  useEffect(() => {
-    if (!moreOpen) return undefined
-    const closeOnEscape = event => {
-      if (event.key === 'Escape') closeMore()
-    }
-    const keepFocusInMenu = event => {
-      if (event.key !== 'Tab') return
-      const controls = [...(mobileMoreRef.current?.querySelectorAll('button:not(:disabled)') || [])]
-      if (!controls.length) return
-      const first = controls[0]
-      const last = controls.at(-1)
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-    const closeOnOutsidePress = event => {
-      if (!mobileMoreRef.current?.contains(event.target) && !mobileMoreButtonRef.current?.contains(event.target)) closeMore()
-    }
-    const firstControl = mobileMoreRef.current?.querySelector('button')
-    firstControl?.focus()
-    document.addEventListener('keydown', closeOnEscape)
-    document.addEventListener('keydown', keepFocusInMenu)
-    document.addEventListener('pointerdown', closeOnOutsidePress)
-    return () => {
-      document.removeEventListener('keydown', closeOnEscape)
-      document.removeEventListener('keydown', keepFocusInMenu)
-      document.removeEventListener('pointerdown', closeOnOutsidePress)
-    }
-  }, [moreOpen])
-
   function closeMenuThen(action) {
     setAccountOpen(false)
-    setMoreOpen(false)
     action()
   }
+
+  const sectionActions = { home: onReturnToRoot, sinking: onShowSinkingFunds, loans: onShowLoans, goals: onShowGoals, recurring: onShowRecurringPayments, investments: onShowInvestments, ledger: onShowGeneralLedger }
+  const selectSection = id => closeMenuThen(sectionActions[id])
+  const sectionSwipe = useSectionSwipe(view, selectSection, { footer: true })
+  useEffect(() => {
+    const strip = mobileSectionsRef.current
+    const center = () => {
+      const active = strip?.querySelector(`[data-section="${view}"]`)
+      if (strip && active) strip.scrollTo({ left: active.offsetLeft - (strip.clientWidth - active.clientWidth) / 2, behavior: 'instant' })
+    }
+    center()
+    const observer = new ResizeObserver(center)
+    if (strip) observer.observe(strip)
+    return () => observer.disconnect()
+  }, [view])
 
   return <>
     {installHelp && <InstallDialog onClose={() => setInstallHelp(false)} />}
@@ -179,38 +151,20 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
         <button type="button" onClick={() => closeMenuThen(onDisconnectDrive)}>Log out</button>
       </> : <>
         <small id={!driveConfigured ? 'drive-configuration-status' : undefined} className="account-menu-status" role={driveError ? 'alert' : undefined}>{driveError || (!driveConfigured ? 'Google Drive sign-in is unavailable until this app is configured.' : 'Sign in to Google Drive to restore your plan. Your data appears after restore.')}</small>
-        <button type="button" className="account-menu-primary" aria-describedby={!driveConfigured ? 'drive-configuration-status' : undefined} disabled={!driveConfigured || ['preparing', 'connecting'].includes(driveStatus)} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{['preparing', 'connecting'].includes(driveStatus) ? driveStatus === 'preparing' ? 'Preparing Google sign-in…' : 'Connecting…' : 'Sign in with Google'}</button>
+        <button type="button" className="account-menu-primary" aria-describedby={!driveConfigured ? 'drive-configuration-status' : undefined} disabled={!driveConfigured || ['preparing', 'connecting'].includes(driveStatus)} onClick={() => closeMenuThen(() => onConnectDrive())}>{['preparing', 'connecting'].includes(driveStatus) ? driveStatus === 'preparing' ? 'Preparing Google sign-in…' : 'Connecting…' : 'Sign in with Google'}</button>
       </>}
     </section>}
-    <nav className="mobile-bottom-nav" aria-label="Primary navigation" {...footerSwipe}>
-      <button type="button" className={footerActive(0, !moreOpen && !accountOpen && homeActive) ? 'is-active' : ''} onClick={() => closeMenuThen(onReturnToRoot)} aria-current={homeActive ? 'page' : undefined}>
-        <span className="material-symbols-rounded" aria-hidden="true">home</span><span>Home</span>
-      </button>
-      <button type="button" className={footerActive(1, !moreOpen && !accountOpen && view === 'sinking') ? 'is-active' : ''} onClick={() => closeMenuThen(onShowSinkingFunds)} aria-current={view === 'sinking' ? 'page' : undefined}>
-        <span className="material-symbols-rounded" aria-hidden="true">savings</span><span>Sinking</span>
-      </button>
-      <button type="button" className={footerActive(2, !moreOpen && !accountOpen && view === 'loans') ? 'is-active' : ''} onClick={() => closeMenuThen(onShowLoans)} aria-current={view === 'loans' ? 'page' : undefined}>
-        <span className="material-symbols-rounded" aria-hidden="true">account_balance</span><span>Loans</span>
-      </button>
-      <button ref={mobileMoreButtonRef} type="button" className={footerActive(3, moreOpen) ? 'is-active' : ''} onClick={() => { setAccountOpen(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="mobile-more-menu">
-        <span className="material-symbols-rounded" aria-hidden="true">more_horiz</span><span>More</span>
-      </button>
-      <button ref={mobileAccountButtonRef} type="button" className={`mobile-account-trigger${footerActive(4, accountOpen) ? ' is-active' : ''}`} onClick={() => { setMoreOpen(false); setAccountOpen(open => !open) }} aria-expanded={accountOpen} aria-controls="account-menu" aria-label="Open account menu">
-        {driveUser?.photoLink
-          ? <img className="sidebar-avatar-image" src={driveUser.photoLink} alt="" />
-          : <span className="sidebar-avatar material-symbols-rounded" aria-hidden="true">person</span>}
+    <nav className="mobile-bottom-nav" aria-label="Primary navigation">
+      <div ref={mobileSectionsRef} className="mobile-section-tabs" aria-label="Plan sections" {...sectionSwipe}>
+        {MOBILE_SECTIONS.map(section => <button key={section.id} data-section={section.id} type="button" className={!accountOpen && view === section.id ? 'is-active' : ''} aria-current={view === section.id ? 'page' : undefined} onClick={() => selectSection(section.id)}>
+          <span className="material-symbols-rounded" aria-hidden="true">{section.icon}</span><span>{section.label}</span>
+        </button>)}
+      </div>
+      <button ref={mobileAccountButtonRef} type="button" className={`mobile-account-trigger${accountOpen ? ' is-active' : ''}`} onClick={() => setAccountOpen(open => !open)} aria-expanded={accountOpen} aria-controls="account-menu" aria-label="Open account menu">
+        {driveUser?.photoLink ? <img className="sidebar-avatar-image" src={driveUser.photoLink} alt="" /> : <span className="sidebar-avatar material-symbols-rounded" aria-hidden="true">person</span>}
         <span>Account</span>
       </button>
     </nav>
-    {moreOpen && <><button type="button" className="mobile-more-backdrop" aria-label="Close more options" onClick={closeMore} /><section ref={mobileMoreRef} id="mobile-more-menu" className="mobile-more-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title">
-      <div className="mobile-more-heading"><strong id="mobile-more-title">More</strong><button type="button" onClick={closeMore} aria-label="Close more options"><span className="material-symbols-rounded" aria-hidden="true">close</span></button></div>
-      <div className="mobile-more-actions">
-        <button type="button" className={view === 'goals' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGoals)}><span className="material-symbols-rounded" aria-hidden="true">flag</span>Goals</button>
-        <button type="button" className={view === 'investments' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowInvestments)}><span className="material-symbols-rounded" aria-hidden="true">trending_up</span>Investments</button>
-        <button type="button" className={view === 'ledger' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowGeneralLedger)}><span className="material-symbols-rounded" aria-hidden="true">receipt_long</span>General ledgers</button>
-        <button type="button" className={view === 'recurring' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowRecurringPayments)}><span className="material-symbols-rounded" aria-hidden="true">event_repeat</span>Recurring payments</button>
-      </div>
-    </section></>}
     {view === 'home' && !expandAll && <nav className="energy-breadcrumbs" aria-label="Flow location">
       <button onClick={onReturnToRoot}>Whole tree</button>
       {breadcrumbs.map(crumb => <span key={crumb.node.id}> / <button onClick={() => onNavigate(crumb.path)}>{crumb.node.name}</button></span>)}

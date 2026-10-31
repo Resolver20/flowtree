@@ -1,80 +1,81 @@
-<!doctype html>
-<html lang="en"><meta charset="utf-8"><title>Mobile footer regression</title>
-<body><pre id="result">Running…</pre><iframe title="Flowtree footer test" src="/offline.local.html" style="border:0"></iframe>
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Mobile footer regression</title><body>
+<pre id="result">Running…</pre><iframe title="Flowtree footer test" src="/offline.local.html" style="border:0"></iframe>
 <script type="module">
 const frame = document.querySelector('iframe');
 const result = document.querySelector('#result');
 const checks = [];
-const assert = (condition, message) => { if (!condition) throw new Error(message); checks.push(message); };
+const wait = () => new Promise(resolve => setTimeout(resolve, 60));
+const assert = (condition, message) => { if (!condition) throw Error(message); checks.push(message); };
 await new Promise(resolve => frame.addEventListener('load', resolve));
 try {
-  for (const [width, height] of [[320,740],[360,800],[390,844],[430,932],[568,320],[740,360],[768,1024],[1366,768],[1920,1080]]) {
-    frame.style.width = `${width}px`; frame.style.height = `${height}px`;
-    await new Promise(resolve => setTimeout(resolve, 150));
-    const doc = frame.contentDocument;
-    const nav = doc.querySelector('.mobile-bottom-nav');
-    const style = frame.contentWindow.getComputedStyle(nav);
-    if (width > 760) { assert(style.display === 'none', `${width}: desktop dock hidden`); continue; }
-    const bounds = nav.getBoundingClientRect();
-    assert(bounds.left >= 12 && bounds.right <= width - 12 && bounds.bottom <= height - 20, `${width}: dock inset from screen edges`);
-    assert([...nav.querySelectorAll('button')].every(button => { const r = button.getBoundingClientRect(); return r.width >= 44 && r.height >= 44 && r.left >= bounds.left && r.right <= bounds.right; }), `${width}: five usable targets fit`);
-    const labelTops = [...nav.querySelectorAll('button > :last-child')].map(label => label.getBoundingClientRect().top);
-    assert(Math.max(...labelTops) - Math.min(...labelTops) < 1, `${width}: all five labels share a baseline`);
-    const canvas = doc.querySelector('.energy-viewport');
-    assert(Math.abs(canvas.getBoundingClientRect().bottom - height) <= 1, `${width}: content extends behind glass dock`);
-    assert(parseFloat(frame.contentWindow.getComputedStyle(canvas).paddingBottom) >= height - bounds.top, `${width}: scroll-end padding clears dock`);
-    canvas.scrollTop = canvas.scrollHeight;
-    const lastCard = [...canvas.querySelectorAll('.mobile-tree-card')].at(-1);
-    if (lastCard) assert(lastCard.getBoundingClientRect().bottom <= bounds.top, `${width}: last card scrolls fully above dock`);
-    canvas.scrollTop = 0;
-    nav.querySelector('[aria-controls="mobile-more-menu"]').click();
-    await new Promise(resolve => setTimeout(resolve, 50));
-    const menuElement = doc.querySelector('.mobile-more-menu');
-    assert(!menuElement.querySelector('.mobile-more-account') && !/Sign in|Log out|switch account/.test(menuElement.textContent), `${width}: More has no duplicate account section`);
-    assert(!/Use (light|dark) mode/.test(menuElement.textContent), `${width}: theme control is not duplicated in More`);
-    const menu = menuElement.getBoundingClientRect();
-    assert(nav.querySelectorAll('.is-active').length === 1 && nav.querySelector('[aria-controls="mobile-more-menu"]').classList.contains('is-active'), `${width}: only More is highlighted while open`);
-    assert(menu.top >= 0 && menu.bottom <= bounds.top, `${width}: More menu clears dock`);
-    nav.querySelector('[aria-controls="mobile-more-menu"]').click();
-    await new Promise(resolve => setTimeout(resolve, 50));
-    assert(nav.querySelectorAll('.is-active').length === 1 && nav.querySelector('button').classList.contains('is-active'), `${width}: Home highlight returns after closing More`);
-    nav.querySelector('[aria-controls="account-menu"]').click();
-    await new Promise(resolve => setTimeout(resolve, 50));
-    assert(/Use (light|dark) mode/.test(doc.querySelector('.account-menu-theme')?.textContent || ''), `${width}: Account contains theme control`);
-    nav.querySelector('[aria-controls="account-menu"]').click();
-    await new Promise(resolve => setTimeout(resolve, 50));
-    if (width === 390) {
-      // Synthetic pointer events cannot acquire a native pointer capture.
-      nav.setPointerCapture = () => {};
-      nav.hasPointerCapture = () => false;
-      const buttons = [...nav.children];
-      const point = index => { const r = buttons[index].getBoundingClientRect(); return { clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 }; };
-      const pointer = (type, index) => nav.dispatchEvent(new frame.contentWindow.PointerEvent(type, { bubbles: true, pointerId: 1, isPrimary: true, button: 0, ...point(index) }));
-      pointer('pointerdown', 0); pointer('pointermove', 2);
-      await new Promise(resolve => setTimeout(resolve, 50));
-      assert(buttons[2].classList.contains('is-active') && buttons[0].getAttribute('aria-current') === 'page', 'Drag previews destination without navigating');
-      pointer('pointerup', 2);
-      await new Promise(resolve => setTimeout(resolve, 50));
-      assert(buttons[2].getAttribute('aria-current') === 'page', 'Release selects Loans');
-      pointer('pointerdown', 2); pointer('pointermove', 3); pointer('pointercancel', 3);
-      await new Promise(resolve => setTimeout(resolve, 50));
-      assert(!doc.querySelector('.mobile-more-menu') && buttons[2].classList.contains('is-active'), 'Cancelled drag restores current section');
-      buttons[0].click();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      delete nav.setPointerCapture; delete nav.hasPointerCapture;
+  for (let i=0;i<100 && !frame.contentDocument.querySelector('.sidebar-nav');i++) await wait();
+  for (const [width,height] of [[320,740],[360,800],[390,844],[430,932],[568,320],[740,360],[768,1024],[1366,768],[1920,1080]]) {
+    frame.style.width=`${width}px`;frame.style.height=`${height}px`;await wait();
+    const doc=frame.contentDocument, win=frame.contentWindow;
+    const nav=doc.querySelector('.mobile-bottom-nav');
+    if(width>760){assert(win.getComputedStyle(nav).display==='none',`${width}: desktop dock hidden`);continue;}
+    const strip=nav.querySelector('.mobile-section-tabs');
+    const buttons=[...strip.querySelectorAll('button')];
+    buttons[0].click();await wait();
+    const bounds=nav.getBoundingClientRect();
+    assert(bounds.left>=16 && bounds.right<=width-16 && bounds.bottom<=height-20,`${width}: dock fits safe gutters`);
+    assert([...nav.querySelectorAll('button')].every(e=>e.getBoundingClientRect().width>=44 && e.getBoundingClientRect().height>=44),`${width}: usable touch targets`);
+    const labelTops=[...nav.querySelectorAll('button > :last-child')].map(e=>e.getBoundingClientRect().top);
+    assert(Math.max(...labelTops)-Math.min(...labelTops)<1,`${width}: labels align`);
+    const canvas=doc.querySelector('.energy-viewport');
+    assert(Math.abs(canvas.getBoundingClientRect().bottom-height)<=1,`${width}: content extends behind glass dock`);
+    assert(parseFloat(win.getComputedStyle(canvas).paddingBottom)>=height-bounds.top,`${width}: scroll-end padding clears dock`);
+    canvas.scrollTop=canvas.scrollHeight;
+    const last=[...canvas.querySelectorAll('.mobile-tree-card')].at(-1);
+    if(last)assert(last.getBoundingClientRect().bottom<=bounds.top,`${width}: last card clears dock`);
+    canvas.scrollTop=0;
+    const swipe=async dx=>{
+      const r=strip.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height/2;
+      strip.dispatchEvent(new win.PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,clientX:x,clientY:y}));
+      strip.dispatchEvent(new win.PointerEvent('pointerup',{bubbles:true,pointerType:'mouse',button:0,clientX:x+dx,clientY:y}));await wait();
+    };
+    const current=()=>strip.querySelector('[aria-current="page"]')?.dataset.section;
+    await swipe(70);assert(current()==='home',`${width}: stops at Home`);
+    for(const button of buttons.slice(1)){
+      await swipe(-70);
+      assert(current()===button.dataset.section,`${width}: swipe reaches ${button.dataset.section}`);
+      const active=strip.querySelector('[aria-current="page"]'), r=active.getBoundingClientRect(), area=strip.getBoundingClientRect();
+      assert(r.left>=area.left-1 && r.right<=area.right+1,`${width}: selected tab remains visible`);
     }
-    doc.documentElement.style.setProperty('--mobile-safe-bottom', '34px');
-    assert(nav.getBoundingClientRect().bottom <= height - 54, `${width}: home indicator clearance`);
+    await swipe(-70);assert(current()==='ledger' && !doc.querySelector('.account-menu'),`${width}: end stops without opening Account`);
+    for(const button of buttons.slice(0,-1).reverse()){await swipe(70);assert(current()===button.dataset.section,`${width}: reverse swipe reaches ${button.dataset.section}`);}
+    if(width===390){
+      const touchEvent=(target,type,x,y)=>{
+        const event=new win.Event(type,{bubbles:true});
+        const point={clientX:x,clientY:y};
+        Object.defineProperties(event,{touches:{value:type==='touchstart'?[point]:[]},changedTouches:{value:[point]}});
+        target.dispatchEvent(event);
+      };
+      const pageSwipe=async(target,dx,dy=0)=>{touchEvent(target,'touchstart',250,300);touchEvent(target,'touchend',250+dx,300+dy);await wait();};
+      await pageSwipe(doc.querySelector('.energy-viewport'),-100);
+      assert(current()==='sinking','Content touch swipe selects next section');
+      await pageSwipe(doc.querySelector('.energy-viewport'),10,100);
+      assert(current()==='sinking','Vertical content scroll does not navigate');
+      buttons[2].click();await wait();doc.querySelector('.loan-list button').click();await wait();
+      doc.querySelector('.loan-schedule-toggle').click();await wait();
+      await pageSwipe(doc.querySelector('.loan-table-wrap'),-100);
+      assert(current()==='loans','Repayment table gestures do not change sections');
+      buttons[0].click();await wait();
+    }
+    assert(!nav.textContent.includes('More'),`${width}: real section labels replace More`);
+    nav.querySelector('.mobile-account-trigger').click();await wait();
+    assert(nav.querySelectorAll('.is-active').length===1 && /Use (light|dark) mode/.test(doc.querySelector('.account-menu-theme').textContent),`${width}: Account remains separate with theme control`);
+    assert(doc.querySelector('.account-menu').getBoundingClientRect().bottom<=bounds.top,`${width}: Account clears dock`);
+    nav.querySelector('.mobile-account-trigger').click();await wait();
+    doc.documentElement.style.setProperty('--mobile-safe-bottom','34px');
+    assert(nav.getBoundingClientRect().bottom<=height-54,`${width}: home-indicator clearance`);
     doc.documentElement.style.removeProperty('--mobile-safe-bottom');
-    if (width >= 568) {
-      doc.documentElement.style.setProperty('--mobile-safe-left', '44px');
-      doc.documentElement.style.setProperty('--mobile-safe-right', '44px');
-      const safeBounds = nav.getBoundingClientRect();
-      assert(safeBounds.left >= 60 && safeBounds.right <= width - 60, `${width}: landscape side safe areas plus gutters`);
-      doc.documentElement.style.removeProperty('--mobile-safe-left');
-      doc.documentElement.style.removeProperty('--mobile-safe-right');
+    if(width>=568){
+      doc.documentElement.style.setProperty('--mobile-safe-left','44px');doc.documentElement.style.setProperty('--mobile-safe-right','44px');
+      const r=nav.getBoundingClientRect();assert(r.left>=60 && r.right<=width-60,`${width}: landscape side safe areas`);
+      doc.documentElement.style.removeProperty('--mobile-safe-left');doc.documentElement.style.removeProperty('--mobile-safe-right');
     }
   }
-  document.body.dataset.result = 'pass'; result.textContent = `PASS\n${checks.join('\n')}`;
-} catch (error) { document.body.dataset.result = 'fail'; result.textContent = `FAIL: ${error.message}\n${checks.join('\n')}`; }
+  document.body.dataset.result='pass';result.textContent=`PASS\n${checks.join('\n')}`;
+}catch(error){document.body.dataset.result='fail';result.textContent=`FAIL: ${error.message}\n${checks.join('\n')}`;}
 </script></body></html>

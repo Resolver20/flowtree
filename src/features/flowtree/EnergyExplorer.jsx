@@ -1,3 +1,4 @@
+import useSectionSwipe from './useSectionSwipe'
 import { selectSinkingFunds } from '../../domain/sinkingFunds'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { allocateEnergy } from '../../domain/energyFlow'
@@ -137,7 +138,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
   }, [tree])
   const investments = useMemo(() => tree.find(node => node.id === 'growth')?.children || [], [tree])
   const expandAll = view === 'home' && !path.length
-  const visibleTreeExpanded = expandAll
+  const visibleTreeExpanded = expandAll || view === 'sinking'
   const showProfileMarker = view === 'home' && (profile.visible || Boolean(driveUser?.photoLink))
 
   const income = demo ? Math.round(totalChildren(visibleTree) * .75 + buffer) : salary
@@ -214,14 +215,14 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
 
   function navigate(nextPath) {
     if (pin) {
-      if (view === 'home' && !path.length) {
+      if (visibleTreeExpanded) {
         onChangeCanvasPin(view, { ...pin, collapsedPaths: [...toggleBranch(visibleTree, collapsedPaths, nextPath)] })
       } else {
         onChangeCanvasPin(view, { ...pin, path: nextPath.join('/') === path.join('/') ? path.slice(0, -1) : nextPath })
       }
       return
     }
-    if (view === 'home' && !path.length) {
+    if (visibleTreeExpanded) {
       setCollapsedPaths(current => toggleBranch(visibleTree, current, nextPath))
       return
     }
@@ -267,7 +268,8 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
     setPath([])
   }
 
-  return <main ref={sectionRef} className={`energy-home theme-${theme}`}>
+  const pageSwipe = useSectionSwipe(view, next => { onChangeView(next); setPath([]) })
+  return <main {...pageSwipe} ref={sectionRef} className={`energy-home theme-${theme}`}>
     <TreeHeader
       breadcrumbs={breadcrumbs}
       expandAll={expandAll}
