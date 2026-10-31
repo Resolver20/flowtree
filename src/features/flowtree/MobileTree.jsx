@@ -1,10 +1,10 @@
+import { cardProgress } from '../../domain/cardProgress'
 import { goalCardPreview } from './goalCardPreview'
 import { useId, useState } from 'react'
 import InactiveMarker from './InactiveMarker'
 import MonthlyPlanShare from './MonthlyPlanShare'
 import MonthlyPlanHub from './MonthlyPlanHub'
 import { monthlyPlanShare } from '../../domain/monthlyPlanShare'
-import { annualTargetProgress } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import { colorForNode, iconForNode } from './nodePresentation'
 
@@ -42,21 +42,19 @@ function MobileNode({ entry, tree, monthlyIncome, selectedPath, expandAll, colla
   const hasChildren = Boolean(item.children?.length)
   const isSelected = path.join('/') === selectedPath.join('/')
   const showChildren = hasChildren && (expandAll ? !collapsedPaths.has(path.join('/')) : path.every((id, index) => selectedPath[index] === id))
-  const annualProgress = annualTargetProgress(item)
+  const progress = cardProgress(item, funding)
   const color = colorForNode(item)
   const isGoal = path.includes('goals') && item.id !== 'goals'
   const { monthlyAmount, inactive } = goalCardPreview(item, isGoal, funding.target)
   const share = monthlyPlanShare({ amount: funding.target, income: monthlyIncome, tree, path })
-  const targetText = annualProgress
-    ? `${formatMoney(monthlyAmount)} per month, ${Math.round(annualProgress.ratio * 100)} percent of the ${isGoal ? 'goal' : 'annual'} target saved`
-    : `${formatMoney(monthlyAmount)} per month`
+  const targetText = `${formatMoney(monthlyAmount)} per month, ${Math.round(progress.ratio * 100)} percent ${progress.label}`
 
   const content = <>
     <span className="mobile-tree-icon material-symbols-rounded" style={{ color }} aria-hidden="true">{iconForNode(item)}</span>
     <span className="mobile-tree-copy"><strong>{item.name}</strong><small>{formatMoney(monthlyAmount)} per month</small></span>
     <MonthlyPlanShare label={share.label} />
     <InactiveMarker inactive={inactive} />
-    {annualProgress && <span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${annualProgress.ratio * 100}%` }} /></span>}
+    {<span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${progress.ratio * 100}%` }} /></span>}
     {hasChildren && <span className="mobile-tree-cue material-symbols-rounded" aria-hidden="true">{showChildren ? 'expand_less' : 'expand_more'}</span>}
   </>
 

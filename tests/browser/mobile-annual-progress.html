@@ -26,8 +26,10 @@ assert(Math.abs(f.width-b.width*expected)<1&&f.height===4,`${prefix}: rendered f
 assert(view.getComputedStyle(fill).backgroundColor!==view.getComputedStyle(bar).backgroundColor&&view.getComputedStyle(bar).backgroundColor!==view.getComputedStyle(card).backgroundColor,`${prefix}: fill and remaining track contrast with card`);
 assert(card.scrollWidth<=card.clientWidth,`${prefix}: no card overflow`);
 }
-assert(!doc.querySelector('[data-tree-path="protection/insurance/monthly"] > .mobile-tree-node-row .node-progress'),`${width}: monthly target has no progress line`);
-assert(!doc.querySelector('[data-tree-path="protection"] > .mobile-tree-node-row .node-progress'),`${width}: category has no invented progress`);
+assert(doc.querySelector('[data-tree-path="protection/insurance/monthly"] > .mobile-tree-node-row .node-progress'),`${width}: monthly card has allocation track`);
+const groupFill=doc.querySelector('[data-tree-path="protection"] > .mobile-tree-node-row .node-progress > span');
+assert(groupFill && Math.abs(parseFloat(groupFill.style.width)-expected*100)<.01,`${width}: category shows descendant yearly progress`);
+assert(doc.querySelectorAll('.mobile-tree-card').length===doc.querySelectorAll('.mobile-tree-card > .node-progress').length,`${width}: every planning card has a progress track`);
 }
 }
 document.body.dataset.result='pass';result.textContent=`PASS (${checks.length} checks)`;

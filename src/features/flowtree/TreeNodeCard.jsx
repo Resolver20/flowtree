@@ -1,3 +1,4 @@
+import { cardProgress } from '../../domain/cardProgress'
 import { goalCardPreview } from './goalCardPreview'
 import { monthlyPlanShare } from '../../domain/monthlyPlanShare'
 import MonthlyPlanShare from './MonthlyPlanShare'
@@ -13,6 +14,7 @@ export default function TreeNodeCard({ entry, tree, monthlyIncome, isExpanded, i
   const complete = funding.target > 0 && funding.ratio >= 1
   const action = isExpanded ? 'Collapse to' : 'Show'
   const annualProgress = annualTargetProgress(item)
+  const progress = cardProgress(item, funding)
   const color = colorForNode(item)
   const isLifeGoal = path.includes('goals') && item.id !== 'goals'
   const { monthlyAmount, inactive } = goalCardPreview(item, isLifeGoal, funding.target)
@@ -28,7 +30,7 @@ export default function TreeNodeCard({ entry, tree, monthlyIncome, isExpanded, i
     <span className="amount-copy"><strong>{item.name}</strong><span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span></span>
     {!inactive && <MonthlyPlanShare label={share.label} />}
     <InactiveMarker inactive={inactive} />
-    {annualProgress && <span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${annualProgress.ratio * 100}%` }} /></span>}
+    {<span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${progress.ratio * 100}%` }} /></span>}
     {hasChildren && !isExpanded && <span className="branch-cue material-symbols-rounded" aria-hidden="true">chevron_right</span>}
   </>
 

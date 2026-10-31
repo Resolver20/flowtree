@@ -564,3 +564,10 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 
 - Open `tests/browser/tree-card-overflow.fixture.html`: the paused Home goal with ₹1,50,376 /mo must keep its monthly amount on one line. The card shows name, amount and bottom progress line; Paused replaces the zero income-share label at the top right. Full annual amounts remain in the card tooltip and Info details rather than a cramped third line.
 - Run `tests/browser/tree-card-overflow.html` for amount containment, progress separation and status placement on three paused yearly goals. Long names truncate without changing card/connector geometry. Recheck active/paused cards and expanded groups in the full Home tree; the whole-tree viewport matrix was not repeated for this focused change.
+
+### Progress tracks on every planning card
+
+- Home and Sinking: every category and child card now has a bottom track, including zero-progress cards. Yearly branches combine own and descendant yearly targets by amount; monthly-only branches show monthly allocation, not savings. Income and the Monthly plan hub are not target cards.
+- Run `tests/browser/mobile-annual-progress.html` for mobile coverage at 320/390/568/760px in both themes. Check zero progress still has a visible neutral track, category progress matches its descendant targets, and expand/collapse retains every track.
+- `tests/domain/cardProgress.test.js` checks weighted yearly aggregation, no double counting, zero targets, and bounded monthly allocation. Physical installed-PWA refresh remains a device check.
+- Verified: 1,521 browser checks passed; full-app Sinking at 390px visibly shows tracks on both category and yearly child. Automated domain suite: 166 tests passed. Installed-device rendering remains unverified.
