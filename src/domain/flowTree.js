@@ -111,6 +111,7 @@ export function annualTargetProgress(node, today = new Date()) {
 
 export function totalExpectedAnnualSavings(nodes, today = new Date()) {
   return nodes.reduce((total, node) => {
+    if (normalizeNodeStatus(node.status) === 'inactive') return total
     const ownExpectedSavings = node.period === 'year' ? expectedAnnualSavings(node, today) : 0
     return total + ownExpectedSavings + totalExpectedAnnualSavings(node.children || [], today)
   }, 0)

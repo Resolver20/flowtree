@@ -195,6 +195,6 @@ test('sinking expected savings includes nested annual records once and ignores m
     ] },
     { amount: 3000, savedAmount: 750, period: 'year', children: [] },
   ] }]
-  assert.equal(totalExpectedAnnualSavings(nodes, new Date(2026, 9, 31)), 5250)
+  assert.equal(totalExpectedAnnualSavings(nodes, new Date(2026, 9, 31)), 3750)
   assert.equal(totalExpectedAnnualSavings([], new Date(2026, 9, 31)), 0)
 })

@@ -56,5 +56,20 @@ test('sinking overview respects nested amounts and pauses without double countin
   const original = structuredClone(target)
   assert.deepEqual(sinkingFundsOverview([target], today), { monthly: 1300, plannedSaved: 9000, hasTargets: true })
   assert.deepEqual(target, original)
-  assert.deepEqual(sinkingFundsOverview([{ ...target, status: 'inactive' }], today), { monthly: 0, plannedSaved: 9000, hasTargets: true })
+  assert.deepEqual(sinkingFundsOverview([{ ...target, status: 'inactive' }], today), { monthly: 0, plannedSaved: 0, hasTargets: true })
+})
+
+test('planned savings excludes paused branches and legacy inactive statuses, and restores them on activation', () => {
+  const today = new Date(2026, 9, 31)
+  const active = { id: 'active', period: 'year', amount: 12000, savedAmount: 3000, children: [] }
+  const child = { ...active, id: 'child', savedAmount: 1500 }
+  for (const status of ['inactive', 'dormant', 'funded']) {
+    const paused = { ...active, id: 'paused', status, children: [child] }
+    const nodes = [active, paused]
+    const original = structuredClone(nodes)
+    assert.equal(sinkingFundsOverview(nodes, today).plannedSaved, 3000)
+    assert.equal(sinkingFundsOverview([{ id: 'group', status, children: [active] }], today).plannedSaved, 0)
+    assert.equal(sinkingFundsOverview([active, { ...paused, status: 'active' }], today).plannedSaved, 7500)
+    assert.deepEqual(nodes, original)
+  }
 })
