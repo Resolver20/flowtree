@@ -217,7 +217,7 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
           : <button type="button" disabled={!driveConfigured || ['preparing', 'connecting'].includes(driveStatus)} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{['preparing', 'connecting'].includes(driveStatus) ? driveStatus === 'preparing' ? 'Preparing Google sign-in…' : 'Connecting…' : 'Sign in with Google'}</button>}
       </div>
     </section></>}
-    {!expandAll && <nav className="energy-breadcrumbs" aria-label="Flow location">
+    {view === 'home' && !expandAll && <nav className="energy-breadcrumbs" aria-label="Flow location">
       <button onClick={onReturnToRoot}>Whole tree</button>
       {breadcrumbs.map(crumb => <span key={crumb.node.id}> / <button onClick={() => onNavigate(crumb.path)}>{crumb.node.name}</button></span>)}
     </nav>}

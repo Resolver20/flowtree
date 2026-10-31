@@ -113,7 +113,7 @@ function IncomeSourceManageDialog({ source, onClose, onDelete, onRequestEdit }) 
   return <DialogShell title={source.name} onClose={onClose}>
     <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">{source.icon || 'payments'}</span><div><span>Monthly income source</span><strong>{formatMoney(source.amount)} <small>/month</small></strong><small>{formatIncomeStart(source.startDate)} · paid on the {source.dayOfMonth || 1}{(source.dayOfMonth || 1) === 1 ? 'st' : (source.dayOfMonth || 1) === 2 ? 'nd' : (source.dayOfMonth || 1) === 3 ? 'rd' : 'th'} of each month</small></div></div>
     <div className="dialog-actions manage-actions">
-      <button type="button" className="modal-submit" onClick={() => onRequestEdit(source.id)}>Edit details</button><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button></div>
+      <button type="button" className="modal-submit" onClick={() => onRequestEdit(source.id)}>Edit details</button><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete</button></div>
   </DialogShell>
 }
 
@@ -277,7 +277,7 @@ function ManageDialog({ onViewOverview, isGoal, node, onClose, onDelete, onReque
       <button type="button" className="modal-submit" onClick={() => onRequestEdit(node.id)}>Edit details</button>
       <button type="button" onClick={() => onRequestAdd(node.id)}>Add child</button>
       {onViewOverview && <button type="button" onClick={() => onViewOverview(node.id)}>View overview</button>}
-      {canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button>}
+      {canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete</button>}
     </div>
   </DialogShell>
 }
@@ -401,7 +401,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
       </div>
       <small>Inactive items pause the entire branch’s allocation. Dates stay editable; activate the item when you want to include it in the plan.</small>
       <div className="amount-preview" aria-live="polite"><span>Monthly branch total<small>Includes {formatMoney(totalChildren(node?.children || []))} in child targets</small></span><strong>{formatMoney(preview)}</strong></div>
-      <div className="dialog-actions">{isEditing && canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete…</button>}<button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">{isEditing ? 'Save changes' : 'Add to tree'}</button></div>
+      <div className="dialog-actions">{isEditing && canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete</button>}<button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">{isEditing ? 'Save changes' : 'Add to tree'}</button></div>
     </form>
   </DialogShell>
 }

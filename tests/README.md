@@ -278,3 +278,25 @@ On 2026-10-31, this regression reproduced 11 failing cases before the fix and pa
 - Update scenario: keep a draft open in one production preview window, rebuild, and open a second window to discover the new worker. Expect Update ready without closing the editor or reloading the first window. Save/discard the test draft, close all preview windows, then reopen to activate the new version. Other app caches must remain intact.
 - Physical-device acceptance: install from HTTPS on Android Chrome and iPhone Safari, launch from the icon, verify standalone layout and safe-area spacing, sign in to Google and restore/save a test plan, close/reopen, then repeat offline/reconnect and update checks. Native OS installation and actual Google OAuth inside standalone phone apps require device verification; desktop emulation cannot prove those flows.
 - Verified in the production preview at `/flowtree/`: browser manifest parser reports no errors, standalone display and correct `/flowtree/` identity/start/scope; mobile Account install fallback and iPhone Safari instructions render; network-disabled reload with HTTP cache disabled loads the offline reconnect screen; reconnect opens the app. A newly discovered worker showed Update ready while the first window retained the exact unsaved editor draft. Closing the test windows activated the new manifest. No real Google sign-in or OS installation was performed.
+
+### Floating glass mobile footer — 2026-10-31
+
+- Open `/tests/browser/mobile-footer.html` on Vite. The browser regression uses the real offline app in an iframe and reports PASS/FAIL for 320×740, 390×844, 568×320, 768×1024, 1366×768 and 1920×1080. It checks edge insets, all five 44px touch targets, content/menu clearance, simulated 34px home-indicator spacing and desktop hiding. All 18 assertions passed locally. This is separate from `npm test`.
+- Manual: on a phone, scroll Home and Sinking funds, open Loans and the More destinations, and open Account. The rounded footer must stay inset from curved edges; content, notices and menus must remain above it. Tab/Enter should activate navigation with visible focus. Check light/dark mode and reduced transparency, plus Safari and installed-app home-indicator spacing. Unsupported blur uses a solid background.
+- Verified at 390×844: light footer screenshot, keyboard Account opening/focus, and dark translucent background with 20px blur. Real iPhone safe-area behavior, reduced-transparency OS setting and every dedicated screen were not manually repeated. The original user tab stayed open without reload.
+
+### Mobile editor action spacing and Save visibility — 2026-10-31
+
+- The mobile form footer uses a zero sticky offset and 16px vertical padding, with an opaque continuation through the dialog's bottom padding. Form fields must not peek out underneath the actions.
+- `/tests/browser/mobile-card-editor.html?mode=edit`, `?mode=add`, and `?mode=edit&keyboard=1` now assert that the primary action is already visible before scrolling, has at least 16px below it, and reads Save changes for editing or Add to tree for creation. Verified all three modes at 320×740, 390×844, 568×320, 768×1024 and 1366×768.
+- Manual scenario: open an existing card's Edit details and a new card's Add child. Scroll to both ends, open/dismiss the phone keyboard, and verify Cancel and Save changes/Add to tree remain visible with space beneath them. Close the dialog: the main plan Save must be visible at top right when connected to Drive or in offline test mode. Verified its visible bounds at 390×844 in the offline app. Real phone keyboard behavior remains a device check.
+
+### Section header breadcrumbs
+
+- Run `/tests/browser/section-breadcrumbs.html`: navigate all six dedicated sections and Home root in the real offline app; none should render the Whole tree breadcrumb. Home branch navigation retains its breadcrumb when drilled into a branch.
+- Manual: at phone and desktop widths, switch Home, Sinking funds, Loans, Life goals, Recurring payments, Investments and General ledger. No Whole tree label should appear above a dedicated screen; its own title and the Save controls remain available.
+
+### Delete button appearance
+
+- The shared dialog Delete action has an outlined red button in light and dark themes. Existing confirmation remains unchanged.
+- The mobile-card-editor browser regression checks a visible solid outline and minimum button height in edit and manage modes. Manually open card info and Edit details: Delete should look like a button, with the same corner radius as the other actions; selecting it must still show confirmation before deletion.

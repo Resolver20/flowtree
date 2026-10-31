@@ -389,7 +389,7 @@
 .dialog-actions button { min-height: 40px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--text); }
 .dialog-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dialog-actions .modal-submit { margin: 0; border-color: #5366c8; background: #5366c8; color: white; }
-.dialog-actions .delete-link { margin-right: auto; border-color: transparent; color: #b42332; }
+.dialog-actions .delete-link { margin-right: auto; border-color: #b42332; background: #fff; color: #b42332; }
 .drive-version-list { display: grid; width: 100%; }
 .drive-version-list button { display: grid; gap: 6px; width: 100%; text-align: left; overflow-wrap: anywhere; }
 .drive-version-list button span { font-size: 12px; line-height: 1.5; }
@@ -621,7 +621,7 @@
 .theme-dark .close { color: var(--muted); }
 .theme-dark .amount-preview, .theme-dark .modal .date-entry button { border-color: var(--line); background: var(--surface-raised); color: var(--text); }
 .theme-dark .dialog-actions .modal-submit, .theme-dark .modal-submit { border-color: #a9bcff; background: #a9bcff; color: #18223a; }
-.theme-dark .dialog-actions .delete-link { color: #ffacb3; }
+.theme-dark .dialog-actions .delete-link { border-color: #ffacb3; background: var(--surface); color: #ffacb3; }
 .theme-dark .dialog-actions .danger-button { border-color: #ffacb3; background: #ffacb3; color: #41171e; }
 .theme-dark .mobile-home-totals .is-available strong { color: #91dbb2; }
 .theme-dark .mobile-home-totals .is-over strong { color: #ffb39e; }
@@ -761,10 +761,58 @@
   .modal p { margin-bottom: 16px; }
   .modal .dialog-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
   .modal .dialog-actions button { min-height: 44px; margin: 0; white-space: normal; overflow-wrap: anywhere; }
-  .modal form > .dialog-actions { position: sticky; bottom: -20px; z-index: 2; margin: 0 -1px -1px; padding: 12px 0 4px; background: var(--surface); border-top: 1px solid var(--line); }
+  .modal form > .dialog-actions { position: sticky; bottom: 0; z-index: 2; margin: 20px 0 0; padding: 16px 0; background: var(--surface); box-shadow: 0 20px 0 var(--surface); border-top: 1px solid var(--line); }
   .modal form > .dialog-actions .delete-link { grid-column: 1 / -1; }
   .modal .manage-actions { grid-template-columns: minmax(0, 1fr); }
   .modal .manage-actions .delete-link { margin-top: 4px; }
   .modal .annual-target-list { max-height: none; overflow: visible; padding-right: 0; }
   .modal .card-overview strong, .modal .card-facts dd { overflow-wrap: anywhere; }
+}
+
+/* One shared clearance keeps the floating phone dock clear of content and sheets. */
+@media (max-width: 760px) {
+  :root {
+    --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --mobile-nav-bottom: max(10px, var(--mobile-safe-bottom));
+    --mobile-nav-clearance: calc(66px + var(--mobile-nav-bottom) + 12px);
+  }
+  .mobile-bottom-nav {
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: var(--mobile-nav-bottom);
+    left: max(12px, env(safe-area-inset-left, 0px));
+    max-width: 520px;
+    height: 66px;
+    min-height: 66px;
+    margin-inline: auto;
+    padding: 6px;
+    border: 1px solid #d9dfe9;
+    border-radius: 26px;
+    background: #f9fafc;
+    box-shadow: 0 4px 16px #34466d12;
+  }
+  .mobile-bottom-nav button { min-width: 0; border-radius: 19px; }
+  .mobile-bottom-nav button.is-active { border-color: transparent; background: #e5ecfc; }
+  .theme-dark .mobile-bottom-nav { background: #202938; border-color: #465063; box-shadow: 0 4px 16px #05091230; }
+  .theme-dark .mobile-bottom-nav button.is-active { border-color: transparent; background: #344765; }
+  .energy-viewport, .energy-viewport.has-mobile-home-outlook,
+  .loans-view, .goals-view, .recurring-view, .ledger-view { bottom: var(--mobile-nav-clearance); }
+  .account-menu, .mobile-more-menu {
+    bottom: var(--mobile-nav-clearance);
+    max-height: calc(100dvh - var(--mobile-nav-clearance) - 16px);
+  }
+  .change-notice { bottom: var(--mobile-nav-clearance); }
+}
+@supports ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  @media (max-width: 760px) {
+    .mobile-bottom-nav {
+      background: #f9fafce8;
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      backdrop-filter: blur(20px) saturate(140%);
+    }
+    .theme-dark .mobile-bottom-nav { background: #202938eb; }
+  }
+}
+@media (max-width: 760px) and (prefers-reduced-transparency: reduce) {
+  .mobile-bottom-nav { background: #f9fafc; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .theme-dark .mobile-bottom-nav { background: #202938; }
 }

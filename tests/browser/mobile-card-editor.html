@@ -6,13 +6,14 @@ import '/src/index.css'
 import '/src/features/flowtree/EnergyExplorer.css'
 const query = new URLSearchParams(location.search)
 const manage = query.get('mode') === 'manage'
+const adding = query.get('mode') === 'add'
 const keyboard = query.has('keyboard')
 const viewport = Object.assign(new EventTarget(), { height: innerHeight, offsetTop: 0 })
 // Simulate a keyboard that changes only the visual viewport, as on phones.
 Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport })
 const tree = [{ id:'obligations', amount:0, children:[{id:'test-card', name:'A long card name for mobile editing', amount:24000, period:'year', dueDate:'2028-10-31', startDate:'2026-10-31', status:'active', children:[]}] }]
 const noop = () => {}
-createRoot(document.getElementById('root')).render(React.createElement('main', {className:'energy-mode theme-light'}, React.createElement(PlanDialog, { dialog:{type:manage ? 'manage' : 'node', nodeId:'test-card'}, tree, onClose:noop, onSaveNode:noop, onRequestEdit:noop, onRequestAdd:noop, onViewOverview:noop })))
+createRoot(document.getElementById('root')).render(React.createElement('main', {className:'energy-mode theme-light'}, React.createElement(PlanDialog, { dialog:{type:manage ? 'manage' : 'node', ...(adding ? {parentId:'obligations'} : {nodeId:'test-card'})}, tree, onClose:noop, onSaveNode:noop, onRequestEdit:noop, onRequestAdd:noop, onViewOverview:noop })))
 const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
 setTimeout(async () => {
   const errors = []
@@ -21,13 +22,19 @@ setTimeout(async () => {
   try {
     check(Boolean(dialog), 'Dialog must open')
     const mobile = innerWidth <= 760
+    const deleteButton = dialog.querySelector('.delete-link')
+    if (deleteButton) {
+      const style = getComputedStyle(deleteButton)
+      check(parseFloat(style.borderTopWidth) >= 1 && style.borderTopStyle === 'solid' && style.borderTopColor !== 'transparent' && style.borderTopColor !== 'rgba(0, 0, 0, 0)', 'Delete must have a visible button outline')
+      check(deleteButton.getBoundingClientRect().height >= (mobile ? 44 : 40), 'Delete must retain a usable button height')
+    }
     if (mobile) {
       check(document.activeElement?.tagName === 'BUTTON', 'Opening must not focus a text input')
       for (const input of dialog.querySelectorAll('input, select, textarea')) check(parseFloat(getComputedStyle(input).fontSize) >= 16, 'Input font must be at least 16px')
     }
     if (manage) {
       const buttons = [...dialog.querySelectorAll('.manage-actions button')]
-      check(buttons.map(button => button.textContent).join('|') === 'Edit details|Add child|View overview|Delete…', 'Actions must have consistent DOM order')
+      check(buttons.map(button => button.textContent).join('|') === 'Edit details|Add child|View overview|Delete', 'Actions must have consistent DOM order')
       if (mobile) for (let i = 1; i < buttons.length; i++) check(buttons[i].getBoundingClientRect().top >= buttons[i - 1].getBoundingClientRect().bottom, 'Info buttons must stack without overlap')
     }
     if (keyboard && mobile && !manage) {
@@ -48,7 +55,15 @@ setTimeout(async () => {
     if (mobile) check(rect.top >= viewport.offsetTop && rect.bottom <= viewport.offsetTop + viewport.height, 'Dialog must fit visible keyboard area')
     if (!manage) {
       const submit = dialog.querySelector('.dialog-actions .modal-submit')
-      submit.scrollIntoView({block:'nearest'})
+      if (mobile) {
+        const actions = dialog.querySelector('.dialog-actions')
+        const bounds = submit.getBoundingClientRect()
+        const panel = dialog.getBoundingClientRect()
+        check(bounds.top >= panel.top && bounds.bottom <= panel.bottom - 16, 'Primary action must be visible with bottom breathing room before scrolling')
+        check(parseFloat(getComputedStyle(actions).paddingBottom) >= 16, 'Action footer needs at least 16px bottom padding')
+        check(submit.textContent === (adding ? 'Add to tree' : 'Save changes'), 'Edit must offer Save; add must offer Add to tree')
+      }
+      if (!mobile) submit.scrollIntoView({block:'nearest'})
       await settle()
       const rect = submit.getBoundingClientRect()
       check(rect.top >= (mobile ? viewport.offsetTop : 0) && rect.bottom <= (mobile ? viewport.offsetTop + viewport.height : innerHeight), 'Save must be reachable')
