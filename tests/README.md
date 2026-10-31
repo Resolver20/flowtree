@@ -1,5 +1,23 @@
 # Flowtree tests
 
+## Hosting migration
+
+`pagesMigration.test.js` checks the new-host link, HTTPS URL validation, retained Search Console tag, and that migration does not force an active service worker update over unsaved edits. Before setting the repository variable `FLOWTREE_HOST_URL`, verify live Google login on the destination. Then verify the Pages landing page at phone and desktop widths, keyboard activation of Open Flowtree, offline reopening of an old installation, and that an already-open unsaved plan is not reloaded. These live cutover scenarios remain pending until Google credentials are configured; the variable must remain unset meanwhile.
+
+## Opt-in server authentication
+
+Automated: `tests/server/auth.test.js` exercises encryption/context binding, secure cookies, configuration failure, CSRF, PKCE/state replay, callback session rotation, session reuse, concurrent refresh/logout, transient refresh outages, revoked grants, logout deletion, proxy restrictions and browser transport. The PWA test also excludes `/auth/*` and `/api/*` from caching. These are mocked tests, not real Google or installed-iPhone checks.
+
+Repeatable browser scenarios: run `VITE_AUTH_MODE=server npm run dev -- --port 5192 --strictPort`, then open `/tests/browser/server-auth.html`. Expect `enabled:true`, `status:connected`, restored synthetic profile, `storedCredentials:null`, `browserAuthorization:false`, `allSameOrigin:true`, `writes:0`. Click **Reopen app**: the plan restores again without a GIS popup. Click **Sign out**, then **Reopen app**: expect `idle` with the blank profile.
+
+- `?mode=retry`: a synthetic 503 download must produce `startup:error`, `retry:true`, no replacement plan/setup prompt and no writes. **Retry** restores the plan without sign-in.
+- `?mode=duplicates`: expect `needs-restore-choice`, no replacement and no writes. **Choose older plan** restores only that candidate.
+- `?mode=empty`: expect `needs-plan-choice` and no automatic creation/upload.
+- Local Worker smoke: build the server bundle, run Wrangler locally without credentials, open `/` and `/auth/session`. App must load safely as unconfigured; auth response must be uncached and contain no secrets. The existing Pages build must still compile and use its original sign-in flow.
+- Deployment-only, **not locally verified**: on a real Google account and installed iPhone PWA, sign in, close/reopen, wait for access expiry, update the app with stable secrets/binding, reopen, explicitly sign out, then reopen. Verify that only explicit logout, server-session expiry, cleared cookies or revoked consent require sign-in. Repeat portrait/landscape and Safari tab launches. Test cancelling consent/account switching, offline cold launch/retry, duplicate backups, explicit Save, recovery versions and no-write-before-choice. Do not claim installed-device persistence from the synthetic fixture.
+
+Browser checked 2026-10-31: the synthetic restore/reopen/logout, 503 retry, duplicate choice and empty-account cases above passed with no Drive writes or browser Authorization headers. The actual local Worker served the app, created and consumed a PKCE/state transaction using synthetic credentials, hid its OAuth cookie from page JavaScript and safely handled cancellation; no Google request was made. Unconfigured `/auth/session` returned an anonymous configuration response. No real OAuth, installed-device or full responsive visual matrix is claimed for this backend change.
+
 ## Compact savings summary
 
 - Edit a dated target and confirm its Savings plan shows only Expected saved, Remaining, and Required / month. The separate This month in plan row must be absent; allocation calculations must remain unchanged.

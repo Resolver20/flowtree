@@ -1,0 +1,7 @@
+# Copy to .dev.vars for LOCAL testing only. Never commit real values.
+APP_ORIGIN=http://localhost:8787
+DEV_INSECURE_COOKIES=true
+GOOGLE_CLIENT_ID=replace-with-web-client-id
+GOOGLE_CLIENT_SECRET=replace-with-client-secret
+# Generate 32 random bytes, encoded as base64url, locally. Never paste into chat.
+AUTH_ENCRYPTION_KEY=replace-with-random-key

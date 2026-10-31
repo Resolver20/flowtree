@@ -1,4 +1,5 @@
 import { orderDriveRestoreCandidates } from '../domain/driveRestoreCandidates.js'
+import { authorizedDriveFetch, SERVER_SESSION, serverAuthRequest } from './serverAuth.js'
 
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3'
@@ -45,10 +46,9 @@ export function prepareGoogleDriveSignIn() {
 }
 
 async function driveRequest(path, accessToken, { baseUrl = DRIVE_API, ...options } = {}) {
-  const response = await fetch(`${baseUrl}${path}`, {
+  const response = await authorizedDriveFetch(baseUrl, path, accessToken, {
     ...options,
     headers: {
-      Authorization: `Bearer ${accessToken}`,
       ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     },
@@ -156,7 +156,7 @@ export async function uploadFlowtreeBackup({ accessToken, folderId, contents, fi
 
 export async function downloadFlowtreeBackup({ accessToken, fileId } = {}) {
   if (!accessToken || !fileId) throw new Error('A Google Drive access token and file ID are required.')
-  const response = await fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`, { headers: { Authorization: `Bearer ${accessToken}` } })
+  const response = await authorizedDriveFetch(DRIVE_API, `/files/${encodeURIComponent(fileId)}?alt=media`, accessToken)
   if (!response.ok) throw Object.assign(new Error(`Google Drive download failed (${response.status}).`), { status: response.status })
   return response.text()
 }
@@ -177,12 +177,13 @@ export async function listFlowtreeRevisions({ accessToken, fileId } = {}) {
 
 export async function downloadFlowtreeRevision({ accessToken, fileId, revisionId } = {}) {
   if (!accessToken || !fileId || !revisionId) throw new Error('A Google Drive access token, file ID, and revision ID are required.')
-  const response = await fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}/revisions/${encodeURIComponent(revisionId)}?alt=media`, { headers: { Authorization: `Bearer ${accessToken}` } })
+  const response = await authorizedDriveFetch(DRIVE_API, `/files/${encodeURIComponent(fileId)}/revisions/${encodeURIComponent(revisionId)}?alt=media`, accessToken)
   if (!response.ok) throw new Error(`Google Drive revision download failed (${response.status}).`)
   return response.text()
 }
 
 export function revokeGoogleDriveAccess(accessToken) {
+  if (accessToken === SERVER_SESSION) return serverAuthRequest('/auth/logout', 'POST')
   if (!accessToken || !window.google?.accounts?.oauth2) return Promise.resolve()
   return new Promise(resolve => window.google.accounts.oauth2.revoke(accessToken, resolve))
 }

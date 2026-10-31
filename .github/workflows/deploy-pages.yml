@@ -27,8 +27,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Build app or verified hosting migration page
+        run: |
+          if [ -n "$FLOWTREE_HOST_URL" ]; then
+            node scripts/build-pages-migration.mjs
+          else
+            npm run build
+          fi
         env:
+          FLOWTREE_HOST_URL: ${{ vars.FLOWTREE_HOST_URL }}
           VITE_BASE_PATH: /flowtree/
           VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
       - uses: actions/upload-pages-artifact@v3

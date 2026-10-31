@@ -1,6 +1,7 @@
 import { rememberGoogleAccount, forgetGoogleAccount, googleReconnectOptions } from '../domain/devicePreferences'
 import { useConfirmation } from './useConfirmation'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { beginServerSignIn, SERVER_SESSION, serverAuthEnabled, serverAuthRequest } from '../lib/serverAuth'
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from '../domain/flowDataTransfer'
 import { organizeSubscriptions } from '../domain/flowTree'
 import { restoreDriveSession, requiresDriveSignIn } from '../domain/restoreDriveSession'
@@ -17,6 +18,7 @@ const DRIVE_SESSION_KEY = 'flowtree-drive-session-v1'
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
 function readDriveSession() {
+  if (serverAuthEnabled) return null
   try {
     const session = JSON.parse(window.sessionStorage.getItem(DRIVE_SESSION_KEY) || 'null')
     return session?.accessToken && session?.folderId && session?.fileId && session.folderName === DRIVE_FOLDER_NAME ? session : null
@@ -26,6 +28,7 @@ function readDriveSession() {
 }
 
 function writeDriveSession(session) {
+  if (serverAuthEnabled) return
   try { window.sessionStorage.setItem(DRIVE_SESSION_KEY, JSON.stringify({ ...session, folderName: DRIVE_FOLDER_NAME })) } catch { /* A storage restriction must not fail a successful restore. */ }
   rememberGoogleAccount(window, session.user?.emailAddress)
 }
@@ -66,6 +69,7 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
   }
   const [drive, setDrive] = useState(() => {
     if (offline) return { status: 'offline', user: null, error: '', accessToken: '', folderId: '', fileId: '' }
+    if (serverAuthEnabled) return { status: 'restoring', user: null, error: '', accessToken: '', folderId: '', fileId: '' }
     const session = readDriveSession()
     return session
       ? { ...session, status: 'restoring', user: session.user || null, error: '' }
@@ -79,7 +83,7 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
   useEffect(() => { replaceDataRef.current = replaceData }, [replaceData])
 
   useEffect(() => {
-    if (offline || !googleClientId) return undefined
+    if (offline || serverAuthEnabled || !googleClientId) return undefined
     let active = true
     prepareGoogleDriveSignIn().then(() => {
       if (active) setDrive(previous => previous.status === 'preparing' ? { ...previous, status: 'idle' } : previous)
@@ -106,14 +110,16 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
         return
       }
       if (startupState !== 'ready') setStartupState('error')
-      setDrive({ status: 'error', user: null, error: error.message || 'Could not restore your Google Drive plan. No data was uploaded.', accessToken: '', folderId: '', fileId: '' })
+      setDrive({ status: 'error', retryRestore: serverAuthEnabled && !requiresDriveSignIn(error), user: null, error: error.message || 'Could not restore your Google Drive plan. No data was uploaded.', accessToken: '', folderId: '', fileId: '' })
     }
   }
 
   async function findValidDriveRestoreCandidates(accessToken, candidates) {
     const checkedCandidates = await Promise.all(candidates.map(async candidate => {
+      // Interrupted downloads must abort discovery rather than offering a blank plan.
+      const contents = await downloadFlowtreeBackup({ accessToken, fileId: candidate.id })
       try {
-        const restoredPlan = parseFlowImport(await downloadFlowtreeBackup({ accessToken, fileId: candidate.id }))
+        const restoredPlan = parseFlowImport(contents)
         return { ...candidate, valid: true, restoredPlan }
       } catch {
         return { ...candidate, valid: false }
@@ -125,10 +131,18 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
   async function connectDrive({ prompt } = {}) {
     if (offline) return
     if (hasUnsavedChanges && !await allowDiscard()) return
-    if (startupState === 'error' && drive.retryRestore && readDriveSession()) {
+    if (startupState === 'error' && drive.retryRestore && (serverAuthEnabled || readDriveSession())) {
       hasAttemptedDriveRestore.current = false
       setStartupState('loading')
       setRestoreAttempt(attempt => attempt + 1)
+      return
+    }
+    if (serverAuthEnabled) {
+      setDrive(previous => ({ ...previous, status: 'connecting', error: '' }))
+      try { await beginServerSignIn() } catch (error) {
+        setDrive(previous => ({ ...previous, status: 'error', error: error.message }))
+        setStartupState('ready')
+      }
       return
     }
     if (!googleClientId) {
@@ -176,8 +190,46 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
     }
   }
 
+  const restoreCandidateFromStartup = useEffectEvent(restoreDriveCandidate)
+
   useEffect(() => {
     if (offline) return
+    if (serverAuthEnabled) {
+      if (hasAttemptedDriveRestore.current) return
+      hasAttemptedDriveRestore.current = true
+      async function restoreServerSession() {
+        try {
+          const session = await serverAuthRequest('/auth/session')
+          // Retire credentials from the previous browser-only implementation.
+          clearDriveSession()
+          if (!session.authenticated) {
+            const callbackError = new URLSearchParams(window.location.search).get('auth_error')
+            if (callbackError) window.history.replaceState(null, '', window.location.pathname)
+            setDrive({ status: session.configured ? 'idle' : 'unavailable', user: null, error: callbackError ? 'Sign-in was not completed. Please try again.' : '', accessToken: '', folderId: '', fileId: '' })
+            setStartupState('ready')
+            return
+          }
+          const accessToken = SERVER_SESSION
+          const discovery = await listFlowtreeRestoreCandidates({ accessToken, folderName: DRIVE_FOLDER_NAME })
+          const candidates = await findValidDriveRestoreCandidates(accessToken, discovery.candidates)
+          const mode = driveRestoreMode(candidates)
+          if (mode === 'restore') {
+            await restoreCandidateFromStartup({ accessToken, user: session.user, candidate: candidates[0] })
+          } else {
+            setStartupState('ready')
+            setDrive(mode === 'choose'
+              ? { status: 'needs-restore-choice', user: session.user, error: '', accessToken, folderId: '', fileId: '', restoreCandidates: candidates }
+              : { status: 'needs-plan-choice', setupRequired: true, user: session.user, error: discovery.candidates.length ? 'No valid FlowTree plan was found. No data was uploaded.' : '', accessToken, folderId: discovery.folders[0]?.id || '', fileId: '' })
+            setDialog({ type: 'driveSync' })
+          }
+        } catch (error) {
+          setStartupState('error')
+          setDrive({ status: 'error', retryRestore: !requiresDriveSignIn(error), user: null, error: requiresDriveSignIn(error) ? 'Please reconnect to Google Drive. No data was uploaded.' : 'Could not open your saved plan. Check your connection and retry; your sign-in has been kept.', accessToken: '', folderId: '', fileId: '' })
+        }
+      }
+      restoreServerSession()
+      return
+    }
     const session = readDriveSession()
     if (hasAttemptedDriveRestore.current || !session) return
     hasAttemptedDriveRestore.current = true
@@ -207,7 +259,7 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
       }
     }
     restore()
-  }, [setPath, offline, restoreAttempt])
+  }, [setPath, setDialog, offline, restoreAttempt])
 
   useEffect(() => {
     if (drive.accessToken && drive.folderId && drive.fileId) writeDriveSession({ accessToken: drive.accessToken, folderId: drive.folderId, fileId: drive.fileId, user: drive.user?.emailAddress ? drive.user : undefined })
@@ -215,14 +267,17 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
 
   async function disconnectDrive() {
     if (savingRef.current || !await allowDiscard()) return
-    await revokeGoogleDriveAccess(drive.accessToken)
+    try { await revokeGoogleDriveAccess(serverAuthEnabled ? SERVER_SESSION : drive.accessToken) } catch {
+      notify('Could not sign out. Check your connection and try again.')
+      return
+    }
     clearDriveSession()
     forgetGoogleAccount(window)
     const blank = createBlankFlowData()
     replaceData(blank, { resetHistory: true })
     setSavedContents(serializeFlowData(blank))
     setPath([])
-    setDrive({ status: googleClientId ? 'idle' : 'unavailable', user: null, error: '', accessToken: '', folderId: '', fileId: '' })
+    setDrive({ status: serverAuthEnabled || googleClientId ? 'idle' : 'unavailable', user: null, error: '', accessToken: '', folderId: '', fileId: '' })
     notify('Signed out. This tab no longer holds your plan.')
   }
 
@@ -251,7 +306,7 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
 
   function cancelDriveSetup() {
     clearDriveSession()
-    setDrive({ status: googleClientId ? 'idle' : 'unavailable', setupRequired: false, user: null, error: '', accessToken: '', folderId: '', fileId: '' })
+    setDrive({ status: serverAuthEnabled || googleClientId ? 'idle' : 'unavailable', setupRequired: false, user: null, error: '', accessToken: '', folderId: '', fileId: '' })
     setDialog(null)
   }
 
@@ -324,5 +379,5 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
     }
   }
 
-  return { discardConfirmation, startupState, hasUnsavedChanges, downloadBackup, drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured: Boolean(googleClientId) }
+  return { discardConfirmation, startupState, hasUnsavedChanges, downloadBackup, drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured: serverAuthEnabled || Boolean(googleClientId) }
 }

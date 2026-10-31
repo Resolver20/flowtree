@@ -29,3 +29,7 @@ dist-ssr
 # Private local testing data and entry page
 /.local/
 /offline.local.html
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.wrangler/

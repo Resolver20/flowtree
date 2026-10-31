@@ -52,6 +52,10 @@ test('cached launches work at root and Pages scope, including launch query strin
 test('PWA never intercepts Google credentials, API requests, writes, or unrelated sites', () => {
   const w = worker()
   for (const [path, options] of [
+    ['/auth/session', {}],
+    ['/auth/callback?code=synthetic&state=synthetic', { mode: 'navigate' }],
+    ['/api/drive/files', {}],
+    ['/api/upload/files', { method: 'POST' }],
     ['https://www.googleapis.com/drive/v3/files', {}],
     ['https://accounts.google.com/gsi/client', {}],
     ['/flowtree/plan.json', {}], ['/another-app/', {mode:'navigate'}],
