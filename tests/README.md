@@ -300,3 +300,10 @@ On 2026-10-31, this regression reproduced 11 failing cases before the fix and pa
 
 - The shared dialog Delete action has an outlined red button in light and dark themes. Existing confirmation remains unchanged.
 - The mobile-card-editor browser regression checks a visible solid outline and minimum button height in edit and manage modes. Manually open card info and Edit details: Delete should look like a button, with the same corner radius as the other actions; selecting it must still show confirmation before deletion.
+
+### Mobile alignment audit — 2026-10-31
+
+- Guidance reviewed: Apple Human Interface Guidelines/Layout, WebKit's Designing Websites for iPhone X, and web.dev Accessible tap targets. Retain the browser-managed safe viewport rather than enabling edge-to-edge cover without handling every top-level surface.
+- Editor action area now has one 16px inset, 48px button heights and a full-width separator; removed stacked margins and the painted bottom extension. Non-form dialogs retain bottom padding. Footer uses an explicit safe-area-constrained width and 16px side gutters. Mobile canvas no longer inherits the 540px desktop minimum height, which failed at 740×360.
+- Verified 36 editor/add/info/simulated-keyboard cases at 320×740, 360×800, 390×844, 430×932, 568×320, 740×360, 768×1024, 1366×768 and 1920×1080. Expanded footer regression passes all nine sizes, including simulated 34px bottom and 44px landscape side insets. The fixture's diagnostic output is hidden to avoid causing viewport widening after its checks.
+- Device acceptance still required: Safari and installed PWA, portrait/landscape, browser toolbar expansion/collapse, native keyboard, text-size changes, light/dark appearance. Check every dedicated screen, scroll to its last card, open Account/More, and confirm no side clipping or controls hidden by the home indicator. Desktop emulation does not establish physical-device acceptance.

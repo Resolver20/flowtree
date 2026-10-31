@@ -72,6 +72,7 @@ setTimeout(async () => {
   document.body.dataset.result = errors.length ? 'fail' : 'pass'
   const output = document.createElement('output')
   output.id = 'test-result'
+  output.style.cssText = 'position:fixed;inset:0;overflow-wrap:anywhere;pointer-events:none;visibility:hidden'
   output.textContent = JSON.stringify({ width:innerWidth, height:innerHeight, manage, keyboard, errors })
   document.body.append(output)
 }, 100)

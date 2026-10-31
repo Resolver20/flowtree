@@ -749,10 +749,11 @@
     margin: 0 auto;
     width: min(560px, calc(100% - 24px));
     max-height: calc(var(--dialog-visible-height, 100dvh) - 24px);
-    padding: 20px 16px;
+    padding: 20px 16px 0;
     overscroll-behavior: contain;
     scroll-padding-block: 16px 92px;
   }
+  .modal:not(:has(> form > .dialog-actions)) { padding-bottom: 16px; }
   .modal .form-grid { grid-template-columns: minmax(0, 1fr); }
   .modal label, .modal input, .modal select, .modal textarea { min-width: 0; }
   .modal input:not([type='radio']):not([type='checkbox']), .modal select { min-height: 44px; }
@@ -760,9 +761,10 @@
   .modal h2 { padding-right: 32px; font-size: 20px; }
   .modal p { margin-bottom: 16px; }
   .modal .dialog-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
-  .modal .dialog-actions button { min-height: 44px; margin: 0; white-space: normal; overflow-wrap: anywhere; }
-  .modal form > .dialog-actions { position: sticky; bottom: 0; z-index: 2; margin: 20px 0 0; padding: 16px 0; background: var(--surface); box-shadow: 0 20px 0 var(--surface); border-top: 1px solid var(--line); }
+  .modal .dialog-actions button { min-height: 48px; margin: 0; white-space: normal; overflow-wrap: anywhere; }
+  .modal form > .dialog-actions { position: sticky; bottom: 0; z-index: 2; margin: 0 -16px; padding: 16px; background: var(--surface); border-top: 1px solid var(--line); }
   .modal form > .dialog-actions .delete-link { grid-column: 1 / -1; }
+  .modal > .dialog-actions { margin-bottom: 16px; }
   .modal .manage-actions { grid-template-columns: minmax(0, 1fr); }
   .modal .manage-actions .delete-link { margin-top: 4px; }
   .modal .annual-target-list { max-height: none; overflow: visible; padding-right: 0; }
@@ -771,26 +773,33 @@
 
 /* One shared clearance keeps the floating phone dock clear of content and sheets. */
 @media (max-width: 760px) {
+  .energy-home { min-height: 0; height: 100dvh; }
   :root {
     --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --mobile-safe-left: env(safe-area-inset-left, 0px);
+    --mobile-safe-right: env(safe-area-inset-right, 0px);
+    --mobile-edge: 16px;
     --mobile-nav-bottom: max(10px, var(--mobile-safe-bottom));
     --mobile-nav-clearance: calc(66px + var(--mobile-nav-bottom) + 12px);
   }
   .mobile-bottom-nav {
-    right: max(12px, env(safe-area-inset-right, 0px));
+    right: auto;
     bottom: var(--mobile-nav-bottom);
-    left: max(12px, env(safe-area-inset-left, 0px));
+    left: calc(var(--mobile-safe-left) + (100% - var(--mobile-safe-left) - var(--mobile-safe-right)) / 2);
+    transform: translateX(-50%);
+    width: min(520px, calc(100% - var(--mobile-safe-left) - var(--mobile-safe-right) - 2 * var(--mobile-edge)));
+    box-sizing: border-box;
     max-width: 520px;
     height: 66px;
     min-height: 66px;
-    margin-inline: auto;
+    margin-inline: 0;
     padding: 6px;
     border: 1px solid #d9dfe9;
     border-radius: 26px;
     background: #f9fafc;
     box-shadow: 0 4px 16px #34466d12;
   }
-  .mobile-bottom-nav button { min-width: 0; border-radius: 19px; }
+  .mobile-bottom-nav button { min-width: 0; min-height: 48px; border-radius: 19px; }
   .mobile-bottom-nav button.is-active { border-color: transparent; background: #e5ecfc; }
   .theme-dark .mobile-bottom-nav { background: #202938; border-color: #465063; box-shadow: 0 4px 16px #05091230; }
   .theme-dark .mobile-bottom-nav button.is-active { border-color: transparent; background: #344765; }

@@ -8,7 +8,7 @@ const checks = [];
 const assert = (condition, message) => { if (!condition) throw new Error(message); checks.push(message); };
 await new Promise(resolve => frame.addEventListener('load', resolve));
 try {
-  for (const [width, height] of [[320,740],[390,844],[568,320],[768,1024],[1366,768],[1920,1080]]) {
+  for (const [width, height] of [[320,740],[360,800],[390,844],[430,932],[568,320],[740,360],[768,1024],[1366,768],[1920,1080]]) {
     frame.style.width = `${width}px`; frame.style.height = `${height}px`;
     await new Promise(resolve => setTimeout(resolve, 150));
     const doc = frame.contentDocument;
@@ -27,6 +27,14 @@ try {
     doc.documentElement.style.setProperty('--mobile-safe-bottom', '34px');
     assert(nav.getBoundingClientRect().bottom <= height - 34, `${width}: home indicator clearance`);
     doc.documentElement.style.removeProperty('--mobile-safe-bottom');
+    if (width >= 568) {
+      doc.documentElement.style.setProperty('--mobile-safe-left', '44px');
+      doc.documentElement.style.setProperty('--mobile-safe-right', '44px');
+      const safeBounds = nav.getBoundingClientRect();
+      assert(safeBounds.left >= 60 && safeBounds.right <= width - 60, `${width}: landscape side safe areas plus gutters`);
+      doc.documentElement.style.removeProperty('--mobile-safe-left');
+      doc.documentElement.style.removeProperty('--mobile-safe-right');
+    }
   }
   document.body.dataset.result = 'pass'; result.textContent = `PASS\n${checks.join('\n')}`;
 } catch (error) { document.body.dataset.result = 'fail'; result.textContent = `FAIL: ${error.message}\n${checks.join('\n')}`; }
