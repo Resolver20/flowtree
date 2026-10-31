@@ -4,6 +4,7 @@ import { parseFlowImport, serializeFlowData } from '../domain/flowDataTransfer'
 import { organizeSubscriptions } from '../domain/flowTree'
 import { restoreDriveSession, requiresDriveSignIn } from '../domain/restoreDriveSession'
 import { preserveCurrentMonth } from '../domain/monthlyHistory'
+import { resolveDriveSetupPlan } from '../domain/examplePlan'
 import { loadCachedRevision, loadRecoveryVersions } from '../domain/versionRecovery'
 import { driveRestoreMode, orderValidDriveRestoreCandidates } from '../domain/driveRestoreCandidates'
 import { createBlankFlowData, normalizeFlowData } from './useFlowData'
@@ -33,11 +34,11 @@ function clearDriveSession() {
 }
 
 // Owns the Drive connection and explicit save/recovery actions. Plan edits never upload.
-export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify }) {
+export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveOfflinePlan, plan, replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify }) {
   const { profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree } = plan
   const serializedPlan = useMemo(() => serializeFlowData({ profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree }), [profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree])
   const [savedContents, setSavedContents] = useState(() => serializedPlan)
-  const hasUnsavedChanges = serializedPlan !== savedContents
+  const hasUnsavedChanges = !isExample && serializedPlan !== savedContents
   const savingRef = useRef(false)
   const recoveryCache = useRef(new Map())
   const recoveryRequest = useRef(0)
@@ -225,13 +226,14 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
 
   async function completeDriveSetup({ useCurrentPlan }) {
     if (!drive.accessToken || drive.status !== 'needs-plan-choice') return
-    const setupPlan = useCurrentPlan ? preserveCurrentMonth(plan) : createBlankFlowData()
-    if (useCurrentPlan) captureCurrentMonth()
+    const setup = resolveDriveSetupPlan({ currentPlan: plan, blankPlan: createBlankFlowData(), useCurrentPlan, isExample })
+    const setupPlan = setup.usesCurrentPlan ? preserveCurrentMonth(setup.plan) : setup.plan
+    if (setup.usesCurrentPlan) captureCurrentMonth()
     setDrive(previous => ({ ...previous, status: 'saving', error: '' }))
     try {
       const folder = drive.folderId ? { id: drive.folderId } : await findOrCreateFolder({ accessToken: drive.accessToken, folderName: DRIVE_FOLDER_NAME })
       const file = await uploadFlowtreeBackup({ accessToken: drive.accessToken, folderId: folder.id, fileName: DRIVE_FILE_NAME, contents: serializeFlowData(setupPlan) })
-      if (!useCurrentPlan) {
+      if (!setup.usesCurrentPlan) {
         replaceData(setupPlan, { resetHistory: true })
         setPath([])
       }
@@ -239,7 +241,7 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
       setDrive(previous => ({ ...previous, status: 'saved', setupRequired: false, error: '', folderId: folder.id, fileId: file.id }))
       setSavedContents(serializeFlowData(setupPlan))
       setDialog(null)
-      notify(useCurrentPlan ? 'Your current plan was saved to Google Drive.' : 'A new private FlowTree plan was created in your Google Drive.')
+      notify(setup.usesCurrentPlan ? 'Your current plan was saved to Google Drive.' : 'A new private FlowTree plan was created in your Google Drive.')
     } catch (error) {
       setDrive(previous => ({ ...previous, status: 'needs-plan-choice', setupRequired: true, error: error.message || 'Could not create your Google Drive plan.' }))
     }
@@ -289,6 +291,7 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
   }
 
   async function saveDrivePlan() {
+    if (isExample) { notify('This is an example plan. Sign in to open or create your own plan.'); return }
     if (offline) {
       try {
         const contents = serializeFlowData(preserveCurrentMonth(plan))

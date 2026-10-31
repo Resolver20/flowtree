@@ -9,17 +9,21 @@ import PlanRestoreScreen from './features/flowtree/PlanRestoreScreen'
 import { useTheme } from './hooks/useTheme'
 import { useSessionState } from './hooks/useSessionState'
 import { useFlowData } from './hooks/useFlowData'
+import { createExamplePlan } from './domain/examplePlan'
 
 function App({ offlinePlan, onSaveOfflinePlan } = {}) {
   const [theme, toggleTheme] = useTheme()
   const offline = import.meta.env.DEV && Boolean(offlinePlan)
-  const { profile, incomeSources, generalLedgers, canvasPins, changeCanvasPin, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData: replaceFlowData, undo, redo, canUndo, canRedo } = useFlowData(offline ? offlinePlan : undefined)
+  const [isExample, setIsExample] = useState(!offline)
+  const [examplePlan] = useState(createExamplePlan)
+  const { profile, incomeSources, generalLedgers, canvasPins, changeCanvasPin, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData: replaceFlowData, undo, redo, canUndo, canRedo } = useFlowData(offline ? offlinePlan : examplePlan)
   const [dialog, setDialog] = useState(null)
   const [path, setPath] = useState(() => canvasPins?.[canvasPins.lastView]?.path || [])
   const [notice, setNotice] = useState(null)
   const [navigation, setNavigation] = useSessionState('flowtree-navigation', { view: 'home', nodeId: null },
     value => ['home', 'sinking', 'loans', 'goals', 'recurring', 'investments', 'ledger'].includes(value?.view) && (value.nodeId === null || typeof value.nodeId === 'string'), pinnedNavigation(canvasPins))
   function replaceData(data, options) {
+    setIsExample(false)
     replaceFlowData(data, options)
     const restoredNavigation = pinnedNavigation(data.canvasPins)
     if (restoredNavigation) setNavigation(restoredNavigation)
@@ -29,7 +33,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
   }
 
   const { drive, startupState, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured, hasUnsavedChanges, downloadBackup } = useGoogleDrivePlan({
-    offline, onSaveOfflinePlan,
+    offline, onSaveOfflinePlan, isExample,
     plan: { profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree },
     replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify,
   })
@@ -195,6 +199,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
 
   return <div className={`app-shell energy-mode theme-${theme}`}>
     <EnergyExplorer
+      isExample={isExample}
       theme={theme}
       onToggleTheme={toggleTheme}
       tree={tree}
@@ -243,6 +248,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
     />
     {notice && <div className="change-notice" role="status"><span>{notice.message}</span><button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
     <PlanDialog
+      isExample={isExample}
       monthlyHistory={monthlyHistory}
       onViewOverview={nodeId => {
         const category = pathToNode(tree, nodeId)[0]

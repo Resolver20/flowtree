@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Friendly sinking funds regression</title>
+<body><pre id="result">Running…</pre><iframe title="Sinking funds summary" style="border:0"></iframe>
+<script type="module">
+const frame = document.querySelector('iframe');
+frame.src = '/tests/browser/sinking-funds-summary.fixture.html';
+const wait = () => new Promise(resolve=>setTimeout(resolve,70));
+let checks = 0;
+const assert = (condition,message) => { if(!condition) throw Error(message); checks++; };
+try {
+  for(let i=0;i<100&&!frame.contentWindow.renderCase;i++) await wait();
+  assert(!!frame.contentWindow.renderCase,'fixture mounts');
+  for(const width of [320,390,568,768,1366,1920]) {
+    frame.style.width=`${width}px`; frame.style.height='740px';
+    for(const dark of [false,true]) for(const kind of ['example','empty','paused','progress']) {
+      frame.contentWindow.renderCase({kind,dark}); await wait();
+      const doc=frame.contentDocument,summary=doc.querySelector('.sinking-status');
+      const values=[...summary.querySelectorAll('.sinking-saved strong')].map(el=>el.textContent);
+      assert(summary.textContent.includes('future bill or goal')&&summary.textContent.includes('Save each month'),`${width}/${kind}: plain explanation and monthly amount`);
+      assert(summary.textContent.includes('not money in your bank'),`${width}/${kind}: plan figures are clearly labelled`);
+      if(kind==='example') assert(values[0]==='₹2,500'&&values[1]==='₹0'&&summary.textContent.includes('starts this month'),`${width}: example explains zero`);
+      if(kind==='empty') assert(values.every(value=>value==='₹0')&&summary.textContent.includes('Add a bill or goal'),`${width}: empty plan gives next step`);
+      if(kind==='paused') assert(values[0]==='₹0'&&summary.textContent.includes('No saving is needed'),`${width}: paused plan is explained`);
+      if(kind==='progress') assert(values[0]==='₹2,250'&&values[1]==='₹3,000',`${width}: real progress and monthly target remain correct`);
+      assert(summary.scrollWidth<=summary.clientWidth&&[...summary.querySelectorAll('.sinking-saved')].every(el=>el.scrollWidth<=el.clientWidth),`${width}/${kind}: summary and fields do not overflow`);
+    }
+  }
+  document.body.dataset.result='pass';document.querySelector('#result').textContent=`PASS (${checks} checks)`;
+} catch(error) { document.body.dataset.result='fail';document.querySelector('#result').textContent=`FAIL: ${error.message}`; }
+</script></body></html>

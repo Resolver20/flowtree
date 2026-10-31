@@ -1,17 +1,20 @@
 import { formatMoney } from '../../lib/money'
 import { colorForNode } from './nodePresentation'
 import MobileTree from './MobileTree'
+import MonthlyPlanHub from './MonthlyPlanHub'
 import TreeNodeCard from './TreeNodeCard'
-import { roundedElbowPath } from './treeLayout'
+import { useId, useState } from 'react'
 
-function PersonNode({ profile, driveUser, point, worldWidth, worldHeight, driveSaved }) {
-  if (!profile.visible) return null
-  return <div className="energy-person" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
+function IncomeSummaryNode({ income, point, worldWidth, worldHeight, driveSaved, onInspect, hasChildren, expanded, onToggle, childrenId }) {
+  const Card = hasChildren ? 'button' : 'div'
+  return <div className="income-source income-summary" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
     {driveSaved && <span className="drive-saved-pulse material-symbols-rounded" role="status" aria-label="Saved to Google Drive">cloud_done</span>}
-    {driveUser?.photoLink
-      ? <img className="person-avatar-image" src={driveUser.photoLink} alt="" />
-      : <span className="person-disc material-symbols-rounded" aria-hidden="true">person</span>}
-    <strong>{profile.name}</strong>
+    <Card className="income-source-card" type={hasChildren ? 'button' : undefined} onClick={hasChildren ? onToggle : undefined} aria-expanded={hasChildren ? expanded : undefined} aria-controls={hasChildren ? childrenId : undefined} aria-label={`${hasChildren ? expanded ? 'Collapse ' : 'Show ' : ''}Income, ${formatMoney(income)} per month`}>
+      <span className="material-symbols-rounded" aria-hidden="true">payments</span>
+      <span className="income-source-copy"><strong>Income</strong><small>{formatMoney(income)} /mo</small></span>
+      {hasChildren && <span className="income-expand-cue material-symbols-rounded" aria-hidden="true">{expanded ? 'expand_less' : 'expand_more'}</span>}
+    </Card>
+    <button type="button" className="card-info" onClick={onInspect} aria-label="View income information" title="View income information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button>
   </div>
 }
 
@@ -25,21 +28,25 @@ function IncomeSourceNode({ source, point, worldWidth, worldHeight, onManage }) 
   </div>
 }
 
-function FinanceNode({ sinking, monthlyOutcome, point, worldWidth, worldHeight, onInspectPlan }) {
-  const label = 'available this month'
-  return <div className="energy-source is-finance" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
+function FinanceNode({ sinking, monthlyOutcome, monthlyDeductions, point, worldWidth, worldHeight, onInspectPlan }) {
+  return <div className={`energy-source is-finance${sinking ? '' : ' is-monthly-plan'}`} style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
+    {sinking ? <>
     <div className="energy-finance-root">
       <span className="energy-root-icon material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
     </div>
-    <strong>{sinking ? 'Sinking funds' : 'Monthly plan'}</strong>
-    {!sinking && <span>{formatMoney(monthlyOutcome)} <small>{label}</small></span>}
-    {!sinking && <button type="button" className="card-info" onClick={event => { event.stopPropagation(); onInspectPlan() }} aria-label="View monthly plan information" title="View monthly plan information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button>}
+    <strong>Sinking funds</strong>
+    </> : <MonthlyPlanHub monthlyDeductions={monthlyDeductions} monthlyOutcome={monthlyOutcome} onInspectPlan={onInspectPlan} />}
   </div>
 }
 
-export default function TreeCanvas({ sinking = false, layout, monthlyIncome, monthlyDeductions, mobile, path, collapsedPaths, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect, onInspectPlan, onInspectIncome }) {
+export default function TreeCanvas({ sinking = false, layout, monthlyIncome, monthlyDeductions, mobile, path, collapsedPaths, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect, onInspectPlan, onInspectIncome }) {
+  const [incomeExpanded, setIncomeExpanded] = useState(true)
+  const incomeChildrenId = useId()
+  const toggleIncome = () => setIncomeExpanded(expanded => !expanded)
   if (mobile) {
     return <MobileTree
+      incomeExpanded={incomeExpanded}
+      onToggleIncome={toggleIncome}
       sinking={sinking}
       monthlyIncome={monthlyIncome}
       monthlyOutcome={layout.monthlyOutcome}
@@ -59,23 +66,6 @@ export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mon
     />
   }
   const rootById = new Map(tree.map(item => [item.id, item]))
-  const introPaths = [
-    ...layout.incomeSourcePoints.map(point => roundedElbowPath(
-      { x: point.x + 98, y: point.y },
-      { x: layout.sourcePoint.x - 36, y: layout.sourcePoint.y },
-    )),
-    ...(profile.visible
-      ? layout.incomeSourcePoints.length
-        ? layout.incomeSourcePoints.map(point => roundedElbowPath(
-          { x: layout.personPoint.x + 36, y: layout.personPoint.y },
-          { x: point.x - 98, y: point.y },
-        ))
-        : [roundedElbowPath(
-          { x: layout.personPoint.x + 36, y: layout.personPoint.y },
-          { x: layout.sourcePoint.x - 36, y: layout.sourcePoint.y },
-        )]
-      : []),
-  ]
 
   return <div
     className="energy-world-frame"
@@ -93,7 +83,7 @@ export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mon
       }}
     >
       <svg className="energy-connections" viewBox={`0 0 ${layout.worldWidth} ${layout.height}`} preserveAspectRatio="none" aria-hidden="true">
-        {introPaths.map((d, index) => <path key={`intro-${index}`} className="energy-track intro-track" d={d} />)}
+        {layout.introPaths.filter((_, index) => index === 0 || incomeExpanded).map((d, index) => <path key={`intro-${index}`} className="energy-track intro-track" d={d} />)}
         {layout.connectorGroups.map(group => <path
           key={group.key}
           className="energy-track"
@@ -101,9 +91,11 @@ export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mon
           style={{ '--branch-color': group.columnIndex === 0 ? '#9da7b6' : colorForNode(rootById.get(group.rootId)) }}
         />)}
       </svg>
-      <PersonNode profile={profile} driveUser={driveUser} point={layout.personPoint} worldWidth={layout.worldWidth} worldHeight={layout.height} driveSaved={driveSaved} />
-      {incomeSources.map((source, index) => <IncomeSourceNode key={source.id} source={source} point={layout.incomeSourcePoints[index]} worldWidth={layout.worldWidth} worldHeight={layout.height} onManage={onManageIncomeSource} />)}
-        <FinanceNode sinking={sinking} monthlyOutcome={layout.monthlyOutcome} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} onInspectPlan={onInspectPlan} />
+      {!sinking && <IncomeSummaryNode income={monthlyIncome} point={layout.personPoint} worldWidth={layout.worldWidth} worldHeight={layout.height} driveSaved={driveSaved} onInspect={onInspectIncome} hasChildren={incomeSources.length > 0} expanded={incomeExpanded} onToggle={toggleIncome} childrenId={incomeChildrenId} />}
+      {!sinking && incomeSources.length > 0 && <div id={incomeChildrenId} role="group" aria-label="Income sources" hidden={!incomeExpanded}>
+        {incomeSources.map((source, index) => <IncomeSourceNode key={source.id} source={source} point={layout.incomeSourcePoints[index]} worldWidth={layout.worldWidth} worldHeight={layout.height} onManage={onManageIncomeSource} />)}
+      </div>}
+        <FinanceNode sinking={sinking} monthlyOutcome={layout.monthlyOutcome} monthlyDeductions={monthlyDeductions} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} onInspectPlan={onInspectPlan} />
       {layout.positionedColumns.flatMap((column, columnIndex) => column.items.map(entry => <TreeNodeCard
         key={entry.path.join('/')}
         entry={entry}

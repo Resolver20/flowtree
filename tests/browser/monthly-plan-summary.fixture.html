@@ -2,13 +2,24 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import MobileTree from '/src/features/flowtree/MobileTree.jsx';
+import TreeCanvas from '/src/features/flowtree/TreeCanvas.jsx';
+import { createTreeLayout } from '/src/features/flowtree/treeLayout.js';
 import PlanDialog from '/src/features/flowtree/PlanDialog.jsx';
 import '/src/index.css'; import '/src/features/flowtree/EnergyExplorer.css';
 const root = createRoot(document.querySelector('#root'));
 window.renderCase = ({deductions,remaining,sinking,dark,incomeSources=[]}) => root.render(React.createElement('div',{className: dark ? 'theme-dark' : 'theme-light'},React.createElement(MobileTree,{
 monthlyDeductions:deductions,monthlyOutcome:remaining,sinking,income:60000,monthlyIncome:60000,
-incomeSources,tree:[],allocations:[],path:[],collapsedPaths:new Set(),onInspectPlan:()=>{},onInspectIncome:()=>{},onManageIncomeSource:id=>{document.body.dataset.managedSourceId=id}
+incomeSources,tree:[],allocations:[],path:[],collapsedPaths:new Set(),onInspectPlan:()=>{document.body.dataset.planOpened='yes'},onInspectIncome:()=>{},onManageIncomeSource:id=>{document.body.dataset.managedSourceId=id}
 })));
+window.renderDesktopCase = ({deductions,remaining,sinking=false,dark=false,mobile=false}) => {
+  const tree = ['Rent','Savings','Insurance'].map((name,index)=>({id:`test-${index}`,name,amount:0,children:[{id:`child-${index}`,name:`${name} child`,amount:0,children:[]}]}));
+  const sources = Array.from({length:5},(_,index)=>({id:`income-${index}`,name:`Income ${index+1}`,amount:12000}));
+  const layout = {...createTreeLayout({tree,path:[],allocations:[],expandAll:true,showPerson:!sinking,incomeSourceCount:sinking?0:sources.length}),monthlyOutcome:remaining,income:60000,allocations:[],expandAll:true};
+  root.render(React.createElement('div',{className:dark?'theme-dark':'theme-light'},React.createElement(TreeCanvas,{
+    layout,sinking,monthlyIncome:60000,monthlyDeductions:deductions,mobile,path:[],collapsedPaths:new Set(),
+    incomeSources:sinking?[]:sources,tree,onInspectIncome:()=>{document.body.dataset.incomeOpened='yes'},onInspectPlan:()=>{document.body.dataset.planOpened='yes'}
+  })));
+};
 window.renderIncomeOverview = incomeSources => root.render(React.createElement(PlanDialog,{
 dialog:{type:'incomeOverview'},incomeSources,onClose:()=>{},onRequestAddIncomeSource:()=>{document.body.dataset.addRequested='yes'}
 }));

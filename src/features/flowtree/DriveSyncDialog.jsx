@@ -6,7 +6,7 @@ function candidateLabel(candidate) {
   return `${candidate.name} in ${candidate.folderName} — ${modifiedText}`
 }
 
-export default function DriveSyncDialog({ status, user, error, configured, setupRequired, restoreCandidates = [], onClose, onConnect, onAddAccount, onEditJson, onUseCurrentPlan, onCreateBlankPlan, onChooseRestoreCandidate, onRecoverDriveVersion }) {
+export default function DriveSyncDialog({ isExample = false, status, user, error, configured, setupRequired, restoreCandidates = [], onClose, onConnect, onAddAccount, onEditJson, onUseCurrentPlan, onCreateBlankPlan, onChooseRestoreCandidate, onRecoverDriveVersion }) {
   const ref = useRef(null)
   useEffect(() => {
     const opener = document.activeElement
@@ -29,9 +29,9 @@ export default function DriveSyncDialog({ status, user, error, configured, setup
       {error && <span role="alert" className="field-error">{error}</span>}
       <div className="dialog-actions">{restoreCandidates.map(candidate => <button key={candidate.id} type="button" disabled={restoreLoading} onClick={() => onChooseRestoreCandidate(candidate.id)}>{candidateLabel(candidate)}</button>)}<button type="button" disabled={restoreLoading} onClick={onClose}>Not now</button></div>
     </> : needsPlanChoice ? <>
-      <p>No valid FlowTree plan was found in your gpt folder. Your current plan will remain unchanged until you choose how to set up Drive.</p>
+      <p>{isExample ? 'Welcome! Create your own empty plan to get started. The example amounts will not be copied to your account.' : 'No valid FlowTree plan was found in your gpt folder. Your current plan will remain unchanged until you choose how to set up Drive.'}</p>
       {error && <span role="alert" className="field-error">{error}</span>}
-      <div className="dialog-actions"><button type="button" disabled={setupSaving} onClick={onClose}>Not now</button><button type="button" disabled={setupSaving} onClick={onCreateBlankPlan}>Create empty Drive plan</button><button type="button" className="modal-submit" disabled={setupSaving} onClick={onUseCurrentPlan}>{setupSaving ? 'Saving…' : 'Save current plan to Drive'}</button></div>
+      <div className="dialog-actions"><button type="button" disabled={setupSaving} onClick={onClose}>Not now</button><button type="button" className={isExample ? 'modal-submit' : undefined} disabled={setupSaving} onClick={onCreateBlankPlan}>{isExample ? 'Create my plan' : 'Create empty Drive plan'}</button>{!isExample && <button type="button" className="modal-submit" disabled={setupSaving} onClick={onUseCurrentPlan}>{setupSaving ? 'Saving…' : 'Save current plan to Drive'}</button>}</div>
     </> : connected ? <>
       <div className="account-card">
         {user?.photoLink ? <img src={user.photoLink} alt="" /> : <span className="overview-icon material-symbols-rounded" aria-hidden="true">account_circle</span>}

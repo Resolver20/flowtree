@@ -5,10 +5,9 @@ const EMPTY_FUNDING = { allocated: 0, target: 0, ratio: 0 }
 const LEAF_GAP = 72
 const EDGE_INSET = 40
 const PERSON_X = 60
-const INCOME_SOURCE_X = 230
-const SOURCE_X = 450
-const COLUMN_GAP = 235
-const COLUMN_START = 700
+const SOURCE_X = 380
+const COLUMN_GAP = 280
+const COLUMN_START = 630
 
 const pathKey = path => path.join('/')
 
@@ -99,34 +98,47 @@ export function createTreeLayout({ tree, path, allocations, expandAll, collapsed
   const columns = createColumns(tree, path, allocations, expandAll, collapsedPaths)
   const depthCounts = countNodesByDepth(tree)
   const branchY = createBranchY(tree)
-  const height = expandAll
+  const incomeStackHeight = incomeSourceCount ? 100 + (incomeSourceCount - 1) * 80 : 0
+  const treeHeight = expandAll
     ? Math.max(620, branchY.leafEnd - 32)
     : Math.max(620, ...depthCounts.map(count => count * 68 + 40))
+  const height = Math.max(treeHeight, incomeStackHeight + 120)
   const expandedVerticalOffset = expandAll && branchY.positions.size
     ? (height - (Math.min(...branchY.positions.values()) + Math.max(...branchY.positions.values()))) / 2
     : 0
   // Keep text at its authored size. The canvas scrolls when the tree is larger
   // than the available space instead of reducing cards to unreadable thumbnails.
   const scale = 1
-  const leftEdge = showPerson ? PERSON_X - 36 : incomeSourceCount ? INCOME_SOURCE_X - 98 : SOURCE_X - 130
-  const rightEdge = COLUMN_START + Math.max(0, columns.length - 1) * COLUMN_GAP + 98
-  // Size the world around visible content, not hidden profile space or unopened
+  // Home's wider summary must sit clear of the first vertical connector trunk.
+  const multipleIncomeSources = incomeSourceCount > 1
+  const summaryOffset = multipleIncomeSources ? 40 : 0
+  const columnStart = COLUMN_START + (showPerson ? 120 : 0) + summaryOffset
+  const leftEdge = showPerson || incomeSourceCount ? PERSON_X - 98 : SOURCE_X - 130
+  const rightEdge = columnStart + Math.max(0, columns.length - 1) * COLUMN_GAP + 98
+  // Size the world around visible content, not hidden Income space or unopened
   // descendant columns. The viewport centers this compact world when it fits.
   const worldPadding = 32
   const worldWidth = rightEdge - leftEdge + worldPadding * 2
   const horizontalOffset = worldPadding - leftEdge
-  const personPoint = { x: PERSON_X + horizontalOffset, y: height / 2 }
+  const personPoint = { x: PERSON_X + horizontalOffset, y: (height - incomeStackHeight) / 2 }
   const incomeSourcePoints = Array.from({ length: incomeSourceCount }, (_, index) => ({
-    x: INCOME_SOURCE_X + horizontalOffset,
-    y: height / 2 + (index - (incomeSourceCount - 1) / 2) * LEAF_GAP,
+    x: personPoint.x + (multipleIncomeSources ? 118 : 0),
+    y: personPoint.y + 100 + index * 80,
   }))
-  const sourcePoint = { x: SOURCE_X + horizontalOffset, y: height / 2 }
+  const sourcePoint = { x: SOURCE_X + summaryOffset + horizontalOffset, y: showPerson ? personPoint.y : height / 2 }
+  const introPaths = showPerson ? [
+    roundedElbowPath({ x: personPoint.x + 98, y: personPoint.y }, { x: sourcePoint.x - 38, y: sourcePoint.y }),
+    ...(multipleIncomeSources ? [
+      `M ${personPoint.x} ${personPoint.y + 28} V ${incomeSourcePoints.at(-1).y}`,
+      ...incomeSourcePoints.map(point => `M ${personPoint.x} ${point.y} H ${point.x - 98}`),
+    ] : incomeSourcePoints.map(point => `M ${personPoint.x} ${personPoint.y + 28} V ${point.y - 28}`)),
+  ] : []
 
   const positionedColumns = columns.map((entries, columnIndex) => ({
     items: entries.map((entry, index) => ({
       ...entry,
       point: {
-        x: COLUMN_START + horizontalOffset + columnIndex * COLUMN_GAP,
+        x: columnStart + horizontalOffset + columnIndex * COLUMN_GAP,
         y: expandAll
           ? branchY.positions.get(pathKey(entry.path)) + expandedVerticalOffset
           : rowY(entries.length, index, height),
@@ -156,5 +168,5 @@ export function createTreeLayout({ tree, path, allocations, expandAll, collapsed
     })
   })
 
-  return { connectorGroups, height, incomeSourcePoints, personPoint, positionedColumns, scale, sourcePoint, worldWidth }
+  return { connectorGroups, introPaths, height, incomeSourcePoints, personPoint, positionedColumns, scale, sourcePoint, worldWidth }
 }

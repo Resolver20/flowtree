@@ -7,7 +7,6 @@ import { findPath, sortTreeByMonthlyTotal, totalChildren } from '../../domain/fl
 import { formatMoney } from '../../lib/money'
 import TreeCanvas from './TreeCanvas'
 import TreeHeader from './TreeHeader'
-import TreeStatus from './TreeStatus'
 import SinkingFundsSummary from './SinkingFundsSummary'
 import LoansView from './LoansView'
 import GoalsView from './GoalsView'
@@ -105,7 +104,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
   </header>
 }
 
-export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path: unpinnedPath, onPathChange: setPath, profile, incomeSources, generalLedgers, canvasPins, onChangeCanvasPin, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onInspectIncome, onInspectPlan, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
+export default function EnergyExplorer({ isExample = false, theme, onToggleTheme, view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path: unpinnedPath, onPathChange: setPath, profile, incomeSources, generalLedgers, canvasPins, onChangeCanvasPin, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onInspectIncome, onInspectPlan, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const sectionRef = useSectionScroll(view)
   useSectionTransition(sectionRef, view)
   const demo = false
@@ -140,7 +139,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
   const investments = useMemo(() => tree.find(node => node.id === 'growth')?.children || [], [tree])
   const expandAll = view === 'home' && !path.length
   const visibleTreeExpanded = expandAll || view === 'sinking'
-  const showProfileMarker = view === 'home' && (profile.visible || Boolean(driveUser?.photoLink))
+  const showIncomeSummary = view === 'home'
 
   const income = demo ? Math.round(totalChildren(visibleTree) * .75 + buffer) : salary
   const planned = totalChildren(orderedTree)
@@ -148,13 +147,13 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
   const showMobileHomeOutlook = view === 'home' && !path.length && !expandAll
   const flow = useMemo(() => allocateEnergy(visibleTree, Math.max(0, income - buffer)), [visibleTree, income, buffer])
   const layout = useMemo(() => ({
-    ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, collapsedPaths, incomeSourceCount: view === 'sinking' ? 0 : incomeSources.length, showPerson: showProfileMarker }),
+    ...createTreeLayout({ tree: visibleTree, path, allocations: flow.allocations, expandAll: visibleTreeExpanded, collapsedPaths, incomeSourceCount: view === 'sinking' ? 0 : incomeSources.length, showPerson: showIncomeSummary }),
     available: income - buffer,
     monthlyOutcome,
     income,
     allocations: flow.allocations,
     expandAll: visibleTreeExpanded,
-  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, collapsedPaths, income, buffer, monthlyOutcome, incomeSources.length, showProfileMarker, view])
+  }), [visibleTree, path, flow.allocations, visibleTreeExpanded, collapsedPaths, income, buffer, monthlyOutcome, incomeSources.length, showIncomeSummary, view])
   const breadcrumbs = path.map((_, index) => ({ path: path.slice(0, index + 1), node: findPath(visibleTree, path.slice(0, index + 1)) }))
 
   useEffect(() => {
@@ -188,7 +187,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
     if (isLocked() || !viewportRef.current) return undefined
 
     const canvas = viewportRef.current
-    if (viewport.width >= 900) {
+    if (view === 'sinking' || viewport.width >= 900) {
       canvas.scrollTo({ left: 0, top: 0, behavior: 'auto' })
       return undefined
     }
@@ -212,7 +211,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
     })
 
     return () => window.cancelAnimationFrame(frame)
-  }, [isMobileLayout, viewport.height, viewport.width, viewportRef, isLocked])
+  }, [view, isMobileLayout, viewport.height, viewport.width, viewportRef, isLocked])
 
   function navigate(nextPath) {
     if (pin) {
@@ -271,6 +270,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
 
   return <main ref={sectionRef} className={`energy-home theme-${theme}`}>
     <TreeHeader
+      isExample={isExample}
       breadcrumbs={breadcrumbs}
       expandAll={expandAll}
       view={view}
@@ -304,6 +304,7 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
     <DriveSyncStatus status={driveStatus} />
     {view === 'loans' ? <LoansView loans={loans} focusedLoanId={focusedNodeId} onSaveLoan={onSaveLoan} onDeleteLoan={onDeleteLoan} /> : view === 'goals' ? <GoalsView goals={goals} focusedGoalId={focusedNodeId} onSaveGoal={onSaveGoal} /> : view === 'recurring' ? <RecurringPaymentsView plan={{ tree, incomeSources, buffer, monthlyHistory }} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${view === 'sinking' ? ' is-sinking' : ''}${canvasControls.locked ? ' is-pinned' : ''}${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
       {showMobileHomeOutlook && <MobileHomeOutlook profile={profile} driveUser={driveUser} income={income} buffer={buffer} planned={planned} />}
+      {view === 'sinking' && <SinkingFundsSummary tree={sinkingTree} isExample={isExample} />}
       <div className="tree-zoom-layer" style={{ zoom: canvasControls.zoom }}>{visibleTree.length
         ? <TreeCanvas
             key={view}
@@ -313,8 +314,6 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
             mobile={isMobileLayout}
             collapsedPaths={collapsedPaths}
             path={path}
-            profile={showProfileMarker ? profile : { ...profile, visible: false }}
-            driveUser={driveUser}
             driveSaved={showDriveSaved}
             sinking={view === 'sinking'}
             incomeSources={view === 'sinking' ? [] : incomeSources}
@@ -328,6 +327,6 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
         : <EmptyTreeState sinking={view === 'sinking'} onReturnHome={returnToRoot} />}</div>
     </div>
     {!isMobileLayout && <CanvasControls {...canvasControls} sinking={view === 'sinking'} />}
-    {view === 'sinking' ? <SinkingFundsSummary tree={sinkingTree} /> : <TreeStatus demo={demo} mobileHome={showMobileHomeOutlook} monthlyOutcome={monthlyOutcome} planned={planned} />}</>}
+    </>}
   </main>
 }

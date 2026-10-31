@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { selectSinkingFunds } from '../../src/domain/sinkingFunds.js'
+import { selectSinkingFunds, sinkingFundsOverview } from '../../src/domain/sinkingFunds.js'
+import { createExamplePlan } from '../../src/domain/examplePlan.js'
 import { sortTreeByMonthlyTotal, monthlyTotal } from '../../src/domain/flowTree.js'
 
 const tree = [{ id: 'needs', amount: 0, children: [
@@ -36,4 +37,24 @@ test('nested ancestors stay connected and empty or unrelated branches are exclud
   assert.deepEqual(selectSinkingFunds([{ id: 'monthly', period: 'month', children: [] }]), [])
   const result = selectSinkingFunds([{ id: 'root', children: [{ id: 'group', children: [{ id: 'target', period: 'year', children: [] }] }] }])
   assert.equal(result[0].children[0].children[0].id, 'target')
+})
+
+test('beginner sinking overview leads with monthly saving and keeps fresh progress at zero', () => {
+  const today = new Date(2026, 9, 31)
+  const plan = createExamplePlan(today)
+  const sinking = selectSinkingFunds(plan.tree)
+  assert.deepEqual(sinkingFundsOverview(sinking, today), { monthly: 2500, plannedSaved: 0, hasTargets: true })
+  assert.deepEqual(sinkingFundsOverview([], today), { monthly: 0, plannedSaved: 0, hasTargets: false })
+})
+
+test('sinking overview respects nested amounts and pauses without double counting parent totals', () => {
+  const today = new Date(2026, 9, 31)
+  const target = { id: 'annual', amount: 12000, period: 'year', startDate: '2026-01-01', dueDate: '2026-12-31', children: [
+    { id: 'monthly', amount: 100, period: 'month', children: [] },
+    { id: 'annual-child', amount: 2400, period: 'year', startDate: '2026-10-01', dueDate: '2027-09-30', children: [] },
+  ] }
+  const original = structuredClone(target)
+  assert.deepEqual(sinkingFundsOverview([target], today), { monthly: 1300, plannedSaved: 9000, hasTargets: true })
+  assert.deepEqual(target, original)
+  assert.deepEqual(sinkingFundsOverview([{ ...target, status: 'inactive' }], today), { monthly: 0, plannedSaved: 9000, hasTargets: true })
 })

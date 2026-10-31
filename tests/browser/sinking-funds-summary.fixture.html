@@ -1,0 +1,18 @@
+<!doctype html><html><meta charset="utf-8"><div id="root"></div><script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import SinkingFundsSummary from '/src/features/flowtree/SinkingFundsSummary.jsx';
+import { createExamplePlan } from '/src/domain/examplePlan.js';
+import { selectSinkingFunds } from '/src/domain/sinkingFunds.js';
+import '/src/index.css';
+import '/src/features/flowtree/EnergyExplorer.css';
+const root = createRoot(document.querySelector('#root'));
+window.renderCase = ({ kind, dark }) => {
+  const plan = createExamplePlan();
+  let tree = selectSinkingFunds(plan.tree);
+  if (kind === 'empty') tree = [];
+  if (kind === 'paused') tree = tree.map(node => ({ ...node, status: 'inactive' }));
+  if (kind === 'progress') tree.find(node=>node.id==='protection').children[0].savedAmount = 3000;
+  root.render(React.createElement('main',{className:`energy-mode ${dark?'theme-dark':'theme-light'}`},React.createElement(SinkingFundsSummary,{tree,isExample:kind==='example'})));
+};
+</script></html>

@@ -27,6 +27,9 @@ try {
       assert(summary.top >= title.bottom && summary.right <= card.getBoundingClientRect().right, `${width}/${dark}/${remaining}: summary below title and inside root`);
       assert(frame.contentWindow.getComputedStyle(deductions).color !== frame.contentWindow.getComputedStyle(available).color, `${width}/${dark}/${remaining}: distinct summary colors`);
       assert(card.scrollWidth <= card.clientWidth, `${width}/${dark}/${remaining}: card does not overflow`);
+      doc.body.dataset.planOpened = '';
+      hub.click();
+      assert(doc.body.dataset.planOpened === 'yes', `${width}/${dark}/${remaining}: hub opens the shared overview action`);
     }
     const incomeSources = [{id:'salary',name:'Salary',amount:50000},{id:'freelance',name:'Freelance income',amount:10000}];
     frame.contentWindow.renderCase({deductions:1,remaining:1,incomeSources}); await wait();
@@ -36,6 +39,7 @@ try {
     const children = [...income.querySelectorAll('.mobile-income-children .mobile-income-source')];
     assert(children.length === 2 && children[0].textContent.includes('Salary') && children[1].textContent.includes('Freelance income'), `${width}: sources are Income children`);
     assert(children.every(child => child.getBoundingClientRect().left > income.getBoundingClientRect().left && child.scrollWidth <= child.clientWidth), `${width}: child indentation without card overflow`);
+    assert(parseFloat(frame.contentWindow.getComputedStyle(income.querySelector('.mobile-income-children')).rowGap) >= 14, `${width}: income children retain comfortable vertical spacing`);
     for (const child of children) {
       const info = child.parentElement.querySelector(':scope > .mobile-tree-manage');
       assert(!child.querySelector('button') && info && info.getBoundingClientRect().left >= child.getBoundingClientRect().right, `${width}: child Info sits outside its card`);
@@ -53,6 +57,70 @@ try {
     frame.contentWindow.renderCase({deductions:1,remaining:1,sinking:true}); await wait();
     assert(!frame.contentDocument.querySelector('.mobile-plan-summary'), `${width}: Sinking funds has no monthly summary`);
   }
+  for (const width of [768,1366,1920]) {
+    frame.style.width = `${width}px`;
+    for (const dark of [false,true]) for (const remaining of [10154,0,-4000,-12345678]) {
+      frame.contentWindow.renderDesktopCase({deductions:12345678,remaining,dark}); await wait();
+      const doc = frame.contentDocument, card = doc.querySelector('.energy-source.is-monthly-plan');
+      const hub = card.querySelector('.monthly-plan-hub'), circle = hub.getBoundingClientRect();
+      const title = card.querySelector('.monthly-plan-title').getBoundingClientRect();
+      const totals = card.querySelector('.monthly-plan-summary');
+      const summaryBox = totals.getBoundingClientRect();
+      const format = n => `₹${new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(n)}`;
+      assert(Math.abs(circle.width-circle.height)<1 && frame.contentWindow.getComputedStyle(hub).borderRadius==='50%', `${width}/${dark}/${remaining}: desktop uses the same circular hub`);
+      assert(title.top >= circle.bottom, `${width}/${dark}/${remaining}: desktop title stays below the circle`);
+      assert(summaryBox.top - title.bottom >= 14, `${width}/${dark}/${remaining}: totals have breathing room below the title`);
+      assert(totals.children[0].textContent === `Deductions ${format(12345678)}` && totals.children[1].textContent === `Available ${format(remaining)}`, `${width}/${dark}/${remaining}: hub retains exact signed totals`);
+      assert(doc.querySelectorAll('[aria-label="Monthly plan summary"]').length === 1, `${width}/${dark}/${remaining}: desktop has only one monthly summary`);
+      const incomeRoot = doc.querySelector('.income-summary').getBoundingClientRect();
+      const incomeCards = [...doc.querySelectorAll('.income-source:not(.income-summary)')].map(item=>item.getBoundingClientRect());
+      assert(incomeCards.length===5 && incomeCards.every(item=>Math.abs(item.left-incomeCards[0].left)<1 && item.left>(incomeRoot.left+incomeRoot.right)/2+16 && item.top>=incomeRoot.bottom+40), `${width}/${dark}/${remaining}: income sources are stacked in one column beside the shared trunk`);
+      assert(incomeCards.every((item,index)=>index===0 || item.top-incomeCards[index-1].bottom>=23.5), `${width}/${dark}/${remaining}: stacked income cards have comfortable vertical gaps`);
+      const incomePath = doc.querySelector('.intro-track').getAttribute('d');
+      assert(incomePath.includes(' H ') && !incomePath.includes(' V '), `${width}/${dark}/${remaining}: Income connects straight to Monthly plan`);
+      const sourceLines=[...doc.querySelectorAll('.intro-track')].slice(1);
+      assert(/^M [-\d.]+ [-\d.]+ V [-\d.]+$/.test(sourceLines[0].getAttribute('d')) && sourceLines.slice(1).length===5 && sourceLines.slice(1).every(path=>/^M [-\d.]+ [-\d.]+ H [-\d.]+$/.test(path.getAttribute('d'))), `${width}/${dark}/${remaining}: one straight trunk branches horizontally to every sibling income`);
+      assert([...totals.children].every(item => parseFloat(frame.contentWindow.getComputedStyle(item).paddingTop) >= 12 && item.scrollWidth <= item.clientWidth), `${width}/${dark}/${remaining}: total fields have padding and no text overflow`);
+      const svg = doc.querySelector('.energy-connections');
+      const boxes = [...totals.children].map(item=>item.getBoundingClientRect());
+      const point = svg.createSVGPoint(), matrix = svg.getScreenCTM();
+      let crossesTotals = false;
+      for (const path of svg.querySelectorAll('path')) {
+        const length = path.getTotalLength();
+        for (let i=0;i<=250;i++) {
+          const p = path.getPointAtLength(length*i/250); point.x=p.x; point.y=p.y;
+          const screen = point.matrixTransform(matrix);
+          if (boxes.some(box=>screen.x>box.left-8&&screen.x<box.right+8&&screen.y>box.top-8&&screen.y<box.bottom+8)) crossesTotals=true;
+        }
+      }
+      assert(!crossesTotals, `${width}/${dark}/${remaining}: connector lines keep clear of both total fields`);
+      const incomeToggle = doc.querySelector('.income-summary button.income-source-card');
+      const sourceGroup = doc.getElementById(incomeToggle.getAttribute('aria-controls'));
+      incomeToggle.click(); await wait();
+      assert(incomeToggle.getAttribute('aria-expanded')==='false' && sourceGroup.hidden && doc.querySelectorAll('.intro-track').length===1, `${width}/${dark}/${remaining}: collapse hides source cards and their lines only`);
+      const stableCircle = hub.getBoundingClientRect();
+      assert(Math.abs(stableCircle.x-circle.x)<1 && Math.abs(stableCircle.y-circle.y)<1, `${width}/${dark}/${remaining}: Monthly plan stays still when Income closes`);
+      doc.body.dataset.incomeOpened=''; doc.querySelector('.income-summary .card-info').click();
+      assert(doc.body.dataset.incomeOpened==='yes' && incomeToggle.getAttribute('aria-expanded')==='false', `${width}/${dark}/${remaining}: Info opens overview without expanding Income`);
+      incomeToggle.click(); await wait();
+      assert(incomeToggle.getAttribute('aria-expanded')==='true' && !sourceGroup.hidden && doc.querySelectorAll('.intro-track').length===7, `${width}/${dark}/${remaining}: reopen restores the trunk and every income branch`);
+      doc.body.dataset.planOpened=''; hub.click();
+      assert(doc.body.dataset.planOpened==='yes', `${width}/${dark}/${remaining}: desktop opens the same overview action`);
+    }
+    frame.contentWindow.renderDesktopCase({deductions:1,remaining:1,sinking:true}); await wait();
+    assert(!frame.contentDocument.querySelector('.monthly-plan-hub'), `${width}: desktop Sinking funds keeps its own root`);
+  }
+  frame.style.width='1366px';
+  frame.contentWindow.renderDesktopCase({deductions:100,remaining:500}); await wait();
+  frame.contentDocument.querySelector('.income-summary button.income-source-card').click(); await wait();
+  frame.style.width='390px';
+  frame.contentWindow.renderDesktopCase({deductions:100,remaining:500,mobile:true}); await wait();
+  const phoneToggle=frame.contentDocument.querySelector('.mobile-income-root button.mobile-income-source');
+  assert(phoneToggle.getAttribute('aria-expanded')==='false' && frame.contentDocument.querySelector('.mobile-income-children').hidden, 'Income stays collapsed when changing from desktop to mobile');
+  phoneToggle.click(); await wait();
+  frame.style.width='1366px';
+  frame.contentWindow.renderDesktopCase({deductions:100,remaining:500}); await wait();
+  assert(frame.contentDocument.querySelector('.income-summary button.income-source-card').getAttribute('aria-expanded')==='true', 'Income opened on mobile remains open when returning to desktop');
   frame.contentWindow.renderIncomeOverview([{id:'salary',name:'Salary',amount:50000}]); await wait();
   const dialog = frame.contentDocument.querySelector('dialog');
   assert(!dialog.textContent.includes('Edit Salary'), 'Income overview has no source edit action');

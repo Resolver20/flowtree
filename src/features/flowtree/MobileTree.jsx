@@ -2,6 +2,7 @@ import { goalCardPreview } from './goalCardPreview'
 import { useId, useState } from 'react'
 import InactiveMarker from './InactiveMarker'
 import MonthlyPlanShare from './MonthlyPlanShare'
+import MonthlyPlanHub from './MonthlyPlanHub'
 import { monthlyPlanShare } from '../../domain/monthlyPlanShare'
 import { annualTargetProgress } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
@@ -83,31 +84,21 @@ function MobileNode({ entry, tree, monthlyIncome, selectedPath, expandAll, colla
   </div>
 }
 
-export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, monthlyDeductions, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onInspectIncome, onNavigate, onInspect, onInspectPlan }) {
-  const [incomeExpanded, setIncomeExpanded] = useState(true)
+export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, monthlyDeductions, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onInspectIncome, onNavigate, onInspect, onInspectPlan, incomeExpanded: sharedIncomeExpanded, onToggleIncome }) {
+  const [localIncomeExpanded, setLocalIncomeExpanded] = useState(true)
+  const incomeExpanded = sharedIncomeExpanded ?? localIncomeExpanded
   const incomeChildrenId = useId()
   const rootLabel = sinking ? 'Sinking funds' : 'Monthly plan'
   return <div className="mobile-tree" aria-label={`${rootLabel} flow`}>
     {!sinking && <><section className="mobile-tree-income" aria-label="Income">
-      <MobileIncomeSummary income={income} onInspectIncome={onInspectIncome} hasChildren={incomeSources.length > 0} expanded={incomeExpanded} onToggle={() => setIncomeExpanded(expanded => !expanded)} childrenId={incomeChildrenId} />
+      <MobileIncomeSummary income={income} onInspectIncome={onInspectIncome} hasChildren={incomeSources.length > 0} expanded={incomeExpanded} onToggle={onToggleIncome || (() => setLocalIncomeExpanded(expanded => !expanded))} childrenId={incomeChildrenId} />
       {incomeSources.length > 0 && <div id={incomeChildrenId} className="mobile-income-children" role="group" aria-label="Income sources" hidden={!incomeExpanded}>
         {incomeSources.map(source => <MobileIncomeSource key={source.id} source={source} onManage={onManageIncomeSource} />)}
       </div>}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" /></>}
     <section className={`mobile-plan-root${!sinking ? ' is-monthly-plan' : ''}`} aria-label={rootLabel}>
-      {sinking ? <><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span><div className="mobile-plan-copy"><strong>{rootLabel}</strong></div></> : <>
-      <div className="mobile-plan-heading">
-        <button type="button" className="mobile-plan-hub" onClick={onInspectPlan} aria-label="View monthly plan information">
-          <span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
-          <span className="mobile-plan-hub-info material-symbols-rounded" aria-hidden="true">info</span>
-        </button>
-        <strong>{rootLabel}</strong>
-      </div>
-      <div className="mobile-plan-summary" aria-label="Monthly plan summary">
-        <small className="is-deductions">Deductions <span>{formatMoney(monthlyDeductions)}</span></small>
-        <small className="is-remaining">Available <span>{formatMoney(monthlyOutcome)}</span></small>
-      </div></>}
+      {sinking ? <><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span><div className="mobile-plan-copy"><strong>{rootLabel}</strong></div></> : <MonthlyPlanHub monthlyDeductions={monthlyDeductions} monthlyOutcome={monthlyOutcome} onInspectPlan={onInspectPlan} />}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" />
     <section className="mobile-tree-categories" aria-label="Plan categories">
