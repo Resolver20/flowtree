@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react'
 import App from '../App'
 import { readDeviceTheme } from '../domain/devicePreferences'
+import DismissibleNotice from '../features/flowtree/DismissibleNotice'
 import './pwa.css'
+
+export function PwaStatusNotice({ kind }) {
+  const [dismissed, setDismissed] = useState(false)
+  if (dismissed) return null
+  return <DismissibleNotice className="pwa-status" label="Dismiss app notification" onDismiss={() => setDismissed(true)}>{kind === 'offline'
+    ? 'Offline. Keep this window open to preserve edits. Reconnect before saving to Drive.'
+    : 'Update ready. Save your changes, then close all Flowtree windows and reopen.'}</DismissibleNotice>
+}
 
 export default function PwaShell() {
   const [online, setOnline] = useState(() => navigator.onLine)
@@ -39,7 +48,6 @@ export default function PwaShell() {
     <p>Connect to the internet to open your Google Drive plan.</p>
     <button disabled={!online} onClick={() => setStarted(true)}>Open Flowtree</button>
   </main>
-  return <><App />{(!online || updateReady) && <div className="pwa-status" role="status">{!online
-    ? 'Offline. Keep this window open to preserve edits. Reconnect before saving to Drive.'
-    : 'Update ready. Save your changes, then close all Flowtree windows and reopen.'}</div>}</>
+  const noticeKind = !online ? 'offline' : updateReady ? 'update' : null
+  return <><App />{noticeKind && <PwaStatusNotice key={noticeKind} kind={noticeKind} />}</>
 }

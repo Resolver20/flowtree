@@ -3,6 +3,8 @@ import { formatDate, formatMoney } from '../../lib/money'
 import IconPicker from './IconPicker'
 import { ledgerBudget, ledgerTotal, ledgerRemaining, ledgerOverview } from '../../domain/generalLedger'
 import { shouldShowLedgerOverview } from './ledgerOverview'
+import { useConfirmation } from '../../hooks/useConfirmation'
+import ConfirmationDialog from './ConfirmationDialog'
 
 function localDateValue() {
   const date = new Date()
@@ -75,6 +77,7 @@ function LedgerOverview({ ledgers, onSelect }) {
 }
 
 export default function GeneralLedgerView({ ledgers, onSaveLedger, onDeleteLedger, onSaveExpense, onDeleteEntry }) {
+  const confirmation = useConfirmation()
   const [selectedId, setSelectedId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [creating, setCreating] = useState(false)
@@ -97,9 +100,16 @@ export default function GeneralLedgerView({ ledgers, onSaveLedger, onDeleteLedge
 
   function showOverview() { selectLedger(null) }
 
+  async function deleteLedger() {
+    if (!selected || !await confirmation.confirm({ title: `Delete ${selected.name}?`, message: `This removes this ledger and its ${selected.entries.length} expense records.`, confirmLabel: 'Delete GL' })) return
+    onDeleteLedger(selected.id)
+    setSelectedId(null)
+  }
+
   return <section className="ledger-view" aria-label="General ledger" onClick={event => {
     if (shouldShowLedgerOverview(event.target, { selected, editingId, creating })) showOverview()
   }}>
+    {confirmation.request && <ConfirmationDialog confirmation={confirmation} />}
     <header className="ledger-header"><div><span className="eyebrow">GENERAL LEDGER</span><h1>General ledger</h1><p>Create separate GLs for expense tracking, such as Home, Travel, or a project. These records stay separate from the monthly planning flow.</p></div><button type="button" className="ledger-add" onClick={() => { setCreating(true); setEditingId(null) }}><span className="material-symbols-rounded" aria-hidden="true">add</span>Create GL</button></header>
     {creating && <LedgerEditor onSave={saveLedger} onCancel={() => setCreating(false)} />}
     {!ledgers.length && !creating && <div className="ledger-empty"><span className="material-symbols-rounded" aria-hidden="true">receipt_long</span><strong>No general ledgers yet</strong><p>Create a GL, then add your expenses to review them in one place.</p><button type="button" onClick={() => setCreating(true)}>Create your first GL</button></div>}
@@ -108,7 +118,7 @@ export default function GeneralLedgerView({ ledgers, onSaveLedger, onDeleteLedge
         <button type="button" className={!selected ? 'is-selected' : ''} aria-pressed={!selected} onClick={showOverview}><span className="material-symbols-rounded" aria-hidden="true">overview</span><span><strong>Overview</strong><small>All ledger budgets and expenses</small></span></button>
         {ledgers.map(ledger => { const remaining = ledgerRemaining(ledger); return <button type="button" key={ledger.id} className={ledger.id === selected?.id ? 'is-selected' : ''} aria-pressed={ledger.id === selected?.id} onClick={() => selectLedger(ledger.id)}><span className="material-symbols-rounded" aria-hidden="true">{ledger.symbol || 'receipt_long'}</span><span><strong>{ledger.name}</strong><small>{remaining < 0 ? `${formatMoney(Math.abs(remaining))} over budget` : `${formatMoney(remaining)} budget remaining`} · {ledger.entries.length} {ledger.entries.length === 1 ? 'expense' : 'expenses'}</small></span></button> })}</aside>
       {!selected ? <LedgerOverview ledgers={ledgers} onSelect={selectLedger} /> : editingId === selected.id ? <LedgerEditor ledger={selected} onSave={saveLedger} onCancel={() => setEditingId(null)} /> : <div className="ledger-details">
-        <div className="ledger-details-heading"><div><span className="eyebrow">{selected.note || 'EXPENSE TRACKING'}</span><h2>{selected.name}</h2></div><div className="ledger-details-actions"><button type="button" onClick={showOverview}>Back to overview</button><button type="button" onClick={() => setEditingId(selected.id)}>Edit GL</button><button type="button" className="delete-link" onClick={() => { if (window.confirm(`Delete ${selected.name} and its ${selected.entries.length} expense records?`)) { onDeleteLedger(selected.id); setSelectedId(null) } }}>Delete GL</button></div></div>
+        <div className="ledger-details-heading"><div><span className="eyebrow">{selected.note || 'EXPENSE TRACKING'}</span><h2>{selected.name}</h2></div><div className="ledger-details-actions"><button type="button" onClick={showOverview}>Back to overview</button><button type="button" onClick={() => setEditingId(selected.id)}>Edit GL</button><button type="button" className="delete-link" onClick={deleteLedger}>Delete GL</button></div></div>
         <div className="ledger-stat-grid" aria-label="Ledger expense budget summary"><div><span>Expense budget</span><strong>{formatMoney(ledgerBudget(selected))}</strong></div><div><span>Total expenses</span><strong>{formatMoney(selectedExpenses)}</strong></div><div className={selectedRemaining < 0 ? 'is-over' : 'is-remaining'}><span>{selectedRemaining < 0 ? 'Over budget by' : 'Budget remaining'}</span><strong>{formatMoney(Math.abs(selectedRemaining))}</strong></div></div>
         <ExpenseEditor key={selected.id} ledger={selected} onSave={onSaveExpense} />
         <section className="ledger-entries"><div className="ledger-entries-heading"><h3>Expense records</h3><span>{selected.entries.length ? 'Newest first' : 'Add your first expense above'}</span></div>{sortedEntries.length ? <div className="ledger-table-wrap"><table><thead><tr><th>Date</th><th>Description</th><th>Expense</th><th><span className="sr-only">Actions</span></th></tr></thead><tbody>{sortedEntries.map(entry => <tr key={entry.id}><td>{formatDate(entry.date)}</td><td>{entry.description}</td><td>{formatMoney(entry.amount)}</td><td><button type="button" onClick={() => onDeleteEntry(selected.id, entry.id)} aria-label={`Delete ${entry.description}`}>Delete</button></td></tr>)}</tbody></table></div> : <p className="ledger-empty-entries">No expenses recorded in this GL.</p>}</section>

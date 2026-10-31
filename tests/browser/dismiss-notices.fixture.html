@@ -1,0 +1,50 @@
+<!doctype html><html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><button id="opener">Open popup</button><div id="root"></div><script type="module">
+import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
+import DismissibleNotice from '/src/features/flowtree/DismissibleNotice.jsx';
+import DriveSyncStatus from '/src/features/flowtree/DriveSyncStatus.jsx';
+import {PwaStatusNotice} from '/src/pwa/PwaShell.jsx';
+import TreeHeader from '/src/features/flowtree/TreeHeader.jsx';
+import PlanDialog from '/src/features/flowtree/PlanDialog.jsx';
+import InstallDialog from '/src/features/flowtree/InstallDialog.jsx';
+import LoansView from '/src/features/flowtree/LoansView.jsx';
+import GeneralLedgerView from '/src/features/flowtree/GeneralLedgerView.jsx';
+import ConfirmationDialog from '/src/features/flowtree/ConfirmationDialog.jsx';
+import {useGoogleDrivePlan} from '/src/hooks/useGoogleDrivePlan.js';
+import {createExamplePlan} from '/src/domain/examplePlan.js';
+import '/src/index.css';import '/src/features/flowtree/EnergyExplorer.css';
+const root=createRoot(document.querySelector('#root')),plan=createExamplePlan();
+const noop=()=>{};
+function DiscardCase({onMutation}){
+ const [draft,setDraft]=useState(plan),[dialog,setDialog]=useState(null);
+ const sync=useGoogleDrivePlan({offline:true,plan:draft,replaceData:()=>onMutation(),captureCurrentMonth:noop,dialog,setDialog,setPath:noop,notify:noop});
+ return React.createElement(React.Fragment,null,React.createElement('button',{className:'make-unsaved',onClick:()=>setDraft({...draft,buffer:draft.buffer+1})},'Make unsaved changes'),React.createElement('button',{className:'request-discard',onClick:sync.disconnectDrive},'Request discard'),React.createElement('output',{id:'unsaved'},String(sync.hasUnsavedChanges)),sync.discardConfirmation.request&&React.createElement(ConfirmationDialog,{confirmation:sync.discardConfirmation}));
+}
+function Harness({kind,status,dark}){
+ const [closed,setClosed]=useState(false),[mutations,setMutations]=useState(0);
+ const close=()=>setClosed(true),mutate=()=>setMutations(n=>n+1);
+ let content;
+ if(kind==='drive')content=React.createElement(DriveSyncStatus,{key:status,status});
+ if(kind==='pwa')content=React.createElement(PwaStatusNotice,{key:status,kind:status});
+ if(kind==='toast')content=React.createElement(DismissibleNotice,{className:'change-notice',onDismiss:close},'Your plan has been updated. '+ 'A long notification message to check wrapping. '.repeat(5));
+ if(kind==='account'||kind==='more')content=React.createElement(TreeHeader,{profile:plan.profile,view:'home',theme:dark?'dark':'light',breadcrumbs:[],driveStatus:'offline'});
+ if(kind==='install')content=React.createElement(InstallDialog,{onClose:close});
+ if(kind==='loan-delete')content=React.createElement(LoansView,{loans:[plan.tree.find(node=>node.id==='obligations').children[0]],onSaveLoan:mutate,onDeleteLoan:mutate});
+ if(kind==='ledger-delete')content=React.createElement(GeneralLedgerView,{ledgers:[{id:'ledger',name:'Test ledger',budget:1000,entries:[{id:'expense',date:'2026-10-31',description:'Test expense',amount:100}]}],onDeleteLedger:mutate});
+ if(kind==='discard')content=React.createElement(DiscardCase,{onMutation:mutate});
+ if(kind==='dialog'){
+  let dialog={type:status,nodeId:'example-rent',sourceId:'example-salary'};
+  let extra={};
+  if(status==='add')dialog={type:'node',parentId:'needs'};
+  if(status==='loan')dialog={type:'node',nodeId:'example-loan'};
+  if(status==='importJson')dialog={type:'importJson',data:plan,fileName:'example.json',summary:{incomeSources:1,destinations:10,yearlyTargets:3}};
+  if(status==='drive-saving'){dialog={type:'driveSync'};extra={driveStatus:'saving',driveSetupRequired:true}};
+  if(status==='drive-restoring'){dialog={type:'driveSync'};extra={driveStatus:'restoring',driveRestoreCandidates:[{id:'a',name:'Plan A'},{id:'b',name:'Plan B'}]}};
+  content=React.createElement(PlanDialog,{...plan,dialog,onClose:close,onSaveNode:mutate,onDeleteNode:mutate,onApplyJson:mutate,onSaveProfile:mutate,onSaveBuffer:mutate,onChooseDriveRestoreCandidate:mutate,driveConfigured:true,driveRestoreCandidates:[],...extra});
+ }
+ return React.createElement('main',{className:`energy-mode ${dark?'theme-dark':'theme-light'}`},React.createElement('output',{id:'mutations'},String(mutations)),!closed&&content);
+}
+window.renderCase=options=>{
+ for(const [edge,value]of Object.entries({top:options.safe&&innerHeight>500?59:0,bottom:options.safe?34:0,left:options.safe&&innerHeight<=500?44:0,right:options.safe&&innerHeight<=500?44:0}))document.documentElement.style.setProperty(`--mobile-safe-${edge}`,`${value}px`);
+ document.querySelector('#opener').focus();flushSync(()=>root.render(React.createElement(Harness,{...options,key:options.testKey})));
+};
+</script></html>

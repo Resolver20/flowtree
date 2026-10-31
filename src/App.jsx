@@ -10,6 +10,8 @@ import { useTheme } from './hooks/useTheme'
 import { useSessionState } from './hooks/useSessionState'
 import { useFlowData } from './hooks/useFlowData'
 import { createExamplePlan } from './domain/examplePlan'
+import DismissibleNotice from './features/flowtree/DismissibleNotice'
+import ConfirmationDialog from './features/flowtree/ConfirmationDialog'
 
 function App({ offlinePlan, onSaveOfflinePlan } = {}) {
   const [theme, toggleTheme] = useTheme()
@@ -32,7 +34,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
     setNotice({ message })
   }
 
-  const { drive, startupState, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured, hasUnsavedChanges, downloadBackup } = useGoogleDrivePlan({
+  const { discardConfirmation, drive, startupState, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured, hasUnsavedChanges, downloadBackup } = useGoogleDrivePlan({
     offline, onSaveOfflinePlan, isExample,
     plan: { profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree },
     replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify,
@@ -246,7 +248,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
       driveError={drive.error}
       driveConfigured={driveConfigured}
     />
-    {notice && <div className="change-notice" role="status"><span>{notice.message}</span><button aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button></div>}
+    {notice && <DismissibleNotice className="change-notice" onDismiss={() => setNotice(null)}>{notice.message}</DismissibleNotice>}
     <PlanDialog
       isExample={isExample}
       monthlyHistory={monthlyHistory}
@@ -269,7 +271,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
       driveConfigured={driveConfigured}
       driveSetupRequired={Boolean(drive.setupRequired)}
       driveRestoreCandidates={drive.restoreCandidates || []}
-      onClose={() => dialog?.type === 'driveSync' && (drive.setupRequired || drive.restoreCandidates?.length) ? cancelDriveSetup() : setDialog(null)}
+      onClose={() => dialog?.type === 'driveSync' && (drive.setupRequired || drive.restoreCandidates?.length) && !['saving', 'restoring'].includes(drive.status) ? cancelDriveSetup() : setDialog(null)}
       onSaveProfile={name => { changeProfile({ name, visible: true }); notify('Profile updated.') }}
       onDeleteProfile={removeProfile}
       onSaveIncomeSource={saveIncomeSource}
@@ -296,6 +298,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
       onRecoverDriveVersion={openDriveRevisionRecovery}
       onRestoreDriveRevision={restoreDriveRevision}
     />
+    {discardConfirmation.request && <ConfirmationDialog confirmation={discardConfirmation} />}
   </div>
 }
 

@@ -23,6 +23,12 @@ export default function TreeHeader({ isExample = false, hasUnsavedChanges, onDow
   const saving = driveStatus === 'saving' || driveStatus === 'restoring'
   const saveShortcut = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘S' : 'Ctrl+S'
 
+  function closeAccount() {
+    setAccountOpen(false)
+    const trigger = [mobileAccountButtonRef.current, desktopAccountButtonRef.current].find(button => button?.getClientRects().length)
+    trigger?.focus()
+  }
+
   useEffect(() => {
     function saveWithKeyboard(event) {
       if ((!connected && !offline) || !isSaveShortcut(event)) return
@@ -43,9 +49,7 @@ export default function TreeHeader({ isExample = false, hasUnsavedChanges, onDow
     }
     function closeOnEscape(event) {
       if (event.key === 'Escape') {
-        setAccountOpen(false)
-        const trigger = [mobileAccountButtonRef.current, desktopAccountButtonRef.current].find(button => button?.getClientRects().length)
-        trigger?.focus()
+        closeAccount()
       }
     }
     accountMenuRef.current?.querySelector('button')?.focus()
@@ -163,10 +167,10 @@ export default function TreeHeader({ isExample = false, hasUnsavedChanges, onDow
       </button>
     </aside>
     {accountOpen && <section ref={accountMenuRef} id="account-menu" className="account-menu" aria-label="Account">
-      <div className="account-menu-identity">
+      <div className="account-menu-heading"><div className="account-menu-identity">
         <strong>{driveUser?.displayName || profile.name}</strong>
         <small>{offline ? 'Offline test copy' : driveUser?.emailAddress || 'Your plan is not connected to Google Drive yet.'}</small>
-      </div>
+      </div><button type="button" className="account-menu-close" aria-label="Close account menu" onClick={closeAccount}>×</button></div>
       <button type="button" className="account-menu-theme" onClick={() => closeMenuThen(onToggleTheme)} aria-pressed={theme === 'dark'}>
         <span className="material-symbols-rounded" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
         <span>{theme === 'dark' ? 'Use light mode' : 'Use dark mode'}</span>

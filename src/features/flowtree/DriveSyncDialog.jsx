@@ -20,9 +20,8 @@ export default function DriveSyncDialog({ isExample = false, status, user, error
   const needsRestoreChoice = restoreCandidates.length > 1
   const setupSaving = needsPlanChoice && status === 'saving'
   const restoreLoading = needsRestoreChoice && status === 'restoring'
-  const choiceBusy = setupSaving || restoreLoading
-  return <dialog ref={ref} className="modal" aria-labelledby="drive-dialog-title" onCancel={event => { event.preventDefault(); if (!choiceBusy) onClose() }}>
-    <button type="button" className="close" aria-label="Close" disabled={choiceBusy} onClick={onClose}>×</button>
+  return <dialog ref={ref} className="modal" aria-labelledby="drive-dialog-title" onCancel={event => { event.preventDefault(); onClose() }}>
+    <button type="button" className="close" aria-label="Close" onClick={onClose}>×</button>
     <h2 id="drive-dialog-title">{needsRestoreChoice ? 'Choose a FlowTree plan' : needsPlanChoice ? 'Set up Google Drive' : 'Account'}</h2>
     {needsRestoreChoice ? <>
       <p>Multiple valid FlowTree plans were found in your gpt folder. Choose one to restore; they are listed newest first and no file will be changed by this selection.</p>

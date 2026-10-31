@@ -80,6 +80,11 @@
 .drive-sync-status { position: fixed; z-index: 12; top: 18px; right: 18px; display: inline-flex; min-height: 32px; align-items: center; gap: 6px; padding: 7px 8px 7px 10px; border: 1px solid #cde5d5; border-radius: 9px; background: #f3fbf6; color: #2f7650; box-shadow: 0 6px 18px #34466d12; font-size: 11px; animation: drive-sync-enter 180ms ease-out both; }.drive-sync-status .material-symbols-rounded { font-size: 16px; }.drive-sync-status button { display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 0; border-radius: 5px; background: transparent; color: currentColor; font-size: 16px; line-height: 1; }.drive-sync-status button:hover, .drive-sync-status button:focus-visible { background: #2f76501a; }.drive-sync-status.is-saving { border-color: #d6ddec; background: #f5f7ff; color: #5269ad; }.drive-sync-status.is-error { border-color: #efd0d3; background: #fff7f7; color: #a34048; }
 @keyframes drive-sync-enter { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 .account-menu button { min-height: 34px; padding: 7px 9px; border: 1px solid #dbe1eb; border-radius: 8px; background: #f9fafc; color: #46556c; font-size: 11px; text-align: left; }
+.account-menu-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.account-menu-heading .account-menu-identity { min-width: 0; padding: 0; border: 0; }
+.account-menu .account-menu-close { display: grid; flex-shrink: 0; place-items: center; min-width: 32px; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--text); font-size: 22px; }
+.drive-sync-status .notice-content { display: flex; align-items: center; gap: 6px; }
+.drive-sync-status .notice-content > span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .account-menu button:hover, .account-menu button:focus-visible { border-color: #aebbd0; background: #f0f4fb; color: #304e98; }
 .account-menu .account-menu-theme { display: flex; align-items: center; gap: 8px; }
 .account-menu-theme .material-symbols-rounded { font-size: 17px; }
@@ -898,6 +903,10 @@ button.income-source-card { cursor: pointer; }
     max-height: calc(100dvh - var(--mobile-nav-clearance) - var(--mobile-safe-top) - 16px);
   }
   .change-notice { bottom: var(--mobile-nav-clearance); }
+  .account-menu .account-menu-close { min-width: 44px; min-height: 44px; }
+  .change-notice .notice-dismiss, .mobile-more-heading button { min-width: 44px; min-height: 44px; }
+  .annual-target-row { grid-template-columns: minmax(0, 1fr); }
+  .drive-sync-status { top: calc(64px + var(--mobile-safe-top)); left: calc(16px + var(--mobile-safe-left)); right: calc(16px + var(--mobile-safe-right)); max-width: none; white-space: normal; overflow: visible; }
 }
 @supports ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
   @media (max-width: 760px) {

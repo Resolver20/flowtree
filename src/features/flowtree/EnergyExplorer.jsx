@@ -19,34 +19,9 @@ import { useSectionScroll } from '../../hooks/useSectionScroll'
 import { useCanvasControls } from './useCanvasControls'
 import CanvasControls from './CanvasControls'
 import './EnergyExplorer.css'
+import DriveSyncStatus from './DriveSyncStatus'
 
 const MOBILE_BREAKPOINT = 760
-
-function DriveSyncStatus({ status }) {
-  const [showSaved, setShowSaved] = useState(false)
-  const previousStatus = useRef(status)
-
-  useEffect(() => {
-    const saveCompleted = status === 'saved' && previousStatus.current !== 'saved'
-    previousStatus.current = status
-    if (!saveCompleted) return undefined
-    setShowSaved(true)
-    const timer = window.setTimeout(() => setShowSaved(false), 2400)
-    return () => window.clearTimeout(timer)
-  }, [status])
-
-  if (!['saving', 'error'].includes(status) && !(status === 'saved' && showSaved)) return null
-  const content = status === 'saving'
-    ? ['sync', 'Saving to Google Drive…']
-    : status === 'saved'
-      ? ['cloud_done', 'Saved to Google Drive']
-      : ['cloud_off', 'Google Drive save needs attention']
-  return <div className={`drive-sync-status is-${status}`} role="status">
-    <span className="material-symbols-rounded" aria-hidden="true">{content[0]}</span>
-    <span>{content[1]}</span>
-    {status === 'saved' && <button type="button" onClick={() => setShowSaved(false)} aria-label="Dismiss Google Drive saved notification">×</button>}
-  </div>
-}
 
 function EmptyTreeState({ sinking, onReturnHome }) {
   return <div className="empty-tree-state">
@@ -301,7 +276,7 @@ export default function EnergyExplorer({ isExample = false, theme, onToggleTheme
       onUndo={onUndo}
       onRedo={onRedo}
     />
-    <DriveSyncStatus status={driveStatus} />
+    <DriveSyncStatus key={driveStatus} status={driveStatus} onDismiss={() => setShowDriveSaved(false)} />
     {view === 'loans' ? <LoansView loans={loans} focusedLoanId={focusedNodeId} onSaveLoan={onSaveLoan} onDeleteLoan={onDeleteLoan} /> : view === 'goals' ? <GoalsView goals={goals} focusedGoalId={focusedNodeId} onSaveGoal={onSaveGoal} /> : view === 'recurring' ? <RecurringPaymentsView plan={{ tree, incomeSources, buffer, monthlyHistory }} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${view === 'sinking' ? ' is-sinking' : ''}${canvasControls.locked ? ' is-pinned' : ''}${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
       {showMobileHomeOutlook && <MobileHomeOutlook profile={profile} driveUser={driveUser} income={income} buffer={buffer} planned={planned} />}
       {view === 'sinking' && <SinkingFundsSummary tree={sinkingTree} isExample={isExample} />}

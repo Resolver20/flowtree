@@ -1,0 +1,55 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Notification and popup close regression</title><pre id="result">Running…</pre><iframe title="Notifications" style="border:0" src="/tests/browser/dismiss-notices.fixture.html"></iframe><script type="module">
+const frame=document.querySelector('iframe');let checks=0;const errors=[];
+const check=(ok,msg)=>{checks++;if(!ok)errors.push(msg)};
+const wait=()=>new Promise(resolve=>{const c=new MessageChannel();c.port1.onmessage=()=>{c.port1.close();c.port2.close();resolve()};c.port2.postMessage(null)});
+await new Promise(resolve=>frame.onload=resolve);
+let sequence=0;
+for(const [width,height] of [[320,740],[390,844],[568,320],[760,800],[768,1024],[1366,768],[1920,1080]]){
+ frame.style.width=`${width}px`;frame.style.height=`${height}px`;
+ for(const dark of [false,true])for(const safe of width<=760?[false,true]:[false]){
+ const cases=[['drive','saving'],['drive','saved'],['drive','error'],['pwa','offline'],['pwa','update'],['toast',''],['account',''],['install',''],['loan-delete',''],['ledger-delete',''],['discard',''],...['profile','incomeOverview','monthlyPlanOverview','manageIncomeSource','incomeSource','buffer','manage','node','loan','add','editJson','importJson','sinkingFunds','driveSync','driveRevisions','drive-saving','drive-restoring'].map(status=>['dialog',status])];
+ if(width<=760)cases.push(['more','']);
+ for(const [kind,status]of cases){
+  const options={kind,status,dark,safe,testKey:++sequence},label=`${width}/${kind}/${status}/${dark}/${safe}`;
+  frame.contentWindow.renderCase(options);await wait();const doc=frame.contentDocument;
+  if(kind==='account')doc.querySelector(width<=760?'.mobile-account-trigger':'.sidebar-profile').click();
+  if(kind==='more')doc.querySelector('[aria-controls="mobile-more-menu"]').click();
+  if(kind==='loan-delete'||kind==='ledger-delete'){doc.querySelector('.loan-portfolio-list button').click();await wait();doc.querySelector('.delete-link').click()}
+  if(kind==='discard'){doc.querySelector('.make-unsaved').click();await wait();doc.querySelector('.request-discard').click()}
+  await wait();
+  const panel=doc.querySelector('dialog[open],.account-menu,.mobile-more-menu,.drive-sync-status,.pwa-status,.change-notice');
+  check(!!panel,`${label}: panel opens`);if(!panel)continue;
+  const close=panel.querySelector('button.notice-dismiss,button.close,button.account-menu-close,button[aria-label="Close more options"]');
+  check(!!close&&!close.disabled&&close.getAttribute('aria-label'),`${label}: enabled named cross`);if(!close)continue;
+  const r=close.getBoundingClientRect(),p=panel.getBoundingClientRect();
+  check(r.left>=p.left&&r.right<=p.right&&r.top>=p.top&&r.bottom<=p.bottom,`${label}: cross fits panel`);
+  check(r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=height,`${label}: cross fits screen`);
+  if(width<=760)check(r.width>=44&&r.height>=44,`${label}: phone touch target`);
+  check(panel.scrollWidth<=panel.clientWidth+1,`${label}: no horizontal overflow`);
+  if(kind==='loan-delete'||kind==='ledger-delete'||kind==='discard'){
+   doc.querySelector(kind==='discard'?'.request-discard':'.delete-link').click();await wait();
+   check(panel.isConnected&&doc.querySelector('#mutations').textContent==='0',`${label}: duplicate request does not replace or accept the pending confirmation`);
+  }
+  close.focus();check(doc.activeElement===close,`${label}: keyboard focusable`);close.click();await wait();
+  check(!panel.isConnected,`${label}: cross dismisses panel`);
+  check(doc.querySelector('#mutations').textContent==='0',`${label}: closing performs no save/delete`);
+  if(kind==='loan-delete'||kind==='ledger-delete'||kind==='discard'){
+   if(kind==='discard')check(doc.querySelector('#unsaved').textContent==='true',`${label}: cross preserves unsaved changes`);
+   doc.querySelector(kind==='discard'?'.request-discard':'.delete-link').click();await wait();
+   doc.querySelector('dialog').dispatchEvent(new frame.contentWindow.Event('cancel',{cancelable:true}));await wait();
+   check(!doc.querySelector('dialog')&&doc.querySelector('#mutations').textContent==='0',`${label}: Escape cancellation performs no action`);
+   doc.querySelector(kind==='discard'?'.request-discard':'.delete-link').click();await wait();
+   doc.querySelector('dialog .dialog-actions .danger-button').click();await wait();
+   for(let i=0;i<100&&doc.querySelector('#mutations').textContent!=='1';i++)await wait();
+   check(doc.querySelector('#mutations').textContent==='1',`${label}: explicit confirmation performs action exactly once`);
+  }
+  if(kind==='account')check(doc.activeElement===doc.querySelector(width<=760?'.mobile-account-trigger':'.sidebar-profile'),`${label}: returns focus to account trigger`);
+  if(kind==='drive'||kind==='pwa'){
+   frame.contentWindow.renderCase(options);await wait();check(!doc.querySelector('.drive-sync-status,.pwa-status'),`${label}: same notification stays dismissed`);
+   frame.contentWindow.renderCase({...options,status:kind==='drive'?(status==='saving'?'error':'saving'):(status==='offline'?'update':'offline')});await wait();check(!!doc.querySelector('.drive-sync-status,.pwa-status'),`${label}: next notification is shown`);
+  }
+ }
+ }
+}
+document.body.dataset.result=errors.length?'fail':'pass';document.querySelector('#result').textContent=`${errors.length?'FAIL':'PASS'} (${checks} checks, ${errors.length} failures)\n${errors.join('\n')}`;
+</script></html>

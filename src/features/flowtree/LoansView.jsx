@@ -3,6 +3,8 @@ import { NODE_STATUSES, normalizeNodeStatus, monthlyAllocation } from '../../dom
 import { loanProjection } from '../../domain/loan'
 import { formatMoney } from '../../lib/money'
 import { shouldShowLoanPreview } from './loanPreview'
+import { useConfirmation } from '../../hooks/useConfirmation'
+import ConfirmationDialog from './ConfirmationDialog'
 
 function formatDuration(months) {
   const years = Math.floor(months / 12)
@@ -114,6 +116,7 @@ function LoanPortfolioOverview({ loans, onSelect }) {
 }
 
 export default function LoansView({ loans, focusedLoanId, onSaveLoan, onDeleteLoan }) {
+  const confirmation = useConfirmation()
   const [selectedId, setSelectedId] = useState(focusedLoanId || null)
   const [editingId, setEditingId] = useState(null)
   const [adding, setAdding] = useState(false)
@@ -130,8 +133,8 @@ export default function LoansView({ loans, focusedLoanId, onSaveLoan, onDeleteLo
     setAdding(false)
   }
 
-  function deleteLoan() {
-    if (!selected || !window.confirm(`Delete ${selected.name}? This removes its repayment details and monthly contribution from Home.`)) return
+  async function deleteLoan() {
+    if (!selected || !await confirmation.confirm({ title: `Delete ${selected.name}?`, message: 'This removes its repayment details and monthly contribution from Home.', confirmLabel: 'Delete loan' })) return
     onDeleteLoan(selected.id)
     setSelectedId(null)
     setScheduleLoanId(null)
@@ -148,6 +151,7 @@ export default function LoansView({ loans, focusedLoanId, onSaveLoan, onDeleteLo
   }
 
   return <section className="loans-view" aria-label="Loans" onClick={handleOutsideClick}>
+    {confirmation.request && <ConfirmationDialog confirmation={confirmation} />}
     <header className="loans-header"><div><span className="eyebrow">DEBT COMMITMENTS</span><h1>Loans</h1><p>Review your total loan commitments, then open a loan when you want its full overview or repayment schedule.</p></div><button type="button" className="loan-add" onClick={() => { setAdding(true); setEditingId(null); setSelectedId(null); setScheduleLoanId(null) }}><span className="material-symbols-rounded" aria-hidden="true">add</span>Add loan</button></header>
     {!loans.length && !adding && <div className="loans-empty"><span className="material-symbols-rounded" aria-hidden="true">account_balance</span><strong>No loans in Debt Commitments</strong><p>Add a loan to create a payoff schedule and keep its monthly payment in your plan.</p><button type="button" onClick={() => setAdding(true)}>Add your first loan</button></div>}
     {adding && <LoanEditor onSave={saveLoan} onCancel={() => setAdding(false)} />}

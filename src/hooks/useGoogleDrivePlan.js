@@ -1,4 +1,5 @@
 import { rememberGoogleAccount, forgetGoogleAccount, googleReconnectOptions } from '../domain/devicePreferences'
+import { useConfirmation } from './useConfirmation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { parseFlowImport, serializeFlowData } from '../domain/flowDataTransfer'
 import { organizeSubscriptions } from '../domain/flowTree'
@@ -35,6 +36,7 @@ function clearDriveSession() {
 
 // Owns the Drive connection and explicit save/recovery actions. Plan edits never upload.
 export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveOfflinePlan, plan, replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify }) {
+  const discardConfirmation = useConfirmation()
   const { profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree } = plan
   const serializedPlan = useMemo(() => serializeFlowData({ profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree }), [profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree])
   const [savedContents, setSavedContents] = useState(() => serializedPlan)
@@ -60,7 +62,7 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
   }
 
   function allowDiscard() {
-    return !hasUnsavedChanges || window.confirm('You have unsaved changes. Download a JSON backup or save to Google Drive first. Continue without saving?')
+    return !hasUnsavedChanges || discardConfirmation.confirm({ title: 'Continue without saving?', message: 'You have unsaved changes. Download a JSON backup or save to Google Drive first.', confirmLabel: 'Continue without saving' })
   }
   const [drive, setDrive] = useState(() => {
     if (offline) return { status: 'offline', user: null, error: '', accessToken: '', folderId: '', fileId: '' }
@@ -122,7 +124,7 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
 
   async function connectDrive({ prompt } = {}) {
     if (offline) return
-    if (!allowDiscard()) return
+    if (hasUnsavedChanges && !await allowDiscard()) return
     if (startupState === 'error' && drive.retryRestore && readDriveSession()) {
       hasAttemptedDriveRestore.current = false
       setStartupState('loading')
@@ -212,7 +214,7 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
   }, [drive.accessToken, drive.folderId, drive.fileId, drive.user])
 
   async function disconnectDrive() {
-    if (!allowDiscard() || savingRef.current) return
+    if (savingRef.current || !await allowDiscard()) return
     await revokeGoogleDriveAccess(drive.accessToken)
     clearDriveSession()
     forgetGoogleAccount(window)
@@ -281,9 +283,9 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
     }
   }
 
-  function restoreDriveRevision(revisionId) {
+  async function restoreDriveRevision(revisionId) {
     const revision = (dialog?.revisions || []).find(item => item.id === revisionId)
-    if (!revision?.restoredPlan || !allowDiscard()) return
+    if (!revision?.restoredPlan || !await allowDiscard()) return
     replaceData({ ...revision.restoredPlan, tree: organizeSubscriptions(revision.restoredPlan.tree) })
     setPath([])
     setDialog(null)
@@ -322,5 +324,5 @@ export function useGoogleDrivePlan({ offline = false, isExample = false, onSaveO
     }
   }
 
-  return { startupState, hasUnsavedChanges, downloadBackup, drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured: Boolean(googleClientId) }
+  return { discardConfirmation, startupState, hasUnsavedChanges, downloadBackup, drive, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured: Boolean(googleClientId) }
 }
