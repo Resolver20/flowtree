@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Monthly outlook regression tests</title>
+<style>body{font:14px system-ui;margin:24px}li{margin:6px 0}.pass{color:#17613d}.fail{color:#a12626}#fixtures{position:absolute;left:-10000px;top:0}iframe{display:block;border:0}</style></head>
+<body><h1>Monthly outlook containment</h1><p id="status" role="status">Running browser regression checks…</p><ol id="results"></ol><div id="fixtures"></div>
+<script type="module">
+const widths = [760, 761, 768, 900, 918, 984, 1024, 1366, 1920]
+const amounts = [[34083, 28917], [1234567890, 1234567890], [1234567890, -1234567890]]
+const cases = widths.flatMap(width => amounts.map(([planned, remaining]) => ({ width, planned, remaining, theme:'light' })))
+cases.push({width:918, planned:1234567890, remaining:-1234567890, theme:'dark'})
+const pending = new Map()
+const failures = []
+let completed = 0
+window.addEventListener('message', event => {
+  if (event.origin !== location.origin || event.data?.type !== 'monthly-outlook-result') return
+  const entry = pending.get(event.data.id)
+  if (!entry || entry.frame.contentWindow !== event.source) return
+  pending.delete(event.data.id)
+  completed++
+  const errors = event.data.errors
+  const row = document.createElement('li')
+  row.className = errors.length ? 'fail' : 'pass'
+  row.textContent = `${errors.length ? 'FAIL' : 'PASS'} ${entry.label}${errors.length ? ': ' + errors.join('; ') : ''}`
+  document.getElementById('results').append(row)
+  if (errors.length) failures.push(entry.label)
+  if (completed === cases.length) {
+    document.getElementById('status').textContent = `${completed - failures.length}/${cases.length} passed; ${failures.length} failed`
+    document.body.dataset.result = failures.length ? 'fail' : 'pass'
+  }
+})
+cases.forEach((item, index) => {
+  const id = String(index)
+  const frame = document.createElement('iframe')
+  frame.width = item.width
+  frame.height = 768
+  frame.title = `${item.width}px ${item.theme} remaining ${item.remaining}`
+  frame.src = `./monthly-outlook.fixture.html?${new URLSearchParams({ ...item, case:id })}`
+  pending.set(id, {frame, label:frame.title})
+  document.getElementById('fixtures').append(frame)
+})
+setTimeout(() => {
+  if (!pending.size) return
+  document.getElementById('status').textContent = `FAIL: ${pending.size} browser checks did not finish within 15 seconds`
+  document.body.dataset.result = 'fail'
+}, 15000)
+</script></body></html>

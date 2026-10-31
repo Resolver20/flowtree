@@ -1,11 +1,13 @@
 import { goalCardPreview } from './goalCardPreview'
+import { monthlyPlanShare } from '../../domain/monthlyPlanShare'
+import MonthlyPlanShare from './MonthlyPlanShare'
 import InactiveMarker from './InactiveMarker'
 import { formatMoney } from '../../lib/money'
 import { annualTargetProgress } from '../../domain/flowTree'
 import { goalSavingsPlan } from '../../domain/goalSavingsPlan'
 import { colorForNode, iconForNode } from './nodePresentation'
 
-export default function TreeNodeCard({ entry, isExpanded, isSelected, isCategory, worldWidth, worldHeight, onNavigate, onInspect }) {
+export default function TreeNodeCard({ entry, tree, monthlyIncome, isExpanded, isSelected, isCategory, worldWidth, worldHeight, onNavigate, onInspect }) {
   const { item, funding, path, point } = entry
   const hasChildren = Boolean(item.children?.length)
   const complete = funding.target > 0 && funding.ratio >= 1
@@ -14,11 +16,12 @@ export default function TreeNodeCard({ entry, isExpanded, isSelected, isCategory
   const color = colorForNode(item)
   const isLifeGoal = path.includes('goals') && item.id !== 'goals'
   const { monthlyAmount, inactive } = goalCardPreview(item, isLifeGoal, funding.target)
+  const share = monthlyPlanShare({ amount: funding.target, income: monthlyIncome, tree, path })
   const progressText = annualProgress
     ? `${formatMoney(annualProgress.saved)} ${isLifeGoal ? 'planned accumulated of' : 'expected saved of'} ${formatMoney(annualProgress.target)} ${isLifeGoal ? 'goal target' : 'annual target'}`
     : `${formatMoney(funding.allocated)} funded of ${formatMoney(funding.target)} monthly target`
 
-  const targetText = `${progressText}${isLifeGoal ? `, ${formatMoney(goalSavingsPlan(item).remaining)} still to save, ${formatMoney(monthlyAmount)} per month estimate` : ''}${inactive ? ', Inactive — excluded from monthly allocation' : ''}`
+  const targetText = `${progressText}, ${share.label} of monthly income${isLifeGoal ? `, ${formatMoney(goalSavingsPlan(item).remaining)} still to save, ${formatMoney(monthlyAmount)} per month estimate` : ''}${inactive ? ', Inactive — excluded from monthly allocation' : ''}`
 
   const cardContent = <>
     <span className="amount-icon material-symbols-rounded" style={{ color }} aria-hidden="true">{iconForNode(item)}</span>
@@ -26,6 +29,7 @@ export default function TreeNodeCard({ entry, isExpanded, isSelected, isCategory
       ? <><span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span><span className="target-meta">{formatMoney(annualProgress.saved)} / {formatMoney(annualProgress.target)} · {Math.round(annualProgress.ratio * 100)}%</span></>
       : <span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span>}
     </span>
+    <MonthlyPlanShare label={share.label} />
     <InactiveMarker inactive={inactive} />
     {annualProgress && <span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${annualProgress.ratio * 100}%` }} /></span>}
     {hasChildren && !isExpanded && <span className="branch-cue material-symbols-rounded" aria-hidden="true">chevron_right</span>}

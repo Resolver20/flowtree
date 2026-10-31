@@ -1,5 +1,7 @@
 import { goalCardPreview } from './goalCardPreview'
 import InactiveMarker from './InactiveMarker'
+import MonthlyPlanShare from './MonthlyPlanShare'
+import { monthlyPlanShare } from '../../domain/monthlyPlanShare'
 import { annualTargetProgress } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import { colorForNode, iconForNode } from './nodePresentation'
@@ -23,7 +25,7 @@ function MobileIncomeSummary({ income }) {
   </div>
 }
 
-function MobileNode({ entry, selectedPath, expandAll, collapsedPaths, onNavigate, onInspect }) {
+function MobileNode({ entry, tree, monthlyIncome, selectedPath, expandAll, collapsedPaths, onNavigate, onInspect }) {
   const { item, path } = entry
   const funding = entry.funding || EMPTY_FUNDING
   const hasChildren = Boolean(item.children?.length)
@@ -33,6 +35,7 @@ function MobileNode({ entry, selectedPath, expandAll, collapsedPaths, onNavigate
   const color = colorForNode(item)
   const isGoal = path.includes('goals') && item.id !== 'goals'
   const { monthlyAmount, inactive } = goalCardPreview(item, isGoal, funding.target)
+  const share = monthlyPlanShare({ amount: funding.target, income: monthlyIncome, tree, path })
   const targetText = annualProgress
     ? `${formatMoney(monthlyAmount)} per month, ${Math.round(annualProgress.ratio * 100)} percent of the ${isGoal ? 'goal' : 'annual'} target saved`
     : `${formatMoney(monthlyAmount)} per month`
@@ -40,6 +43,7 @@ function MobileNode({ entry, selectedPath, expandAll, collapsedPaths, onNavigate
   const content = <>
     <span className="mobile-tree-icon material-symbols-rounded" style={{ color }} aria-hidden="true">{iconForNode(item)}</span>
     <span className="mobile-tree-copy"><strong>{item.name}</strong><small>{targetText}</small></span>
+    <MonthlyPlanShare label={share.label} />
     <InactiveMarker inactive={inactive} />
     {hasChildren && <span className="mobile-tree-cue material-symbols-rounded" aria-hidden="true">{showChildren ? 'expand_less' : 'expand_more'}</span>}
   </>
@@ -47,8 +51,8 @@ function MobileNode({ entry, selectedPath, expandAll, collapsedPaths, onNavigate
   return <div className={`mobile-tree-node${isSelected ? ' is-selected' : ''}${showChildren ? ' is-expanded' : ''}`} data-tree-path={path.join('/')}>
     <div className="mobile-tree-node-row">
       {hasChildren
-        ? <button type="button" className="mobile-tree-card" onClick={() => onNavigate(path)} aria-expanded={showChildren} aria-label={`${showChildren ? 'Collapse' : 'Show'} ${item.name}, ${targetText}${inactive ? ', Inactive — excluded from monthly allocation' : ''}`}>{content}</button>
-        : <div className="mobile-tree-card" aria-label={`${item.name}, ${targetText}${inactive ? ', Inactive — excluded from monthly allocation' : ''}`}>{content}</div>}
+        ? <button type="button" className="mobile-tree-card" onClick={() => onNavigate(path)} aria-expanded={showChildren} aria-label={`${showChildren ? 'Collapse' : 'Show'} ${item.name}, ${targetText}, ${share.label} of monthly income${inactive ? ', Inactive — excluded from monthly allocation' : ''}`}>{content}</button>
+        : <div className="mobile-tree-card" aria-label={`${item.name}, ${targetText}, ${share.label} of monthly income${inactive ? ', Inactive — excluded from monthly allocation' : ''}`}>{content}</div>}
       <button type="button" className="mobile-tree-manage" onClick={() => onInspect(item.id)} aria-label={`View and manage ${item.name}`}>
         <span className="material-symbols-rounded" aria-hidden="true">info</span>
       </button>
@@ -57,6 +61,8 @@ function MobileNode({ entry, selectedPath, expandAll, collapsedPaths, onNavigate
       {item.children.map((child, index) => <MobileNode
         key={child.id}
         entry={{ item: child, path: [...path, child.id], funding: funding.children?.[index] || EMPTY_FUNDING }}
+        tree={tree}
+        monthlyIncome={monthlyIncome}
         selectedPath={selectedPath}
         expandAll={expandAll}
         collapsedPaths={collapsedPaths}
@@ -67,19 +73,20 @@ function MobileNode({ entry, selectedPath, expandAll, collapsedPaths, onNavigate
   </div>
 }
 
-export default function MobileTree({ monthlyOutcome, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
+export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
   const availableLabel = 'remaining this month'
-  return <div className="mobile-tree" aria-label="Monthly plan flow">
-    <section className="mobile-tree-income" aria-label="Income">
+  const rootLabel = sinking ? 'Sinking funds' : 'Monthly plan'
+  return <div className="mobile-tree" aria-label={`${rootLabel} flow`}>
+    {!sinking && <><section className="mobile-tree-income" aria-label="Income">
       <span className="mobile-tree-step">Income</span>
       {incomeSources.length
         ? incomeSources.map(source => <MobileIncomeSource key={source.id} source={source} onManage={onManageIncomeSource} />)
         : <MobileIncomeSummary income={income} />}
     </section>
-    <div className="mobile-tree-connector" aria-hidden="true" />
-    <section className="mobile-plan-root" aria-label="Monthly plan">
+    <div className="mobile-tree-connector" aria-hidden="true" /></>}
+    <section className="mobile-plan-root" aria-label={rootLabel}>
       <span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
-      <span><strong>Monthly plan</strong><small>{formatMoney(monthlyOutcome)} {availableLabel}</small></span>
+      <span><strong>{rootLabel}</strong>{!sinking && <small>{formatMoney(monthlyOutcome)} {availableLabel}</small>}</span>
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" />
     <section className="mobile-tree-categories" aria-label="Plan categories">
@@ -87,6 +94,8 @@ export default function MobileTree({ monthlyOutcome, allocations, expandAll, col
       {tree.map((item, index) => <MobileNode
         key={item.id}
         entry={{ item, path: [item.id], funding: allocations[index] || EMPTY_FUNDING }}
+        tree={tree}
+        monthlyIncome={monthlyIncome}
         selectedPath={path}
         expandAll={expandAll}
         collapsedPaths={collapsedPaths}

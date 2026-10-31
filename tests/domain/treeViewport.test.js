@@ -28,14 +28,16 @@ test('scrollable tablet and short desktop layouts keep the first node inside the
 })
 
 test('sinking funds reserves space only for its visible starting node and open columns', () => {
-  const layout = createTreeLayout({ tree, path: [], allocations: [], expandAll: false, showPerson: false, incomeSourceCount: 1 })
-  assert.equal(layout.incomeSourcePoints[0].x - 98, 32)
+  const layout = createTreeLayout({ tree, path: [], allocations: [], expandAll: false, showPerson: false, incomeSourceCount: 0 })
+  assert.deepEqual(layout.incomeSourcePoints, [])
+  assert.equal(layout.sourcePoint.x - 130, 32)
   const last = layout.positionedColumns.at(-1).items[0]
   assert.equal(layout.worldWidth - (last.point.x + 98), 32)
-  assert.equal(layout.worldWidth, 730)
-  const opened = createTreeLayout({ tree, path: ['root'], allocations: [], expandAll: false, showPerson: false, incomeSourceCount: 1 })
+  assert.equal(layout.worldWidth, 542)
+  const opened = createTreeLayout({ tree, path: ['root'], allocations: [], expandAll: false, showPerson: false, incomeSourceCount: 0 })
   assert.equal(opened.worldWidth - layout.worldWidth, 235)
-  assert.equal(opened.incomeSourcePoints[0].x, layout.incomeSourcePoints[0].x)
+  assert.equal(opened.sourcePoint.x, layout.sourcePoint.x)
+  assert.ok(layout.connectorGroups[0].d.startsWith(`M ${layout.sourcePoint.x + 40} ${layout.sourcePoint.y}`))
 })
 
 test('a plan without income sources leaves room for the monthly-plan label', () => {
@@ -45,12 +47,13 @@ test('a plan without income sources leaves room for the monthly-plan label', () 
 
 test('Home → Sinking funds → Home keeps each view sized to its visible content', () => {
   const homeOptions = { tree, path: [], allocations: [], expandAll: true, showPerson: true, incomeSourceCount: 1 }
-  const sinkingOptions = { ...homeOptions, expandAll: false, showPerson: false }
+  const sinkingOptions = { ...homeOptions, expandAll: false, showPerson: false, incomeSourceCount: 0 }
   const home = createTreeLayout(homeOptions)
   for (let visit = 0; visit < 3; visit++) {
     const sinking = createTreeLayout(sinkingOptions)
-    assert.equal(sinking.worldWidth, 730)
-    assert.equal(sinking.incomeSourcePoints[0].x - 98, 32)
+    assert.equal(sinking.worldWidth, 542)
+    assert.deepEqual(sinking.incomeSourcePoints, [])
+    assert.equal(sinking.sourcePoint.x - 130, 32)
     assert.equal(sinking.positionedColumns.length, 1)
     assert.equal(sinking.scale, 1)
     assert.deepEqual(createTreeLayout(homeOptions), home)

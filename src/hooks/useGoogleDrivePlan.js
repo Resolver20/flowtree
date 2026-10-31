@@ -6,7 +6,7 @@ import { preserveCurrentMonth } from '../domain/monthlyHistory'
 import { loadCachedRevision, loadRecoveryVersions } from '../domain/versionRecovery'
 import { driveRestoreMode, orderValidDriveRestoreCandidates } from '../domain/driveRestoreCandidates'
 import { createBlankFlowData, normalizeFlowData } from './useFlowData'
-import { connectGoogleDrive, downloadFlowtreeBackup, downloadFlowtreeRevision, findOrCreateFolder, getDriveUser, listFlowtreeRestoreCandidates, listFlowtreeRevisions, revokeGoogleDriveAccess, uploadFlowtreeBackup } from '../lib/googleDriveSync'
+import { connectGoogleDrive, isGoogleDriveSignInReady, prepareGoogleDriveSignIn, downloadFlowtreeBackup, downloadFlowtreeRevision, findOrCreateFolder, getDriveUser, listFlowtreeRestoreCandidates, listFlowtreeRevisions, revokeGoogleDriveAccess, uploadFlowtreeBackup } from '../lib/googleDriveSync'
 
 const DRIVE_FOLDER_NAME = 'gpt'
 const DRIVE_FILE_NAME = 'flowtree-plan.json'
@@ -32,8 +32,8 @@ function clearDriveSession() {
 
 // Owns the Drive connection and explicit save/recovery actions. Plan edits never upload.
 export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify }) {
-  const { profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree } = plan
-  const serializedPlan = useMemo(() => serializeFlowData({ profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree }), [profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree])
+  const { profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree } = plan
+  const serializedPlan = useMemo(() => serializeFlowData({ profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree }), [profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree])
   const [savedContents, setSavedContents] = useState(() => serializedPlan)
   const hasUnsavedChanges = serializedPlan !== savedContents
   const savingRef = useRef(false)
@@ -64,13 +64,24 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
     const session = readDriveSession()
     return session
       ? { ...session, status: 'restoring', user: session.user || null, error: '' }
-      : { status: googleClientId ? 'idle' : 'unavailable', user: null, error: '', accessToken: '', folderId: '', fileId: '' }
+      : { status: googleClientId ? 'preparing' : 'unavailable', user: null, error: '', accessToken: '', folderId: '', fileId: '' }
   })
   const [startupState, setStartupState] = useState(() => drive.status === 'restoring' ? 'loading' : 'ready')
   const replaceDataRef = useRef(replaceData)
   const hasAttemptedDriveRestore = useRef(false)
 
   useEffect(() => { replaceDataRef.current = replaceData }, [replaceData])
+
+  useEffect(() => {
+    if (offline || !googleClientId) return undefined
+    let active = true
+    prepareGoogleDriveSignIn().then(() => {
+      if (active) setDrive(previous => previous.status === 'preparing' ? { ...previous, status: 'idle' } : previous)
+    }).catch(error => {
+      if (active) setDrive(previous => previous.status === 'preparing' ? { ...previous, status: 'error', error: error.message } : previous)
+    })
+    return () => { active = false }
+  }, [offline])
 
   async function restoreDriveCandidate({ accessToken, user, candidate, candidates = [] }) {
     try {
@@ -112,6 +123,16 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
       setDrive(previous => ({ ...previous, status: 'unavailable', error: 'Google Drive sign-in has not been configured for this deployment.' }))
       return
     }
+    if (!isGoogleDriveSignInReady()) {
+      setDrive(previous => ({ ...previous, status: 'preparing', error: '' }))
+      try {
+        await prepareGoogleDriveSignIn()
+        setDrive(previous => ({ ...previous, status: 'idle', error: '' }))
+      } catch (error) {
+        setDrive(previous => ({ ...previous, status: 'error', error: error.message }))
+      }
+      return
+    }
     if (startupState !== 'ready') setStartupState('loading')
     setDrive(previous => ({ ...previous, status: 'connecting', error: '' }))
     try {
@@ -138,6 +159,7 @@ export function useGoogleDrivePlan({ offline = false, onSaveOfflinePlan, plan, r
     } catch (error) {
       setDrive(previous => ({ ...previous, status: 'error', error: error.message || 'Google Drive sign-in failed.' }))
       if (startupState !== 'ready') setStartupState('error')
+      else setDialog({ type: 'driveSync' })
     }
   }
 

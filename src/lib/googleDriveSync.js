@@ -1,4 +1,4 @@
-import { orderDriveRestoreCandidates } from '../domain/driveRestoreCandidates'
+import { orderDriveRestoreCandidates } from '../domain/driveRestoreCandidates.js'
 
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3'
@@ -8,22 +8,31 @@ export const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
 
 let identityScript
 
-function loadIdentityScript() {
-  if (window.google?.accounts?.oauth2) return Promise.resolve()
+export function isGoogleDriveSignInReady() {
+  return Boolean(window.google?.accounts?.oauth2)
+}
+
+export function prepareGoogleDriveSignIn() {
+  if (isGoogleDriveSignInReady()) return Promise.resolve()
   if (identityScript) return identityScript
   identityScript = new Promise((resolve, reject) => {
     const script = document.createElement('script')
-    const timeout = window.setTimeout(() => reject(new Error('Google Identity Services did not load. Check that your browser allows Google sign-in, then try again.')), GIS_LOAD_TIMEOUT_MS)
+    const fail = message => {
+      window.clearTimeout(timeout)
+      script.remove()
+      reject(new Error(message))
+    }
+    const timeout = window.setTimeout(() => fail('Google sign-in did not load. Check your connection or browser blockers, then try again.'), GIS_LOAD_TIMEOUT_MS)
     script.src = GIS_SCRIPT
     script.async = true
     script.defer = true
     script.onload = () => {
       window.clearTimeout(timeout)
-      resolve()
+      if (isGoogleDriveSignInReady()) resolve()
+      else fail('Google sign-in could not initialize. Please try again.')
     }
     script.onerror = () => {
-      window.clearTimeout(timeout)
-      reject(new Error('Google Identity Services could not be loaded.'))
+      fail('Google sign-in could not be loaded. Check your connection or browser blockers, then try again.')
     }
     document.head.append(script)
   })
@@ -59,7 +68,9 @@ async function driveRequest(path, accessToken, { baseUrl = DRIVE_API, ...options
 
 export async function connectGoogleDrive({ clientId, scope = GOOGLE_DRIVE_SCOPE, prompt = 'consent', loginHint } = {}) {
   if (!clientId) throw new Error('Set VITE_GOOGLE_CLIENT_ID before connecting Google Drive.')
-  await loadIdentityScript()
+  // Opening the popup must stay in the button's user gesture. Prepare the SDK
+  // before enabling sign-in rather than awaiting a network load here.
+  if (!isGoogleDriveSignInReady()) throw new Error('Google sign-in is still loading. Please try again shortly.')
   return new Promise((resolve, reject) => {
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: clientId,
@@ -69,7 +80,14 @@ export async function connectGoogleDrive({ clientId, scope = GOOGLE_DRIVE_SCOPE,
         if (response.error) reject(new Error(response.error_description || 'Google Drive authorization was not completed.'))
         else resolve(response.access_token)
       },
-      error_callback: error => reject(new Error(error?.type || 'Google Drive authorization was not completed.')),
+      error_callback: error => {
+        const message = error?.type === 'popup_failed_to_open'
+          ? 'Your browser blocked the Google sign-in window. Allow popups for FlowTree, then try again.'
+          : error?.type === 'popup_closed'
+            ? 'Google sign-in was closed before it finished. Please try again.'
+            : 'Google sign-in could not open. Please try again.'
+        reject(new Error(message))
+      },
     })
     tokenClient.requestAccessToken({ prompt })
   })

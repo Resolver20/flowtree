@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Monthly outlook fixture</title></head>
+<body><div id="root"></div><script type="module">
+import React, { useEffect } from 'react'
+import { createRoot } from 'react-dom/client'
+import TreeStatus from '/src/features/flowtree/TreeStatus.jsx'
+import '/src/index.css'
+import '/src/features/flowtree/EnergyExplorer.css'
+
+const query = new URLSearchParams(location.search)
+function Fixture() {
+  useEffect(() => {
+    document.fonts.ready.then(() => requestAnimationFrame(() => {
+      const panel = document.querySelector('.energy-status')
+      const errors = []
+      const check = (condition, message) => { if (!condition) errors.push(message) }
+      if (innerWidth <= 760) {
+        check(getComputedStyle(panel).display === 'none', 'Desktop outlook should remain hidden on mobile')
+      } else {
+        const bounds = panel.getBoundingClientRect()
+        check(bounds.left >= 0 && bounds.right <= innerWidth, 'Panel extends beyond viewport')
+        check(panel.scrollWidth <= panel.clientWidth + 1, 'Panel has horizontal overflow')
+        for (const element of panel.querySelectorAll('.summary-heading, .plan-totals, .plan-totals > div, .plan-totals strong')) {
+          const rect = element.getBoundingClientRect()
+          check(rect.left >= bounds.left + 1 && rect.right <= bounds.right - 1, `${element.className || element.tagName} extends beyond panel border`)
+          check(element.scrollWidth <= element.clientWidth + 1, `${element.className || element.tagName} clips its text`)
+          check(rect.bottom <= bounds.bottom - 1, 'Summary content extends below panel')
+        }
+        const cards = [...panel.querySelectorAll('.plan-totals > div')].map(element => element.getBoundingClientRect())
+        check(cards[0].right < cards[1].left, 'Deductions overlaps Remaining')
+        check(panel.querySelector('.plan-totals > div:last-child span').textContent === 'Remaining', 'Signed remaining label changed')
+      }
+      parent.postMessage({ type: 'monthly-outlook-result', id: query.get('case'), errors }, location.origin)
+    }))
+  }, [])
+  return React.createElement('main', { className: `app-shell energy-mode energy-home theme-${query.get('theme') || 'light'}` }, React.createElement(TreeStatus, {
+    planned: Number(query.get('planned')), monthlyOutcome: Number(query.get('remaining')), demo: false, mobileHome: false,
+  }))
+}
+createRoot(document.getElementById('root')).render(React.createElement(Fixture))
+</script></body></html>

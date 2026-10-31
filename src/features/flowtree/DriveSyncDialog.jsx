@@ -42,7 +42,7 @@ export default function DriveSyncDialog({ status, user, error, configured, setup
       <p>Sign in with Google to open your FlowTree plan from your Google Drive.</p>
       {error && <span role="alert" className="field-error">{error}</span>}
       {!configured && <span role="alert" className="field-error">Google Drive sign-in still needs its public OAuth client configuration.</span>}
-      <div className="dialog-actions"><button type="button" onClick={onClose}>Not now</button><button type="button" className="modal-submit" disabled={!configured || status === 'connecting'} onClick={onConnect}>{status === 'connecting' ? 'Connecting…' : 'Sign in with Google'}</button></div>
+      <div className="dialog-actions"><button type="button" onClick={onClose}>Not now</button><button type="button" className="modal-submit" disabled={!configured || ['preparing', 'connecting'].includes(status)} onClick={onConnect}>{['preparing', 'connecting'].includes(status) ? status === 'preparing' ? 'Preparing Google sign-in…' : 'Connecting…' : 'Sign in with Google'}</button></div>
     </>}
   </dialog>
 }

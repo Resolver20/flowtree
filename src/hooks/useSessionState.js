@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 
 // Session preferences describe the current view; they never contain plan data.
-export function useSessionState(key, initialValue, isValid) {
+export function useSessionState(key, initialValue, isValid, restoredValue) {
   const [value, setValue] = useState(() => {
+    if (restoredValue && isValid(restoredValue)) return restoredValue
     try {
       const saved = JSON.parse(window.sessionStorage.getItem(key))
       if (isValid(saved)) return saved

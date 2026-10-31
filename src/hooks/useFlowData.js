@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { normalizeCanvasPins, updateCanvasPin } from '../domain/canvasPins'
 import { preserveCurrentMonth, recordPayment } from '../domain/monthlyHistory'
 import { addChild, createTreeFromBuckets, normalizeTreeStatuses, organizeSubscriptions, removeNode, updateNode } from '../domain/flowTree'
 
@@ -32,6 +33,7 @@ export function normalizeFlowData(data) {
   const legacyIncome = Math.max(0, Number(data?.income) || 0)
   return {
     ...data,
+    canvasPins: normalizeCanvasPins(data?.canvasPins),
     profile: data?.profile || { name: 'You', visible: true },
     incomeSources: Array.isArray(data?.incomeSources)
       ? data.incomeSources.map(normalizeIncomeSource)
@@ -66,6 +68,10 @@ export function useFlowData(initialData) {
 
   function changeProfile(changes) {
     record(previous => ({ ...previous, profile: { ...previous.profile, ...changes } }))
+  }
+
+  function changeCanvasPin(view, pin) {
+    record(previous => ({ ...previous, canvasPins: updateCanvasPin(previous.canvasPins, view, pin) }))
   }
 
   function changeIncomeSource(id, changes) {
@@ -161,5 +167,5 @@ export function useFlowData(initialData) {
     })
   }
 
-  return { ...data, captureCurrentMonth, markPaymentPaid, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData, undo, redo, canUndo: history.past.length > 0, canRedo: history.future.length > 0 }
+  return { ...data, captureCurrentMonth, markPaymentPaid, setBuffer, changeProfile, changeCanvasPin, changeIncomeSource, createIncomeSource, deleteIncomeSource, restoreIncomeSources, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, restoreTree, replaceData, undo, redo, canUndo: history.past.length > 0, canRedo: history.future.length > 0 }
 }

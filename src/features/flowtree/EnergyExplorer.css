@@ -91,6 +91,16 @@
 .energy-breadcrumbs button:hover { color: var(--text); }
 .energy-viewport { position: absolute; inset: 108px 0 28px 224px; display: grid; place-items: center; overflow: hidden; overscroll-behavior: contain; }
 .energy-viewport:not(.is-measured) { visibility: hidden; }
+.energy-viewport { touch-action: pan-x pan-y; }
+.tree-zoom-layer { min-width: 0; }
+.canvas-controls { position: absolute; z-index: 5; bottom: 32px; left: 240px; display: flex; align-items: center; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.canvas-controls button { display: grid; place-items: center; min-width: 36px; height: 36px; padding: 4px; border: 0; border-radius: 5px; background: transparent; color: var(--text); font-size: 18px; cursor: pointer; }
+.canvas-controls .canvas-zoom-reset { min-width: 48px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.canvas-controls button:hover, .canvas-controls button[aria-pressed="true"] { background: var(--accent-soft, #eef1ff); color: var(--accent); }
+.canvas-controls button:disabled { opacity: .4; cursor: default; }
+.canvas-controls .material-symbols-rounded { font-size: 20px; }
+@media (min-width: 761px) and (max-width: 900px) { .canvas-controls:not(.is-sinking) { bottom: 200px; } }
+@media (max-width: 760px) { .canvas-controls { bottom: calc(78px + env(safe-area-inset-bottom)); left: auto; right: 16px; } }
 .empty-tree-state { display: grid; max-width: 340px; justify-items: center; gap: 9px; padding: 26px; border: 1px solid #dce3ed; border-radius: 13px; background: #fff; color: #536178; text-align: center; box-shadow: 0 8px 22px #34466d0d; }.empty-tree-state .material-symbols-rounded { color: #7184ad; font-size: 28px; }.empty-tree-state strong { color: #344158; font-size: 14px; }.empty-tree-state p { margin: 0; color: #748095; font-size: 11px; line-height: 1.5; }.empty-tree-state button { min-height: 34px; margin-top: 4px; padding: 7px 10px; border: 1px solid #cfd8e8; border-radius: 8px; background: #f5f7fc; color: #435b94; font-size: 11px; }
 .energy-world-frame { position: relative; min-width: 0; }
 .energy-world { position: absolute; top: 0; left: 0; min-width: 0; transform-origin: left top; }
@@ -136,18 +146,23 @@
 .card-info .material-symbols-rounded { font-size: 11px; }
 .target-meta { overflow: hidden; color: #7b8492; font-size: 9px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
 .amount-node:has(.node-progress) .amount-copy { gap: 2px; }
+.monthly-plan-share { position: absolute; top: 6px; right: 10px; color: var(--muted, #737b88); font-size: 9px; font-weight: 400; line-height: 1.1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.amount-copy > strong { padding-right: 34px; }
+.mobile-tree-card { position: relative; }
+.mobile-tree-copy > strong { padding-right: 38px; }
 .node-progress { position: absolute; right: 12px; bottom: 4px; left: 50px; height: 2px; overflow: hidden; border-radius: 2px; background: #e5e8ee; }
 .node-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--progress-color); }
-.energy-status { position: absolute; z-index: 3; top: 14px; right: 28px; display: grid; grid-template-columns: minmax(132px, .72fr) minmax(280px, 1.28fr); align-items: center; gap: 10px 14px; width: min(520px, calc(100% - 500px)); padding: 10px 12px 8px; border: 1px solid #d9e0ef; border-radius: 13px; background: linear-gradient(125deg, #ffffff 0%, #f5f7ff 58%, #f1f8f5 100%); box-shadow: 0 8px 22px #34466d12; color: #43516e; }
+.energy-status { position: absolute; z-index: 3; top: 14px; right: 28px; display: grid; grid-template-columns: minmax(0, .72fr) minmax(0, 1.28fr); align-items: center; gap: 10px 14px; width: min(520px, calc(100% - 500px)); padding: 10px 12px 8px; border: 1px solid #d9e0ef; border-radius: 13px; background: linear-gradient(125deg, #ffffff 0%, #f5f7ff 58%, #f1f8f5 100%); box-shadow: 0 8px 22px #34466d12; color: #43516e; }
 .summary-heading { display: grid; align-content: center; gap: 5px; text-align: left; }
 .summary-heading strong { color: #2f3b52; font-size: 12px; font-weight: 650; letter-spacing: -.1px; }
 .summary-heading span { color: #748096; font-size: 9px; line-height: 1.3; }
+.summary-heading, .plan-totals, .plan-totals > div { min-width: 0; }
 .plan-totals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 .plan-totals > div { display: grid; gap: 3px; padding: 7px 9px; border: 1px solid #e1e6f0; border-radius: 9px; background: #ffffffc7; text-align: left; }
 .plan-totals > div:first-child { background: #f1faf5; border-color: #d8ecdf; }
 .plan-totals > div:last-child { background: #f3f2ff; border-color: #dfddf6; }
 .plan-totals span { color: #6d788c; font-size: 9px; letter-spacing: .2px; }
-.plan-totals strong { color: #304056; font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.plan-totals strong { min-width: 0; overflow-wrap: anywhere; color: #304056; font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .plan-totals strong small { color: #6d788c; font-size: 10px; font-weight: 500; }
 .plan-totals > div:first-child strong { color: #27704c; }
 .plan-totals > div:last-child strong { color: #5b53a6; }
@@ -220,14 +235,15 @@
 .close { position: absolute; top: 8px; right: 9px; width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: #697590; font-size: 22px; line-height: 1; }
 .close:hover, .close:focus-visible { background: #f0f4ff; }
 .energy-home button:focus-visible, .energy-home summary:focus-visible, .energy-viewport:focus-visible, .modal button:focus-visible, .modal input:focus-visible, .modal select:focus-visible, .modal textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-@media (max-width: 900px) { .energy-breadcrumbs { right: 36px; } .energy-viewport { inset: 78px 0 178px 224px; } .energy-status { top: auto; right: 18px; bottom: 18px; left: 242px; width: auto; max-width: 760px; grid-template-columns: minmax(180px, .8fr) minmax(340px, 1.2fr); gap: 18px 24px; padding: 15px 18px 13px; } .summary-heading strong { font-size: 13px; } .summary-heading span { font-size: 10px; } .plan-totals > div { padding: 10px 12px; } .plan-totals strong { font-size: 17px; } .energy-status > small { font-size: 9px; } }
+@media (max-width: 900px) { .energy-breadcrumbs { right: 36px; } .energy-viewport { inset: 78px 0 178px 224px; } .energy-status { top: auto; right: 18px; bottom: 18px; left: 242px; width: auto; max-width: 760px; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 18px 24px; padding: 15px 18px 13px; } .summary-heading strong { font-size: 13px; } .summary-heading span { font-size: 10px; } .plan-totals > div { padding: 10px 12px; } .plan-totals strong { font-size: 17px; } .energy-status > small { font-size: 9px; } }
 @media (max-width: 760px) { .energy-sidebar { right: 0; bottom: auto; width: auto; min-height: 64px; flex-direction: row; align-items: center; gap: 8px; padding: 10px; border-right: 0; border-bottom: 1px solid #dfe4eb; } .sidebar-brand { flex: 0 0 auto; padding: 0 4px; } .energy-brand span { font-size: 16px; } .energy-brand .flowtree-mark { width: 30px; height: 30px; font-size: 19px; } .energy-mode-label, .sidebar-section-label, .sidebar-nav button > span:last-child, .sidebar-history, .sidebar-profile > span:last-child { display: none; } .sidebar-nav { display: flex; gap: 3px; margin: 0 0 0 auto; } .sidebar-nav button, .sidebar-profile { display: grid; width: 38px; min-height: 38px; place-items: center; margin: 0; padding: 0; } .sidebar-profile { margin: 0; } .sidebar-avatar { width: 28px; height: 28px; } .account-menu { top: 58px; right: 10px; bottom: auto; left: auto; width: min(280px, calc(100vw - 20px)); } .energy-breadcrumbs { top: 72px; right: 18px; left: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .energy-viewport { inset: 102px 0 203px; } .energy-status { right: 10px; bottom: 18px; left: 10px; grid-template-columns: 1fr; gap: 9px; padding: 11px 12px 9px; } .summary-heading { grid-template-columns: auto 1fr; align-items: baseline; gap: 10px; } .summary-heading span, .energy-status > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .plan-totals > div { padding: 8px 10px; } .plan-totals strong { font-size: 15px; } .form-grid { grid-template-columns: 1fr; } }
 
 .mobile-account-trigger, .mobile-bottom-nav, .mobile-more-menu, .mobile-more-backdrop { display: none; }
 @media (max-width: 760px) {
   .energy-sidebar { display: none; }
-  .mobile-account-trigger { position: fixed; z-index: 7; top: 8px; right: 12px; display: grid; width: 40px; height: 40px; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--accent); box-shadow: 0 3px 10px #34466d14; }
+  .mobile-account-trigger { display: grid; }
   .mobile-account-trigger .sidebar-avatar, .mobile-account-trigger .sidebar-avatar-image { width: 28px; height: 28px; }
+  .account-menu { top: auto; right: 10px; bottom: calc(74px + env(safe-area-inset-bottom)); left: auto; max-height: calc(100dvh - 134px); overflow-y: auto; overscroll-behavior: contain; }
   .drive-sync-status { top: 8px; right: 60px; max-width: calc(100vw - 116px); overflow: hidden; white-space: nowrap; }
   .drive-sync-status > span:last-child { overflow: hidden; text-overflow: ellipsis; }
   .mobile-bottom-nav { position: fixed; z-index: 20; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); min-height: calc(66px + env(safe-area-inset-bottom)); padding: 6px 4px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); box-shadow: 0 -6px 20px #34466d12; }
@@ -274,7 +290,6 @@
   .mobile-tree-cue { margin-left: auto; color: var(--muted); font-size: 21px; }
   .mobile-tree-children { display: grid; gap: 10px; margin-left: 20px; padding-left: 15px; border-left: 1px solid #c8ced8; animation: mobile-branch-in 160ms ease-out; }
   .theme-dark .mobile-bottom-nav { border-color: var(--line); background: var(--canvas); box-shadow: 0 -6px 20px #0509124d; }
-  .theme-dark .mobile-account-trigger { border-color: var(--line); background: var(--surface); color: #a9bfff; box-shadow: 0 3px 10px #0509124d; }
   .theme-dark .mobile-bottom-nav button.is-active, .theme-dark .mobile-more-actions button.is-active { border-color: #6076a8; background: #243652; color: var(--text); }
   .theme-dark .mobile-more-menu { border-color: var(--line); background: var(--surface); box-shadow: 0 14px 38px #05091273; }
   .theme-dark .mobile-more-actions button, .theme-dark .mobile-more-account button { border-color: var(--line); background: var(--surface-raised); color: var(--text); }
@@ -462,7 +477,7 @@
 }
 
 @media (max-width: 760px) and (max-height: 500px) {
-  .account-menu { top: 54px; bottom: calc(74px + env(safe-area-inset-bottom)); max-height: none; overflow-y: auto; overscroll-behavior: contain; }
+  .account-menu { top: auto; bottom: calc(74px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 134px); overflow-y: auto; overscroll-behavior: contain; }
   .energy-sidebar { min-height: 54px; padding-block: 7px; }
   .energy-brand .flowtree-mark { width: 28px; height: 28px; font-size: 17px; }
   .sidebar-nav button, .sidebar-profile { width: 36px; min-height: 36px; }
@@ -545,7 +560,7 @@
 }
 
 /* A dedicated toolbar keeps saving clear of the plan summary and page content. */
-.plan-save-controls { position: fixed; z-index: 12; inset: 0 0 auto 224px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; height: 56px; padding: 8px 24px; border-bottom: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.plan-save-controls { position: fixed; z-index: 12; inset: 0 0 auto 224px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; height: 56px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--surface); color: var(--text); }
 .plan-save-controls > span { font-size: 11px; color: var(--muted); }
 .plan-save-controls button { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--text); padding: 6px 10px; cursor: pointer; }
 .plan-save-controls button:disabled { opacity: .5; cursor: default; }
@@ -566,11 +581,11 @@
   .energy-status { top: auto; }
 }
 @media (max-width: 760px) {
-  .plan-save-controls { left: 0; justify-content: flex-end; gap: 6px; padding: 8px 64px 8px 10px; }
+  .plan-save-controls { left: 0; justify-content: flex-end; gap: 6px; padding: 8px 10px; }
   .plan-save-controls .mobile-history-action { display: grid; place-items: center; min-width: 30px; padding: 5px; }
   .plan-save-controls button { min-height: 34px; padding: 6px; }
-  .plan-save-controls .save-state { margin-right: auto; font-size: 0; }
-  .save-state .is-unsaved::before { content: ''; display: block; width: 7px; height: 7px; border-radius: 50%; background: #c58a40; }
+  .plan-save-controls .save-state { min-width: 0; margin-right: auto; font-size: 10px; line-height: 1.2; }
+  .plan-save-controls .save-state .is-unsaved { display: block; max-width: 80px; white-space: normal; }
   .plan-save-button kbd { display: none; }
   .energy-viewport { top: 68px; }
   .energy-breadcrumbs { top: 58px; }
@@ -700,4 +715,28 @@
   .sinking-saved { min-width: 120px; padding: 5px 8px; }
   .sinking-saved > strong { font-size: 15px; }
   .energy-viewport.is-sinking { top: 168px; padding-top: 8px; padding-bottom: 24px; }
+}
+
+/* Leave scrollable room below the tree for the floating canvas controls. */
+.energy-viewport, .energy-viewport.is-sinking { padding-bottom: 76px; }
+.energy-viewport { display: grid; place-items: safe center; overflow: auto; }
+@media (max-width: 760px) {
+  .energy-viewport, .energy-viewport.is-sinking { display: block; overflow-x: hidden; overflow-y: auto; padding-bottom: 24px; touch-action: auto; }
+  .tree-zoom-layer { width: 100%; max-width: 640px; margin-inline: auto; }
+}
+
+.ledger-overview { min-width: 0; }
+.ledger-overview .ledger-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ledger-overview .ledger-stat-grid strong { overflow-wrap: anywhere; }
+.ledger-overview .ledger-stat-grid small { color: var(--muted); font-size: 10px; }
+.ledger-overview .loan-portfolio-list button > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+@media (min-width: 761px) and (max-width: 900px) { .ledger-view { left: 224px; } }
+@media (max-width: 1100px) {
+  .ledger-workspace { grid-template-columns: minmax(0, 1fr); }
+  .ledger-list { display: flex; overflow: auto; padding-bottom: 3px; }
+  .ledger-list button { flex: 0 0 190px; }
+}
+@media (max-width: 680px) {
+  .ledger-overview { padding: 17px; }
+  .ledger-overview .ledger-stat-grid { grid-template-columns: minmax(0, 1fr); }
 }

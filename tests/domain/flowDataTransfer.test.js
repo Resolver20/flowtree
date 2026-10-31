@@ -24,6 +24,18 @@ test('Flowtree JSON export round-trips the supported plan fields', () => {
   assert.deepEqual(summarizeFlowData(plan), { destinations: 2, yearlyTargets: 1, incomeSources: 1 })
 })
 
+test('pinned camera views survive raw JSON and backup exports with legacy compatibility', () => {
+  const pinned = { ...plan, canvasPins: {
+    home: { zoom: 0.8, scrollLeft: 400, scrollTop: 250, path: [], collapsedPaths: ['needs'] },
+    sinking: { zoom: 1.2, scrollLeft: 150.5, scrollTop: 90, path: ['needs'], collapsedPaths: [] },
+    lastView: 'sinking',
+  } }
+  assert.deepEqual(parseFlowImport(serializeFlowData(pinned)), pinned)
+  assert.deepEqual(parseFlowImport(JSON.stringify(createFlowExport(pinned))), pinned)
+  assert.equal(parseFlowImport(serializeFlowData(plan)).canvasPins, undefined)
+  assert.throws(() => parseFlowImport(JSON.stringify({ ...pinned, canvasPins: { home: { ...pinned.canvasPins.home, scrollTop: -1 } } })), /canvasPins/)
+})
+
 test('manual raw JSON plans are accepted and normalized', () => {
   const imported = parseFlowImport(JSON.stringify({
     profile: { name: 'Me' },

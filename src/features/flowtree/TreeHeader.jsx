@@ -34,8 +34,13 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
       if (!accountControls.some(ref => ref.current?.contains(event.target))) setAccountOpen(false)
     }
     function closeOnEscape(event) {
-      if (event.key === 'Escape') setAccountOpen(false)
+      if (event.key === 'Escape') {
+        setAccountOpen(false)
+        const trigger = [mobileAccountButtonRef.current, desktopAccountButtonRef.current].find(button => button?.getClientRects().length)
+        trigger?.focus()
+      }
     }
+    accountMenuRef.current?.querySelector('button')?.focus()
     document.addEventListener('pointerdown', closeOnOutsidePress)
     document.addEventListener('keydown', closeOnEscape)
     return () => {
@@ -144,11 +149,6 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
         <span><strong>{driveUser?.displayName || profile.name}</strong><small>{offline ? 'Offline test copy' : driveUser?.emailAddress || 'Sign in to Google Drive'}</small></span>
       </button>
     </aside>
-    <button ref={mobileAccountButtonRef} type="button" className="mobile-account-trigger" onClick={() => setAccountOpen(open => !open)} aria-expanded={accountOpen} aria-controls="account-menu" aria-label={connected || offline ? 'Open account menu' : 'Sign in to Google Drive'}>
-      {driveUser?.photoLink
-        ? <img className="sidebar-avatar-image" src={driveUser.photoLink} alt="" />
-        : <span className="sidebar-avatar material-symbols-rounded" aria-hidden="true">person</span>}
-    </button>
     {accountOpen && <section ref={accountMenuRef} id="account-menu" className="account-menu" aria-label="Account">
       <div className="account-menu-identity">
         <strong>{driveUser?.displayName || profile.name}</strong>
@@ -167,7 +167,7 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
         <button type="button" onClick={() => closeMenuThen(onDisconnectDrive)}>Log out</button>
       </> : <>
         <small id={!driveConfigured ? 'drive-configuration-status' : undefined} className="account-menu-status" role={driveError ? 'alert' : undefined}>{driveError || (!driveConfigured ? 'Google Drive sign-in is unavailable until this app is configured.' : 'Sign in to Google Drive to restore your plan. Your data appears after restore.')}</small>
-        <button type="button" className="account-menu-primary" aria-describedby={!driveConfigured ? 'drive-configuration-status' : undefined} disabled={!driveConfigured || driveStatus === 'connecting'} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{driveStatus === 'connecting' ? 'Connecting…' : 'Sign in with Google'}</button>
+        <button type="button" className="account-menu-primary" aria-describedby={!driveConfigured ? 'drive-configuration-status' : undefined} disabled={!driveConfigured || ['preparing', 'connecting'].includes(driveStatus)} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{['preparing', 'connecting'].includes(driveStatus) ? driveStatus === 'preparing' ? 'Preparing Google sign-in…' : 'Connecting…' : 'Sign in with Google'}</button>
       </>}
     </section>}
     <nav className="mobile-bottom-nav" aria-label="Primary navigation">
@@ -180,8 +180,14 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
       <button type="button" className={view === 'loans' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowLoans)} aria-current={view === 'loans' ? 'page' : undefined}>
         <span className="material-symbols-rounded" aria-hidden="true">account_balance</span><span>Loans</span>
       </button>
-      <button ref={mobileMoreButtonRef} type="button" className={moreOpen ? 'is-active' : ''} onClick={() => setMoreOpen(open => !open)} aria-expanded={moreOpen} aria-controls="mobile-more-menu">
+      <button ref={mobileMoreButtonRef} type="button" className={moreOpen ? 'is-active' : ''} onClick={() => { setAccountOpen(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="mobile-more-menu">
         <span className="material-symbols-rounded" aria-hidden="true">more_horiz</span><span>More</span>
+      </button>
+      <button ref={mobileAccountButtonRef} type="button" className={`mobile-account-trigger${accountOpen ? ' is-active' : ''}`} onClick={() => { setMoreOpen(false); setAccountOpen(open => !open) }} aria-expanded={accountOpen} aria-controls="account-menu" aria-label="Open account menu">
+        {driveUser?.photoLink
+          ? <img className="sidebar-avatar-image" src={driveUser.photoLink} alt="" />
+          : <span className="sidebar-avatar material-symbols-rounded" aria-hidden="true">person</span>}
+        <span>Account</span>
       </button>
     </nav>
     {moreOpen && <><button type="button" className="mobile-more-backdrop" aria-label="Close more options" onClick={closeMore} /><section ref={mobileMoreRef} id="mobile-more-menu" className="mobile-more-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title">
@@ -199,7 +205,7 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
         <small className="mobile-drive-status" role={driveStatus === 'error' || driveError ? 'alert' : undefined}>{driveError || (connected ? driveStatus === 'saving' ? 'Saving changes to Google Drive…' : driveStatus === 'error' ? 'Google Drive save needs attention.' : 'Changes stay in this tab until you save them to Google Drive.' : '')}</small>
         {offline ? null : connected
           ? <><button type="button" disabled={driveStatus === 'saving'} onClick={() => closeMenuThen(onSaveDrivePlan)}>{driveStatus === 'saving' ? 'Saving…' : 'Save to Google Drive'}</button><button type="button" onClick={() => closeMenuThen(onRecoverDriveVersion)}>Recover earlier version</button><button type="button" onClick={() => closeMenuThen(onEditJson)}>Edit plan JSON</button><button type="button" onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>Add or switch account</button><button type="button" onClick={() => closeMenuThen(onDisconnectDrive)}>Log out</button></>
-          : <button type="button" disabled={!driveConfigured || driveStatus === 'connecting'} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{driveStatus === 'connecting' ? 'Connecting…' : 'Sign in with Google'}</button>}
+          : <button type="button" disabled={!driveConfigured || ['preparing', 'connecting'].includes(driveStatus)} onClick={() => closeMenuThen(() => onConnectDrive({ prompt: 'select_account consent' }))}>{['preparing', 'connecting'].includes(driveStatus) ? driveStatus === 'preparing' ? 'Preparing Google sign-in…' : 'Connecting…' : 'Sign in with Google'}</button>}
       </div>
     </section></>}
     {!expandAll && <nav className="energy-breadcrumbs" aria-label="Flow location">

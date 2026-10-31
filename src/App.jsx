@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { findNode, isBuiltInFlowGroup, pathToNode } from './domain/flowTree'
 import { loanProjection } from './domain/loan'
+import { pinnedNavigation } from './domain/canvasPins'
 import EnergyExplorer from './features/flowtree/EnergyExplorer'
 import { useGoogleDrivePlan } from './hooks/useGoogleDrivePlan'
 import PlanDialog from './features/flowtree/PlanDialog'
@@ -12,19 +13,24 @@ import { useFlowData } from './hooks/useFlowData'
 function App({ offlinePlan, onSaveOfflinePlan } = {}) {
   const [theme, toggleTheme] = useTheme()
   const offline = import.meta.env.DEV && Boolean(offlinePlan)
-  const { profile, incomeSources, generalLedgers, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData, undo, redo, canUndo, canRedo } = useFlowData(offline ? offlinePlan : undefined)
+  const { profile, incomeSources, generalLedgers, canvasPins, changeCanvasPin, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData: replaceFlowData, undo, redo, canUndo, canRedo } = useFlowData(offline ? offlinePlan : undefined)
   const [dialog, setDialog] = useState(null)
-  const [path, setPath] = useState([])
+  const [path, setPath] = useState(() => canvasPins?.[canvasPins.lastView]?.path || [])
   const [notice, setNotice] = useState(null)
   const [navigation, setNavigation] = useSessionState('flowtree-navigation', { view: 'home', nodeId: null },
-    value => ['home', 'sinking', 'loans', 'goals', 'recurring', 'investments', 'ledger'].includes(value?.view) && (value.nodeId === null || typeof value.nodeId === 'string'))
+    value => ['home', 'sinking', 'loans', 'goals', 'recurring', 'investments', 'ledger'].includes(value?.view) && (value.nodeId === null || typeof value.nodeId === 'string'), pinnedNavigation(canvasPins))
+  function replaceData(data, options) {
+    replaceFlowData(data, options)
+    const restoredNavigation = pinnedNavigation(data.canvasPins)
+    if (restoredNavigation) setNavigation(restoredNavigation)
+  }
   function notify(message) {
     setNotice({ message })
   }
 
   const { drive, startupState, connectDrive, disconnectDrive, saveDrivePlan, completeDriveSetup, cancelDriveSetup, chooseDriveRestoreCandidate, openDriveRevisionRecovery, restoreDriveRevision, driveConfigured, hasUnsavedChanges, downloadBackup } = useGoogleDrivePlan({
     offline, onSaveOfflinePlan,
-    plan: { profile, incomeSources, generalLedgers, monthlyHistory, buffer, tree },
+    plan: { profile, incomeSources, generalLedgers, canvasPins, monthlyHistory, buffer, tree },
     replaceData, captureCurrentMonth, dialog, setDialog, setPath, notify,
   })
 
@@ -185,7 +191,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
   const monthlyIncome = incomeSources.reduce((sum, source) => sum + Math.max(0, Number(source.amount) || 0), 0)
   const driveUser = drive.user ? { emailAddress: drive.user.emailAddress, displayName: drive.user.displayName, photoLink: drive.user.photoLink } : null
 
-  if (startupState !== 'ready') return <PlanRestoreScreen theme={theme} state={startupState} error={drive.error} onRetry={connectDrive} configured={driveConfigured} />
+  if (startupState !== 'ready') return <PlanRestoreScreen theme={theme} state={startupState} error={drive.error} onRetry={connectDrive} configured={driveConfigured && drive.status !== 'preparing'} />
 
   return <div className={`app-shell energy-mode theme-${theme}`}>
     <EnergyExplorer
@@ -204,6 +210,8 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
       profile={profile}
       incomeSources={incomeSources}
       generalLedgers={generalLedgers}
+      canvasPins={canvasPins}
+      onChangeCanvasPin={changeCanvasPin}
       salary={monthlyIncome}
       buffer={Number(buffer) || 0}
       canUndo={canUndo}
@@ -244,6 +252,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
       profile={profile}
       incomeSources={incomeSources}
       generalLedgers={generalLedgers}
+      canvasPins={canvasPins}
       buffer={buffer}
       tree={tree}
       driveStatus={drive.status}

@@ -1,4 +1,5 @@
 import { NODE_STATUSES, normalizeNodeStatus } from './flowTree.js'
+import { normalizeCanvasPins } from './canvasPins.js'
 
 export const FLOWTREE_EXPORT_FORMAT = 'flowtree-plan'
 export const FLOWTREE_EXPORT_VERSION = 1
@@ -221,10 +222,12 @@ function normalizePlan(value) {
   const counters = { nodes: 0 }
   const tree = arrayAt(source.tree, 'data.tree').map((node, index) => normalizeNode(node, `data.tree[${index}]`, nodeIds, counters, 1))
 
+  const canvasPins = normalizeCanvasPins(source.canvasPins)
   return {
     profile,
     incomeSources,
     generalLedgers: generalLedgersAt(source.generalLedgers),
+    ...(canvasPins ? { canvasPins } : {}),
     ...(source.monthlyHistory === undefined ? {} : { monthlyHistory: monthlyHistoryAt(source.monthlyHistory) }),
     buffer: amountAt(source.buffer, 'data.buffer'),
     tree,
