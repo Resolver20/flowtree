@@ -1,5 +1,10 @@
 # Flowtree tests
 
+## Compact savings summary
+
+- Edit a dated target and confirm its Savings plan shows only Expected saved, Remaining, and Required / month. The separate This month in plan row must be absent; allocation calculations must remain unchanged.
+- Browser verified in the current dated-target editor on 2026-10-31: the three displayed amounts were ₹71, ₹929, and ₹71. The existing screen stayed open. This row removal did not repeat the viewport matrix.
+
 ## Ongoing regression rule
 
 Every requested behavior change or reported bug must have matching coverage here before the work is considered complete:

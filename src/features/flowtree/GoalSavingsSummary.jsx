@@ -1,5 +1,4 @@
 import { goalSavingsPlan } from '../../domain/goalSavingsPlan'
-import { monthlyAllocation } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 
 export default function GoalSavingsSummary({ goal }) {
@@ -8,7 +7,6 @@ export default function GoalSavingsSummary({ goal }) {
     <span>Expected saved</span><strong>{formatMoney(plan.saved)}</strong>
     <span>Remaining</span><strong>{formatMoney(plan.remaining)}</strong>
     <span>Required / month</span><strong>{formatMoney(plan.monthlyRequired)}</strong>
-    <span>This month in plan</span><strong>{formatMoney(monthlyAllocation(goal))}</strong>
 
   </div>
 }
