@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatDate, formatMoney } from '../../lib/money'
-import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
+import IconPicker from './IconPicker'
 import { ledgerBudget, ledgerTotal, ledgerRemaining, ledgerOverview } from '../../domain/generalLedger'
 import { shouldShowLedgerOverview } from './ledgerOverview'
 
@@ -29,7 +29,7 @@ function LedgerEditor({ ledger, onSave, onCancel }) {
 
   return <form className="ledger-editor" onSubmit={submit}>
     <div className="ledger-editor-heading"><div><strong>{ledger ? `Edit ${ledger.name}` : 'Create a general ledger'}</strong><span>Keep expense tracking separate from your Home plan and savings targets.</span></div><button type="button" onClick={onCancel}>Cancel</button></div>
-    <div className="ledger-form-grid"><label>GL name<input autoFocus value={name} onChange={event => { setName(event.target.value); setError('') }} maxLength="100" placeholder="e.g. Home GL" /></label><label>Expense budget assigned (₹)<input value={budget} onChange={event => { setBudget(event.target.value); setError('') }} type="number" min="0" step="0.01" placeholder="e.g. 25000" /><small>This expense budget is tracked only in this ledger, not in your Home monthly plan.</small></label><label>Note (optional)<input value={note} onChange={event => setNote(event.target.value)} maxLength="300" placeholder="e.g. Household expenses" /></label><label>GL icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={`ledger-${group.label}`} label={group.label}>{group.options.map(([value, label]) => <option key={`ledger-${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label></div>
+    <div className="ledger-form-grid"><label>GL name<input autoFocus value={name} onChange={event => { setName(event.target.value); setError('') }} maxLength="100" placeholder="e.g. Home GL" /></label><label>Expense budget assigned (₹)<input value={budget} onChange={event => { setBudget(event.target.value); setError('') }} type="number" min="0" step="0.01" placeholder="e.g. 25000" /><small>This expense budget is tracked only in this ledger, not in your Home monthly plan.</small></label><label>Note (optional)<input value={note} onChange={event => setNote(event.target.value)} maxLength="300" placeholder="e.g. Household expenses" /></label><label>GL icon<IconPicker value={symbol} onChange={setSymbol} /></label></div>
     {error && <span className="field-error" role="alert">{error}</span>}
     <div className="ledger-editor-actions"><button className="ledger-save" type="submit">{ledger ? 'Save GL' : 'Create GL'}</button></div>
   </form>

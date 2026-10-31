@@ -26,7 +26,7 @@ function IncomeSourceNode({ source, point, worldWidth, worldHeight, onManage }) 
 }
 
 function FinanceNode({ sinking, monthlyOutcome, point, worldWidth, worldHeight, onInspectPlan }) {
-  const label = 'remaining this month'
+  const label = 'available this month'
   return <div className="energy-source is-finance" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
     <div className="energy-finance-root">
       <span className="energy-root-icon material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>

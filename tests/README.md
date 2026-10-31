@@ -403,7 +403,7 @@ After an approved deployment, inspect the public homepage HTML and confirm the `
 
 ### Income and monthly plan info actions
 
-Icon picker scenario: open the income, plan card, goal, investment, and general ledger editors on phone and desktop. Expect category headings in alphabetical order and icon labels alphabetically sorted within each category. Select an icon, save, and reopen; the selected icon must be retained. Existing custom icons remain available as Current icon.
+Icon picker scenario: open the income, plan card, goal, investment, and general ledger editors on phone and desktop. Expect a single alphabetical list of icon suggestions with no category headings. Type Bank or part of another label and choose a suggestion with pointer or keyboard. The preview updates; save and reopen to confirm the chosen icon is retained. Unmatched text must block form submission with a request to choose a suggestion. Existing custom icons remain available as Current icon. Check narrow phone widths for input overflow and confirm Cancel still closes without saving.
 
 On Home, verify the Income section label has a visible `Info` button and the Monthly plan card has its info button on desktop and phone layouts, including when multiple income sources are present. Activate Income and expect the total amount and Add income source; edit individual sources through their child cards; activate Monthly plan and expect its overview dialog. Open an income source editor and expect the same compact card treatment as the desktop view with only Name, Amount per month, and Icon fields; payday and start-date controls are not shown. These actions must not open a child branch or change the plan.
 
@@ -426,3 +426,15 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 - Home uses a centered circular Monthly plan hub with its title and green Deductions / purple Remaining beneath it. Tap the circle, or focus it and press Enter/Space, to open the existing information dialog. Sinking funds keeps its existing root.
 - Browser regression `/tests/browser/monthly-plan-summary.html` additionally verifies circular geometry and centering at 320, 390, 568 and 760px in both themes with positive, zero, negative and large amounts. Repeat Home branch expansion/collapse and Income collapse/reopen: the hub must stay centered, with no horizontal clipping or overlap. Check short landscape scrolling so the larger root and final category remain reachable above the dock.
 - Verified: browser regression PASS (228 checks); domain tests, lint and build passed. Full-app DOM checks at 320×740, 568×320, 768×1024, 1366×768 and 1920×1080 found no horizontal page overflow and confirmed the hub appears only at mobile widths. At 390×844, visually checked the circle/summary, activated its Info dialog with Enter, toggled a category and switched Home → Sinking → Home. Installed-device testing, short-landscape end-of-scroll and the full long-label/new-node connector matrix were not repeated.
+
+### Monthly plan Available label — 2026-10-31
+
+- The current label is Available (replacing Remaining in earlier checklist entries) across the mobile Monthly plan hub, mobile outlook, desktop root and monthly outlook footer. Deductions stays green; Available stays purple and keeps its sign, including negative values. Calculations are unchanged.
+- Repeatable scenario: view Home on phone and desktop using positive, zero and negative available amounts. Expect Available everywhere in the monthly summary, exact amounts, and no Over-planned relabeling. `/tests/browser/monthly-plan-summary.html` asserts the Available label with signed values in both themes at 320, 390, 568 and 760px.
+
+### Income child Info placement — 2026-10-31
+
+- Salary and other Income children use a separate Info button outside the card, matching category/destination rows. The source card contains only its icon, name and monthly amount. Income's own expand/collapse and Info actions retain their existing behavior.
+- Repeatable scenario: add two income sources, verify the Info circles are to the right of their card borders, and activate the second source's Info using Enter. Expect that source's details; opening it must not collapse Income. Check the 320px portrait and 568px landscape layouts for clipping.
+- Browser regression `/tests/browser/monthly-plan-summary.html` checks outside placement, containment within the Income column, and correct source selection at 320, 390, 568 and 760px.
+- Verified: browser regression PASS (248 checks); domain tests, lint and build passed. In the full app at 390×844, keyboard activation of Salary's outside Info button opened Salary details and returned focus on close. The broader desktop/connector/new-node matrix was not repeated for this source-row-only change.

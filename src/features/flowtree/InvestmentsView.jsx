@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NODE_STATUSES, normalizeNodeStatus, monthlyAllocation } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
-import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
+import IconPicker from './IconPicker'
 
 function InvestmentEditor({ investment, onSave, onCancel }) {
   const [name, setName] = useState(investment?.name || 'New investment')
@@ -34,7 +34,7 @@ function InvestmentEditor({ investment, onSave, onCancel }) {
       <label>Investment type<input value={type} onChange={event => setType(event.target.value)} maxLength="64" placeholder="Mutual fund, PF, equity…" /></label>
       <label>Monthly contribution (₹)<input value={amount} onChange={event => setAmount(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Current value (₹)<input value={currentValue} onChange={event => setCurrentValue(event.target.value)} type="number" min="0" step="0.01" /></label>
-      <label>Investment icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={`investment-${group.label}`} label={group.label}>{group.options.map(([value, label]) => <option key={`investment-${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label>
+      <label>Investment icon<IconPicker value={symbol} onChange={setSymbol} /></label>
       <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(item => <option key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</option>)}</select></label>
     </div>
     <div className="goal-preview investment-preview"><span>Monthly amount reflected in Home</span><strong>{formatMoney(monthlyAllocation({ amount, status }))}</strong><span>Recorded current value</span><strong>{formatMoney(Math.max(0, Number(currentValue) || 0))}</strong><small>This helps you track the plan; it is not a live market value or an account balance.</small></div>

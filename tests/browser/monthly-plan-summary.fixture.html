@@ -7,7 +7,7 @@ import '/src/index.css'; import '/src/features/flowtree/EnergyExplorer.css';
 const root = createRoot(document.querySelector('#root'));
 window.renderCase = ({deductions,remaining,sinking,dark,incomeSources=[]}) => root.render(React.createElement('div',{className: dark ? 'theme-dark' : 'theme-light'},React.createElement(MobileTree,{
 monthlyDeductions:deductions,monthlyOutcome:remaining,sinking,income:60000,monthlyIncome:60000,
-incomeSources,tree:[],allocations:[],path:[],collapsedPaths:new Set(),onInspectPlan:()=>{},onInspectIncome:()=>{},onManageIncomeSource:()=>{}
+incomeSources,tree:[],allocations:[],path:[],collapsedPaths:new Set(),onInspectPlan:()=>{},onInspectIncome:()=>{},onManageIncomeSource:id=>{document.body.dataset.managedSourceId=id}
 })));
 window.renderIncomeOverview = incomeSources => root.render(React.createElement(PlanDialog,{
 dialog:{type:'incomeOverview'},incomeSources,onClose:()=>{},onRequestAddIncomeSource:()=>{document.body.dataset.addRequested='yes'}

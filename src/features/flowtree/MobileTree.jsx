@@ -10,10 +10,12 @@ import { colorForNode, iconForNode } from './nodePresentation'
 const EMPTY_FUNDING = { allocated: 0, target: 0, ratio: 0 }
 
 function MobileIncomeSource({ source, onManage }) {
-  return <div className="mobile-income-source">
+  return <div className="mobile-tree-node-row mobile-income-child">
+    <div className="mobile-income-source">
     <span className="material-symbols-rounded" aria-hidden="true">{source.icon || 'payments'}</span>
     <span><strong>{source.name}</strong><small>{formatMoney(source.amount)} /mo</small></span>
-    <button type="button" onClick={() => onManage(source.id)} aria-label={`View and manage ${source.name}`}>
+    </div>
+    <button type="button" className="mobile-tree-manage" onClick={() => onManage(source.id)} aria-label={`View and manage ${source.name}`}>
       <span className="material-symbols-rounded" aria-hidden="true">info</span>
     </button>
   </div>
@@ -104,7 +106,7 @@ export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutc
       </div>
       <div className="mobile-plan-summary" aria-label="Monthly plan summary">
         <small className="is-deductions">Deductions <span>{formatMoney(monthlyDeductions)}</span></small>
-        <small className="is-remaining">Remaining <span>{formatMoney(monthlyOutcome)}</span></small>
+        <small className="is-remaining">Available <span>{formatMoney(monthlyOutcome)}</span></small>
       </div></>}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" />

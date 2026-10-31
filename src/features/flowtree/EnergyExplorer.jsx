@@ -80,11 +80,11 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
   const health = !hasIncome
     ? 'Set your monthly income to start planning this month.'
     : available < 0
-      ? `Remaining after deductions and safety buffer: ${formatMoney(available)}.`
+      ? `Available after deductions and safety buffer: ${formatMoney(available)}.`
       : planned === 0
         ? 'No monthly targets are planned yet.'
         : `${Math.round(planned / income * 100)}% of this month’s income is planned after your safety buffer.`
-  const availableLabel = 'Remaining'
+  const availableLabel = 'Available'
   const availableIcon = 'account_balance_wallet'
 
   return <header className="mobile-home-outlook">

@@ -1,6 +1,6 @@
 // One Material Symbols family, grouped around the financial-planning areas used
 // throughout Flowtree. Labels stay concrete so the native picker is easy to scan.
-export const FINANCE_ICON_GROUPS = [
+const iconGroups = [
   { label: 'Cash and banking', options: [
     ['account_balance_wallet', 'Wallet'], ['account_balance', 'Bank'], ['payments', 'Cash'],
     ['savings', 'Savings'], ['currency_rupee', 'Rupees'], ['paid', 'Income'],
@@ -64,4 +64,9 @@ export const FINANCE_ICON_GROUPS = [
   ] },
 ]
 
-export const FINANCE_ICON_VALUES = new Set(FINANCE_ICON_GROUPS.flatMap(group => group.options.map(([value]) => value)))
+export const FINANCE_ICON_OPTIONS = iconGroups.flatMap(group => group.options)
+  .sort((a, b) => a[1].localeCompare(b[1], 'en', { sensitivity: 'base' }))
+
+export function findFinanceIcon(label) {
+  return FINANCE_ICON_OPTIONS.find(([, name]) => name.toLowerCase() === label.trim().toLowerCase())?.[0]
+}

@@ -4,7 +4,7 @@ import InactiveMarker from './InactiveMarker'
 import { useMemo, useState } from 'react'
 import { annualTargetProgress, monthlyAllocation, requiredMonthlyAmount, NODE_STATUSES, normalizeNodeStatus } from '../../domain/flowTree'
 import { formatDate, formatMoney } from '../../lib/money'
-import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
+import IconPicker from './IconPicker'
 import { goalTargetDate } from '../../domain/goalDates'
 
 function dateValue(date) {
@@ -46,7 +46,7 @@ function GoalEditor({ goal, onSave, onCancel }) {
     <div className="goal-form-grid">
       <label>Goal name<input value={name} onChange={event => setName(event.target.value)} maxLength="100" /></label>
       <label>Target amount (₹)<input value={amount} onChange={event => setAmount(event.target.value)} type="number" min="0" step="0.01" /></label>
-      <label>Goal icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={`goal-${group.label}`} label={group.label}>{group.options.map(([value, label]) => <option key={`goal-${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label>
+      <label>Goal icon<IconPicker value={symbol} onChange={setSymbol} /></label>
       <CardStartSetup mode={startMode} onModeChange={mode => { setStartMode(mode); if (mode === 'fresh') { setStartDate(todayDate()); setSavedAmount(0) } setError('') }} startDate={startDate} onStartDateChange={date => { setStartDate(date); setError('') }} />
       {period === 'year' && <><label>Target date<input type="date" value={dueDate} onChange={event => { setDueDate(event.target.value); setError('') }} required /></label><label>Already accumulated (₹)<input value={savedAmount} onChange={event => setSavedAmount(event.target.value)} type="number" min="0" step="0.01" /></label></>}
       <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(item => <option key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</option>)}</select></label>

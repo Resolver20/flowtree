@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { pathToNode, annualTargetProgress, countBranch, findNode, isBuiltInFlowGroup, isGoalDestination, monthlyAllocation, requiredMonthlyAmount, monthlyTotal, NODE_STATUSES, normalizeNodeStatus, totalChildren } from '../../domain/flowTree'
 import { formatDate, formatMoney } from '../../lib/money'
 import { colorForNode, iconForNode } from './nodePresentation'
-import { FINANCE_ICON_GROUPS, FINANCE_ICON_VALUES } from './financeIcons'
+import IconPicker from './IconPicker'
 import DriveSyncDialog from './DriveSyncDialog'
 import { parseFlowImport, serializeFlowData } from '../../domain/flowDataTransfer'
 import { loanProjection } from '../../domain/loan'
@@ -139,7 +139,7 @@ function IncomeSourceDialog({ source, onClose, onSave }) {
       {error && <span role="alert" className="field-error">{error}</span>}
       <div className="form-grid">
         <label>Amount per month (₹)<input name="amount" type="number" min="0" step="0.01" defaultValue={source?.amount ?? ''} required /></label>
-        <label>Icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={group.label} label={group.label}>{group.options.map(([value, label]) => <option key={`income-${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label>
+        <label>Icon<IconPicker value={symbol} onChange={setSymbol} /></label>
       </div>
       <div className="dialog-actions"><button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">{source ? 'Save changes' : 'Add income source'}</button></div>
     </form>
@@ -405,7 +405,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
         <GoalSavingsSummary goal={previewNode} />
       </>}
       <div className="form-grid">
-        <label>Icon<span className="icon-select"><span aria-hidden="true" className="material-symbols-rounded">{symbol}</span><select value={symbol} onChange={event => setSymbol(event.target.value)}>{!FINANCE_ICON_VALUES.has(symbol) && <option value={symbol}>Current icon</option>}{FINANCE_ICON_GROUPS.map(group => <optgroup key={group.label} label={group.label}>{group.options.map(([value, label]) => <option key={`${group.label}-${value}`} value={value}>{label}</option>)}</optgroup>)}</select></span></label>
+        <label>Icon<IconPicker value={symbol} onChange={setSymbol} /></label>
         <label>Status<select name="status" value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(status => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></label>
       </div>
       <small>Inactive items pause the entire branch’s allocation. Dates stay editable; activate the item when you want to include it in the plan.</small>
