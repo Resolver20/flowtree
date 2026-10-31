@@ -11,9 +11,9 @@ function worker(base = '/flowtree/', options = {}) {
   let fetched = 0
   const requests = []
   const self = { location: { origin:'https://example.com' }, clients:{ claim:async () => {} }, addEventListener:(event, callback) => { handlers[event] = callback } }
-  const cache = { put:async (key, response) => stored.set(key, response), match:async key => stored.get(key)?.clone() }
+  const cache = { put:async (key, response) => stored.set(key, response), match:async key => { const original = stored.get(key); if (!original) return undefined; const copy = original.clone(); if (original.redirected) Object.defineProperty(copy, 'redirected', { value: true }); return copy } }
   const cacheNames = [`flowtree-shell-${encodeURIComponent(base)}-old`, 'flowtree-shell-%2Fother%2F-old', 'unrelated-cache']
-  vm.runInNewContext(serviceWorkerSource({ base, assets:[`${base}index.html`,`${base}assets/app.js`], version:'new' }), { self, URL, Request: class extends Request { constructor(input, init) { super(typeof input === 'string' ? new URL(input, self.location.origin) : input, init) } }, Response, caches:{ open:async () => cache, keys:async () => cacheNames, delete:async key => deleted.push(key) }, fetch:async request => { fetched++; requests.push(request); if (options.offline) throw new Error('offline'); return new Response(request.url.endsWith('index.html') ? (options.html ?? `<script src="${base}assets/app.js"></script>`) : 'bundle', { status:options.status ?? 200 }) } })
+  vm.runInNewContext(serviceWorkerSource({ base, assets:[`${base}index.html`,`${base}assets/app.js`], version:'new' }), { self, URL, Request: class extends Request { constructor(input, init) { super(typeof input === 'string' ? new URL(input, self.location.origin) : input, init) } }, Response, caches:{ open:async () => cache, keys:async () => cacheNames, delete:async key => deleted.push(key) }, fetch:async request => { fetched++; requests.push(request); if (options.offline) throw new Error('offline'); const response = new Response(request.url.endsWith('index.html') ? (options.html ?? `<script src="${base}assets/app.js"></script>`) : 'bundle', { status:options.status ?? 200, headers: { 'Content-Security-Policy': "frame-ancestors 'self'" } }); if (options.redirectedShell && request.url.endsWith('index.html')) Object.defineProperty(response, 'redirected', { value: true }); return response } })
   const request = (path, options = {}) => {
     let response
     handlers.fetch({ request:{ url:new URL(path, self.location.origin).href, method:'GET', mode:'cors', headers:new Headers(), ...options }, respondWith: promise => { response = promise } })
@@ -109,7 +109,7 @@ test('mismatched HTML or failed release does not populate a new app cache', asyn
 })
 
 test('missing cached bundle uses fresh navigation instead of broken old HTML', async () => {
-  const w = worker()
+  const w = worker('/flowtree/', { redirectedShell: true })
   let pending
   w.handlers.install({waitUntil: promise => { pending = promise }})
   await pending
@@ -118,7 +118,9 @@ test('missing cached bundle uses fresh navigation instead of broken old HTML', a
   const request = new Request('https://example.com/flowtree/index.html')
   Object.defineProperty(request, 'mode', {value:'navigate'})
   w.handlers.fetch({request, respondWith: promise => { pending = promise }})
-  assert.equal((await pending).status, 200)
+  const fresh = await pending
+  assert.equal(fresh.status, 200)
+  assert.equal(fresh.redirected, false)
   assert.equal(w.fetched(), 3)
   assert.equal(w.requests.at(-1).cache, 'reload')
   w.options.offline = true
@@ -126,4 +128,23 @@ test('missing cached bundle uses fresh navigation instead of broken old HTML', a
   const recovery = await pending
   assert.equal(recovery.status, 503)
   assert.match(await recovery.text(), /Try again/)
+})
+
+
+test('redirected index.html responses are safe for cached page navigations and OAuth return URLs', async () => {
+  const w = worker('/', { redirectedShell: true })
+  let pending
+  w.handlers.install({ waitUntil: promise => { pending = promise } })
+  await pending
+  assert.equal(w.stored.get('/index.html').redirected, false)
+  for (const path of ['/', '/?auth_error=token_rejected', '/?source=homescreen']) {
+    const response = await w.request(path, { mode: 'navigate', redirect: 'manual' })
+    assert.equal(response.redirected, false)
+    assert.equal(response.status, 200)
+    assert.equal(response.headers.get('Content-Security-Policy'), "frame-ancestors 'self'")
+    assert.match(await response.text(), /assets\/app.js/)
+  }
+  // An older cached redirect must also be repaired on read.
+  Object.defineProperty(w.stored.get('/index.html'), 'redirected', { value: true })
+  assert.equal((await w.request('/', { mode: 'navigate', redirect: 'manual' })).redirected, false)
 })

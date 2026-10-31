@@ -1,5 +1,11 @@
 # Flowtree tests
 
+## Redirected app-shell navigation
+
+Workers static assets redirect `/index.html` to `/`. Previously the PWA cached that followed-redirect Response and returned it for a browser navigation with manual redirect mode, producing `ERR_FAILED` after the first visit. `pwa.test.js` now reproduces this condition and checks non-redirected responses on cache write, legacy cache read, root reopening, Home Screen query URLs and OAuth-error return URLs, while preserving CSP headers and excluding auth/API requests.
+
+Browser-verified 2026-10-31 using the real local Workers asset server: the old build loaded once then failed on reload after `/index.html` returned 307. The corrected production build on a fresh local origin had an active controlling service worker, reloaded successfully, and displayed the Account dialog with `Reference: token_rejected` after navigating to an OAuth-error URL. Real Google login and installed iPhone verification remain separate checks. To receive the update, close old Flowtree tabs/app windows and reopen; do not delete the PWA or clear plan data. No forced reload over unsaved edits was added.
+
 ## Hosting migration
 
 `pagesMigration.test.js` checks the new-host link, HTTPS URL validation, retained Search Console tag, and that migration does not force an active service worker update over unsaved edits. Before setting the repository variable `FLOWTREE_HOST_URL`, verify live Google login on the destination. Then verify the Pages landing page at phone and desktop widths, keyboard activation of Open Flowtree, offline reopening of an old installation, and that an already-open unsaved plan is not reloaded. These live cutover scenarios remain pending until Google credentials are configured; the variable must remain unset meanwhile.
