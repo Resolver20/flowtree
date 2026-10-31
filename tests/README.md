@@ -307,3 +307,23 @@ On 2026-10-31, this regression reproduced 11 failing cases before the fix and pa
 - Editor action area now has one 16px inset, 48px button heights and a full-width separator; removed stacked margins and the painted bottom extension. Non-form dialogs retain bottom padding. Footer uses an explicit safe-area-constrained width and 16px side gutters. Mobile canvas no longer inherits the 540px desktop minimum height, which failed at 740×360.
 - Verified 36 editor/add/info/simulated-keyboard cases at 320×740, 360×800, 390×844, 430×932, 568×320, 740×360, 768×1024, 1366×768 and 1920×1080. Expanded footer regression passes all nine sizes, including simulated 34px bottom and 44px landscape side insets. The fixture's diagnostic output is hidden to avoid causing viewport widening after its checks.
 - Device acceptance still required: Safari and installed PWA, portrait/landscape, browser toolbar expansion/collapse, native keyboard, text-size changes, light/dark appearance. Check every dedicated screen, scroll to its last card, open Account/More, and confirm no side clipping or controls hidden by the home indicator. Desktop emulation does not establish physical-device acceptance.
+
+### Mobile alignment follow-up
+
+- Actual phone-emulated Home inspection found Account's label 2.125px lower than its peers because its avatar occupied a taller auto-sized grid row. Fixed icon/label tracks now align all five labels; the footer regression asserts this across six phone sizes and retains tablet/desktop hiding checks.
+- Header controls, More/Account panels and dialogs now use consistent 16px side gutters. Dialog max-width explicitly overrides the browser's default dialog cap. Verified the footer regression at all nine sizes; tests, lint and build pass. Installed iOS/PWA rendering and the reported blank startup remain unverified/unresolved by this visual change.
+
+### Exclusive mobile footer highlight
+
+- Opening More or Account temporarily removes the underlying section's visual highlight; closing the menu restores it. The underlying page retains aria-current because opening a menu does not change pages.
+- Footer browser regression verifies More is the sole active item and Home is restored after closing, across six phone sizes. Manual: repeat from Sinking and Loans, dismiss by backdrop/Escape, then select a different section; exactly one footer control should be highlighted. Browser fixture, Node tests, lint and build passed.
+
+### Mobile footer bottom breathing room
+
+- Footer sits 20px above the safe area's bottom, including an extra 20px above any reported home-indicator inset. Shared clearance moves canvas boundaries and menus with it.
+- Browser regression asserts at least 20px bottom spacing and 54px with a simulated 34px safe inset. Check portrait and short landscape on-device; native Safari/PWA safe-area reporting still needs physical verification.
+
+### Translucent footer appearance
+
+- Blur-capable browsers render the footer with 55% light/dark surface opacity and translucent active tabs. Unsupported blur and reduced-transparency preferences retain solid surfaces.
+- Manual: inspect Home and More in light/dark themes on a phone; labels must stay legible, only one footer tab is highlighted, and the raised bottom spacing remains unchanged. This is a frosted-glass treatment, not native iOS Liquid Glass rendering.

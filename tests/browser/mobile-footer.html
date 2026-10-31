@@ -16,16 +16,21 @@ try {
     const style = frame.contentWindow.getComputedStyle(nav);
     if (width > 760) { assert(style.display === 'none', `${width}: desktop dock hidden`); continue; }
     const bounds = nav.getBoundingClientRect();
-    assert(bounds.left >= 12 && bounds.right <= width - 12 && bounds.bottom <= height - 10, `${width}: dock inset from screen edges`);
+    assert(bounds.left >= 12 && bounds.right <= width - 12 && bounds.bottom <= height - 20, `${width}: dock inset from screen edges`);
     assert([...nav.querySelectorAll('button')].every(button => { const r = button.getBoundingClientRect(); return r.width >= 44 && r.height >= 44 && r.left >= bounds.left && r.right <= bounds.right; }), `${width}: five usable targets fit`);
+    const labelTops = [...nav.querySelectorAll('button > :last-child')].map(label => label.getBoundingClientRect().top);
+    assert(Math.max(...labelTops) - Math.min(...labelTops) < 1, `${width}: all five labels share a baseline`);
     assert(doc.querySelector('.energy-viewport').getBoundingClientRect().bottom <= bounds.top, `${width}: content clears dock`);
     nav.querySelector('[aria-controls="mobile-more-menu"]').click();
     await new Promise(resolve => setTimeout(resolve, 50));
     const menu = doc.querySelector('.mobile-more-menu').getBoundingClientRect();
+    assert(nav.querySelectorAll('.is-active').length === 1 && nav.querySelector('[aria-controls="mobile-more-menu"]').classList.contains('is-active'), `${width}: only More is highlighted while open`);
     assert(menu.top >= 0 && menu.bottom <= bounds.top, `${width}: More menu clears dock`);
     nav.querySelector('[aria-controls="mobile-more-menu"]').click();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    assert(nav.querySelectorAll('.is-active').length === 1 && nav.querySelector('button').classList.contains('is-active'), `${width}: Home highlight returns after closing More`);
     doc.documentElement.style.setProperty('--mobile-safe-bottom', '34px');
-    assert(nav.getBoundingClientRect().bottom <= height - 34, `${width}: home indicator clearance`);
+    assert(nav.getBoundingClientRect().bottom <= height - 54, `${width}: home indicator clearance`);
     doc.documentElement.style.removeProperty('--mobile-safe-bottom');
     if (width >= 568) {
       doc.documentElement.style.setProperty('--mobile-safe-left', '44px');

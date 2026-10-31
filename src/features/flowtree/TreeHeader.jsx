@@ -180,13 +180,13 @@ export default function TreeHeader({ hasUnsavedChanges, onDownloadBackup, breadc
       </>}
     </section>}
     <nav className="mobile-bottom-nav" aria-label="Primary navigation">
-      <button type="button" className={homeActive ? 'is-active' : ''} onClick={() => closeMenuThen(onReturnToRoot)} aria-current={homeActive ? 'page' : undefined}>
+      <button type="button" className={!moreOpen && !accountOpen && homeActive ? 'is-active' : ''} onClick={() => closeMenuThen(onReturnToRoot)} aria-current={homeActive ? 'page' : undefined}>
         <span className="material-symbols-rounded" aria-hidden="true">home</span><span>Home</span>
       </button>
-      <button type="button" className={view === 'sinking' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowSinkingFunds)} aria-current={view === 'sinking' ? 'page' : undefined}>
+      <button type="button" className={!moreOpen && !accountOpen && view === 'sinking' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowSinkingFunds)} aria-current={view === 'sinking' ? 'page' : undefined}>
         <span className="material-symbols-rounded" aria-hidden="true">savings</span><span>Sinking</span>
       </button>
-      <button type="button" className={view === 'loans' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowLoans)} aria-current={view === 'loans' ? 'page' : undefined}>
+      <button type="button" className={!moreOpen && !accountOpen && view === 'loans' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowLoans)} aria-current={view === 'loans' ? 'page' : undefined}>
         <span className="material-symbols-rounded" aria-hidden="true">account_balance</span><span>Loans</span>
       </button>
       <button ref={mobileMoreButtonRef} type="button" className={moreOpen ? 'is-active' : ''} onClick={() => { setAccountOpen(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="mobile-more-menu">
