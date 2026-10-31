@@ -219,6 +219,8 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
       onUndo={undoPlan}
       onRedo={redoPlan}
       onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })}
+      onInspectIncome={() => setDialog({ type: 'incomeOverview' })}
+      onInspectPlan={() => setDialog({ type: 'monthlyPlanOverview' })}
       onConnectDrive={connectDrive}
       onDisconnectDrive={disconnectDrive}
       onSaveDrivePlan={saveDrivePlan}

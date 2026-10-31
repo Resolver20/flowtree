@@ -400,3 +400,7 @@ Run `/tests/browser/drive-restore-retry.html` in a separate test tab (synthetic 
 ### Google branding ownership verification
 
 After an approved deployment, inspect the public homepage HTML and confirm the `google-site-verification` meta tag is present in `<head>` and matches the current Search Console challenge. Verify the exact `https://resolver20.github.io/flowtree/` URL-prefix property using the intended owner account. Google branding approval is a separate check; do not treat successful deployment or ownership verification as proof the consent screen displays the app name.
+
+### Income and monthly plan info actions
+
+On Home, verify the aggregate Income card and Monthly plan card each show an info button on desktop and phone layouts. Activate each button and expect its matching overview dialog; the action must not open a child branch or change the plan.

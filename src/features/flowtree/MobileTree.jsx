@@ -18,10 +18,11 @@ function MobileIncomeSource({ source, onManage }) {
   </div>
 }
 
-function MobileIncomeSummary({ income }) {
+function MobileIncomeSummary({ income, onInspectIncome }) {
   return <div className="mobile-income-source" aria-label={`Income, ${formatMoney(income)} per month`}>
     <span className="material-symbols-rounded" aria-hidden="true">payments</span>
     <span><strong>Income</strong><small>{formatMoney(income)} /mo</small></span>
+    <button type="button" onClick={onInspectIncome} aria-label="View income information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button>
   </div>
 }
 
@@ -73,7 +74,7 @@ function MobileNode({ entry, tree, monthlyIncome, selectedPath, expandAll, colla
   </div>
 }
 
-export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onNavigate, onInspect }) {
+export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onInspectIncome, onNavigate, onInspect, onInspectPlan }) {
   const availableLabel = 'remaining this month'
   const rootLabel = sinking ? 'Sinking funds' : 'Monthly plan'
   return <div className="mobile-tree" aria-label={`${rootLabel} flow`}>
@@ -81,12 +82,13 @@ export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutc
       <span className="mobile-tree-step">Income</span>
       {incomeSources.length
         ? incomeSources.map(source => <MobileIncomeSource key={source.id} source={source} onManage={onManageIncomeSource} />)
-        : <MobileIncomeSummary income={income} />}
+        : <MobileIncomeSummary income={income} onInspectIncome={onInspectIncome} />}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" /></>}
     <section className="mobile-plan-root" aria-label={rootLabel}>
       <span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
       <span><strong>{rootLabel}</strong>{!sinking && <small>{formatMoney(monthlyOutcome)} {availableLabel}</small>}</span>
+      {!sinking && <button type="button" className="mobile-tree-manage" onClick={onInspectPlan} aria-label="View monthly plan information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button>}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" />
     <section className="mobile-tree-categories" aria-label="Plan categories">

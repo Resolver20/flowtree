@@ -25,7 +25,7 @@ function IncomeSourceNode({ source, point, worldWidth, worldHeight, onManage }) 
   </div>
 }
 
-function FinanceNode({ sinking, monthlyOutcome, point, worldWidth, worldHeight }) {
+function FinanceNode({ sinking, monthlyOutcome, point, worldWidth, worldHeight, onInspectPlan }) {
   const label = 'remaining this month'
   return <div className="energy-source is-finance" style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
     <div className="energy-finance-root">
@@ -33,10 +33,11 @@ function FinanceNode({ sinking, monthlyOutcome, point, worldWidth, worldHeight }
     </div>
     <strong>{sinking ? 'Sinking funds' : 'Monthly plan'}</strong>
     {!sinking && <span>{formatMoney(monthlyOutcome)} <small>{label}</small></span>}
+    {!sinking && <button type="button" className="card-info" onClick={event => { event.stopPropagation(); onInspectPlan() }} aria-label="View monthly plan information" title="View monthly plan information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button>}
   </div>
 }
 
-export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mobile, path, collapsedPaths, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect }) {
+export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mobile, path, collapsedPaths, profile, driveUser, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect, onInspectPlan, onInspectIncome }) {
   if (mobile) {
     return <MobileTree
       sinking={sinking}
@@ -50,8 +51,10 @@ export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mob
       path={path}
       tree={tree}
       onManageIncomeSource={onManageIncomeSource}
+      onInspectIncome={onInspectIncome}
       onNavigate={onNavigate}
       onInspect={onInspect}
+      onInspectPlan={onInspectPlan}
     />
   }
   const rootById = new Map(tree.map(item => [item.id, item]))
@@ -99,7 +102,7 @@ export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mob
       </svg>
       <PersonNode profile={profile} driveUser={driveUser} point={layout.personPoint} worldWidth={layout.worldWidth} worldHeight={layout.height} driveSaved={driveSaved} />
       {incomeSources.map((source, index) => <IncomeSourceNode key={source.id} source={source} point={layout.incomeSourcePoints[index]} worldWidth={layout.worldWidth} worldHeight={layout.height} onManage={onManageIncomeSource} />)}
-      <FinanceNode sinking={sinking} monthlyOutcome={layout.monthlyOutcome} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} />
+        <FinanceNode sinking={sinking} monthlyOutcome={layout.monthlyOutcome} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} onInspectPlan={onInspectPlan} />
       {layout.positionedColumns.flatMap((column, columnIndex) => column.items.map(entry => <TreeNodeCard
         key={entry.path.join('/')}
         entry={entry}

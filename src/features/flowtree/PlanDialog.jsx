@@ -93,6 +93,14 @@ function ProfileManageDialog({ profile, onClose, onDelete, onRequestEdit, onRequ
   </DialogShell>
 }
 
+function InfoDialog({ title, icon, children, onClose }) {
+  return <DialogShell title={title} onClose={onClose}>
+    <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">{icon}</span><div><span>FlowTree preview</span><strong>{title}</strong></div></div>
+    <p>{children}</p>
+    <div className="dialog-actions"><button type="button" className="modal-submit" onClick={onClose}>Done</button></div>
+  </DialogShell>
+}
+
 function ProfileDialog({ profile, onClose, onSave }) {
   return <DialogShell title="Edit profile" onClose={onClose}>
     <p>This label identifies the starting point of your money flow.</p>
@@ -413,6 +421,8 @@ export default function PlanDialog({ monthlyHistory, onViewOverview, dialog, pro
   if (dialog.type === 'driveRevisions') return <DriveRevisionDialog revisions={dialog.revisions || []} loading={dialog.loading} error={dialog.error} onRetry={onRecoverDriveVersion} onClose={onClose} onRestore={onRestoreDriveRevision} />
   if (dialog.type === 'manageProfile') return <ProfileManageDialog profile={profile} onClose={onClose} onDelete={onDeleteProfile} onRequestEdit={onRequestEditProfile} onRequestAddIncome={onRequestAddIncomeSource} onRequestSinkingFunds={() => onRequestSinkingFunds()} />
   if (dialog.type === 'profile') return <ProfileDialog profile={profile} onClose={onClose} onSave={onSaveProfile} />
+  if (dialog.type === 'incomeOverview') return <InfoDialog title="Income" icon="payments" onClose={onClose}>Your active income sources add up to the monthly amount shown here. FlowTree uses this as a planning figure; it does not connect to your bank or move money.</InfoDialog>
+  if (dialog.type === 'monthlyPlanOverview') return <InfoDialog title="Monthly plan" icon="account_balance_wallet" onClose={onClose}>This is the amount left after planned monthly targets and your safety buffer. It is a plan preview, not your bank balance.</InfoDialog>
   if (dialog.type === 'manageIncomeSource') return <IncomeSourceManageDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onDelete={onDeleteIncomeSource} onRequestEdit={onRequestEditIncomeSource} />
   if (dialog.type === 'incomeSource') return <IncomeSourceDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onSave={onSaveIncomeSource} />
   if (dialog.type === 'annualTargets') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} />

@@ -105,7 +105,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
   </header>
 }
 
-export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path: unpinnedPath, onPathChange: setPath, profile, incomeSources, generalLedgers, canvasPins, onChangeCanvasPin, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
+export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path: unpinnedPath, onPathChange: setPath, profile, incomeSources, generalLedgers, canvasPins, onChangeCanvasPin, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onInspectIncome, onInspectPlan, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const sectionRef = useSectionScroll(view)
   useSectionTransition(sectionRef, view)
   const demo = false
@@ -319,8 +319,10 @@ export default function EnergyExplorer({ theme, onToggleTheme, view, focusedNode
             incomeSources={view === 'sinking' ? [] : incomeSources}
             tree={visibleTree}
             onManageIncomeSource={onManageIncomeSource}
+            onInspectIncome={onInspectIncome}
             onNavigate={navigate}
             onInspect={inspectNode}
+            onInspectPlan={onInspectPlan}
           />
         : <EmptyTreeState sinking={view === 'sinking'} onReturnHome={returnToRoot} />}</div>
     </div>

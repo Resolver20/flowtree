@@ -144,6 +144,7 @@
 .energy-destination:hover .card-info, .energy-destination:focus-within .card-info, .income-source:hover .card-info, .income-source:focus-within .card-info, .energy-person:hover .card-info { color: #6a7689; opacity: .68; }
 .card-info:hover, .card-info:focus-visible { border-color: #c8d0dc; background: #eef1f5; color: #3f4d64; opacity: 1; }
 .card-info .material-symbols-rounded { font-size: 11px; }
+.energy-source .card-info { top: 28px; left: 56px; color: #526078; opacity: .68; }
 .target-meta { overflow: hidden; color: #7b8492; font-size: 9px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
 .amount-node:has(.node-progress) .amount-copy { gap: 2px; }
 .monthly-plan-share { position: absolute; top: 6px; right: 10px; color: var(--muted, #737b88); font-size: 9px; font-weight: 400; line-height: 1.1; white-space: nowrap; font-variant-numeric: tabular-nums; }
