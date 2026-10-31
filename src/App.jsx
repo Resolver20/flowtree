@@ -18,7 +18,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
   const offline = import.meta.env.DEV && Boolean(offlinePlan)
   const [isExample, setIsExample] = useState(!offline)
   const [examplePlan] = useState(createExamplePlan)
-  const { profile, incomeSources, generalLedgers, canvasPins, changeCanvasPin, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData: replaceFlowData, undo, redo, canUndo, canRedo } = useFlowData(offline ? offlinePlan : examplePlan)
+  const { profile, incomeSources, generalLedgers, canvasPins, changeCanvasPin, monthlyHistory, captureCurrentMonth, markPaymentPaid, buffer, tree, setBuffer, changeProfile, changeIncomeSource, createIncomeSource, deleteIncomeSource, createGeneralLedger, updateGeneralLedger, deleteGeneralLedger, createLedgerEntry, deleteLedgerEntry, changeNode, changeNodes, createChild, deleteNode, replaceData: replaceFlowData } = useFlowData(offline ? offlinePlan : examplePlan)
   const [dialog, setDialog] = useState(null)
   const [path, setPath] = useState(() => canvasPins?.[canvasPins.lastView]?.path || [])
   const [notice, setNotice] = useState(null)
@@ -42,7 +42,7 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
 
   useEffect(() => {
     if (!notice) return undefined
-    const timeout = window.setTimeout(() => setNotice(null), notice.tree || notice.undo ? 5000 : 3200)
+    const timeout = window.setTimeout(() => setNotice(null), 3200)
     return () => window.clearTimeout(timeout)
   }, [notice])
 
@@ -179,21 +179,6 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
     notify('Plan JSON updated.')
   }
 
-  function undoPlan() {
-    if (!canUndo) return
-    undo()
-    setPath([])
-    setDialog(null)
-    notify('Last plan change undone. Google Drive was not changed.')
-  }
-
-  function redoPlan() {
-    redo()
-    setPath([])
-    setDialog(null)
-    notify('Plan change restored.')
-  }
-
   const monthlyIncome = incomeSources.reduce((sum, source) => sum + Math.max(0, Number(source.amount) || 0), 0)
   const driveUser = drive.user ? { emailAddress: drive.user.emailAddress, displayName: drive.user.displayName, photoLink: drive.user.photoLink } : null
 
@@ -221,10 +206,6 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
       onChangeCanvasPin={changeCanvasPin}
       salary={monthlyIncome}
       buffer={Number(buffer) || 0}
-      canUndo={canUndo}
-      canRedo={canRedo}
-      onUndo={undoPlan}
-      onRedo={redoPlan}
       onManageIncomeSource={sourceId => setDialog({ type: 'manageIncomeSource', sourceId })}
       onInspectIncome={() => setDialog({ type: 'incomeOverview' })}
       onInspectPlan={() => setDialog({ type: 'monthlyPlanOverview' })}

@@ -8,6 +8,7 @@ for(const [width,height] of [[320,740],[390,844],[430,932],[568,320],[760,800],[
  for(const name of ['Home','Sinking funds','Loans','Life goals','Recurring payments','Investments','General ledger']){
  const doc=frame.contentDocument;doc.querySelector(`.sidebar-nav [aria-label="${name}"]`).click();await wait();
  const page=doc.querySelector('.loans-view,.goals-view,.ledger-view,.recurring-view,.energy-viewport');
+ check(!doc.querySelector('[aria-label="Undo last plan change"],[aria-label="Redo plan change"],.sidebar-history,.mobile-history-action'),`${width}/${name}: Undo and Redo are absent`);
  check(!!page,`${width}/${name}: screen mounts`);
  if(!page)continue;
  if(name!=='Home'&&name!=='Sinking funds')check(page.scrollWidth<=page.clientWidth+1,`${width}/${name}: page overflows`);

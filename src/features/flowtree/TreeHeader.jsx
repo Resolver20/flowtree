@@ -4,7 +4,7 @@ import InstallDialog from './InstallDialog'
 import { useEffect, useRef, useState } from 'react'
 import { isSaveShortcut } from '../../domain/saveShortcut'
 
-export default function TreeHeader({ isExample = false, hasUnsavedChanges, onDownloadBackup, breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, canUndo, canRedo, onUndo, onRedo, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onShowSinkingFunds, onShowLoans, onShowGoals, onShowRecurringPayments, onShowInvestments, onShowGeneralLedger, onToggleTheme }) {
+export default function TreeHeader({ isExample = false, hasUnsavedChanges, onDownloadBackup, breadcrumbs, expandAll, view, profile, driveUser, driveStatus, driveError, driveConfigured, theme, onReturnToRoot, onNavigate, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onShowSinkingFunds, onShowLoans, onShowGoals, onShowRecurringPayments, onShowInvestments, onShowGeneralLedger, onToggleTheme }) {
   const { installed, install } = usePwaInstall()
   const [installHelp, setInstallHelp] = useState(false)
   async function installApp() {
@@ -113,8 +113,6 @@ export default function TreeHeader({ isExample = false, hasUnsavedChanges, onDow
     {installHelp && <InstallDialog onClose={() => setInstallHelp(false)} />}
     <div className="plan-save-controls" role="group" aria-label="Plan saving">
       {offline && <span className="offline-test-label">Offline test copy</span>}
-      <button className="mobile-history-action" type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo last plan change"><span className="material-symbols-rounded" aria-hidden="true">undo</span></button>
-      <button className="mobile-history-action" type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo plan change"><span className="material-symbols-rounded" aria-hidden="true">redo</span></button>
       <span className="save-state" role="status"><span className="mobile-section-name">{MOBILE_SECTIONS.find(section => section.id === view)?.label}<small>{MOBILE_SECTIONS.findIndex(section => section.id === view) + 1} / {MOBILE_SECTIONS.length}</small></span>{isExample && <span className="example-plan-label">Example plan · sample amounts</span>}{hasUnsavedChanges && <span className="is-unsaved" title="Changes waiting to be saved">Unsaved changes</span>}</span>
       <button type="button" onClick={onDownloadBackup} title="Download JSON backup" aria-label="Download JSON backup"><span className="material-symbols-rounded" aria-hidden="true">download</span></button>
       {isExample && <button type="button" onClick={onConnectDrive} disabled={!driveConfigured || ['preparing', 'connecting'].includes(driveStatus)}>Sign in</button>}
@@ -123,10 +121,6 @@ export default function TreeHeader({ isExample = false, hasUnsavedChanges, onDow
     <aside className="energy-sidebar" aria-label="FlowTree navigation">
       <header className="sidebar-brand">
         <button className="energy-brand" onClick={() => closeMenuThen(onReturnToRoot)} aria-label="Return to home"><span className="flowtree-mark material-symbols-rounded" aria-hidden="true">account_tree</span><span>FlowTree</span></button>
-        <div className="sidebar-history" aria-label="Plan history">
-          <button type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo last plan change" title="Undo last plan change"><span className="material-symbols-rounded" aria-hidden="true">undo</span></button>
-          <button type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo plan change" title="Redo plan change"><span className="material-symbols-rounded" aria-hidden="true">redo</span></button>
-        </div>
       </header>
       <nav className="sidebar-nav" aria-label="Plan sections">
         <span className="sidebar-section-label">PLAN</span>

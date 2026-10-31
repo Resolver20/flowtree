@@ -228,7 +228,7 @@ function ImportPlanDialog({ dialog, onClose, onImport }) {
       <div><dt>Destinations</dt><dd>{summary.destinations}</dd></div>
       <div><dt>Yearly targets</dt><dd>{summary.yearlyTargets}</dd></div>
     </dl>
-    <div className="import-warning">Export your current plan first if you may need it later. You can also undo immediately after importing, until the next plan change or reload.</div>
+    <div className="import-warning">Export your current plan first if you may need it later.</div>
     <div className="dialog-actions"><button type="button" onClick={onClose}>Cancel</button><button type="button" className="danger-button" onClick={() => onImport(dialog.data)}>Replace my plan</button></div>
   </DialogShell>
 }
@@ -263,7 +263,7 @@ function ManageDialog({ onViewOverview, isGoal, node, onClose, onDelete, onReque
   const children = node.children || []
 
   if (confirmDelete) return <DialogShell title={`Delete ${node.name}?`} onClose={onClose}>
-    <p>This removes {node.name}{countBranch(node) > 1 ? ` and ${countBranch(node) - 1} nested items` : ''} from your plan. Its monthly target is {formatMoney(monthlyTotal(node))}. You can undo this until your next change or reload.</p>
+    <p>This removes {node.name}{countBranch(node) > 1 ? ` and ${countBranch(node) - 1} nested items` : ''} from your plan. Its monthly target is {formatMoney(monthlyTotal(node))}.</p>
     <div className="dialog-actions"><button autoFocus type="button" onClick={() => setConfirmDelete(false)}>Keep item</button><button type="button" className="danger-button" onClick={() => onDelete(node.id)}>Delete {countBranch(node) > 1 ? 'branch' : 'item'}</button></div>
   </DialogShell>
 
@@ -383,7 +383,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   }
 
   if (confirmDelete) return <DialogShell title={`Delete ${node.name}?`} onClose={onClose}>
-    <p>This removes {node.name}{countBranch(node) > 1 ? ` and ${countBranch(node) - 1} nested items` : ''} from your plan. Its monthly target is {formatMoney(monthlyTotal(node))}. No money is moved. You can undo this until your next change or reload.</p>
+    <p>This removes {node.name}{countBranch(node) > 1 ? ` and ${countBranch(node) - 1} nested items` : ''} from your plan. Its monthly target is {formatMoney(monthlyTotal(node))}. No money is moved.</p>
     <div className="dialog-actions"><button autoFocus type="button" onClick={() => setConfirmDelete(false)}>Keep item</button><button type="button" className="danger-button" onClick={() => onDelete(node.id)}>Delete {countBranch(node) > 1 ? 'branch' : 'item'}</button></div>
   </DialogShell>
 

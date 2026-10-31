@@ -79,7 +79,7 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
   </header>
 }
 
-export default function EnergyExplorer({ isExample = false, theme, onToggleTheme, view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path: unpinnedPath, onPathChange: setPath, profile, incomeSources, generalLedgers, canvasPins, onChangeCanvasPin, salary, buffer, canUndo, canRedo, onUndo, onRedo, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onInspectIncome, onInspectPlan, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
+export default function EnergyExplorer({ isExample = false, theme, onToggleTheme, view, focusedNodeId, onChangeView, monthlyHistory, hasUnsavedChanges, onDownloadBackup, tree, path: unpinnedPath, onPathChange: setPath, profile, incomeSources, generalLedgers, canvasPins, onChangeCanvasPin, salary, buffer, driveUser, driveStatus, driveError, driveConfigured, onManageIncomeSource, onInspectIncome, onInspectPlan, onConnectDrive, onDisconnectDrive, onSaveDrivePlan, onEditJson, onRecoverDriveVersion, onManageNode, onSaveLoan, onDeleteLoan, onSaveGoal, onSaveInvestment, onSaveGeneralLedger, onDeleteGeneralLedger, onSaveLedgerExpense, onDeleteLedgerEntry }) {
   const sectionRef = useSectionScroll(view)
   useSectionTransition(sectionRef, view)
   const demo = false
@@ -271,10 +271,6 @@ export default function EnergyExplorer({ isExample = false, theme, onToggleTheme
       onShowRecurringPayments={showRecurringPayments}
       onShowInvestments={showInvestments}
       onShowGeneralLedger={showGeneralLedger}
-      canUndo={canUndo}
-      canRedo={canRedo}
-      onUndo={onUndo}
-      onRedo={onRedo}
     />
     <DriveSyncStatus key={driveStatus} status={driveStatus} onDismiss={() => setShowDriveSaved(false)} />
     {view === 'loans' ? <LoansView loans={loans} focusedLoanId={focusedNodeId} onSaveLoan={onSaveLoan} onDeleteLoan={onDeleteLoan} /> : view === 'goals' ? <GoalsView goals={goals} focusedGoalId={focusedNodeId} onSaveGoal={onSaveGoal} /> : view === 'recurring' ? <RecurringPaymentsView plan={{ tree, incomeSources, buffer, monthlyHistory }} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${view === 'sinking' ? ' is-sinking' : ''}${canvasControls.locked ? ' is-pinned' : ''}${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">

@@ -121,7 +121,7 @@ The interface shows **Deductions** in green and signed **Remaining** in purple, 
 
 Use **Account → Edit plan JSON** to open the current plan in Flowtree. You can edit it directly; Flowtree validates the JSON before replacing the active plan, then lets you save the validated version using **Save to Google Drive**.
 
-Import replaces the current plan. Export the current plan first when you may want to restore it later. An immediate **Undo** is available until the next plan change or page reload. Files larger than 2 MB, duplicate IDs, negative amounts, invalid dates, unknown statuses, excessive nesting, and unsupported export versions are rejected before any saved data changes.
+Import replaces the current plan. Export the current plan first when you may want to restore it later. Files larger than 2 MB, duplicate IDs, negative amounts, invalid dates, unknown statuses, excessive nesting, and unsupported export versions are rejected before any saved data changes.
 
 The Drive file is intentionally a plain plan object—there is no wrapper, metadata, or export timestamp. You can also create or edit it outside Flowtree:
 
