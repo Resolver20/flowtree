@@ -79,7 +79,7 @@ export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutc
   const rootLabel = sinking ? 'Sinking funds' : 'Monthly plan'
   return <div className="mobile-tree" aria-label={`${rootLabel} flow`}>
     {!sinking && <><section className="mobile-tree-income" aria-label="Income">
-      <span className="mobile-tree-step"><span>Income</span><button type="button" onClick={onInspectIncome} aria-label="View income information"><span className="material-symbols-rounded" aria-hidden="true">info</span></button></span>
+      <span className="mobile-tree-step"><span>Income</span><button type="button" onClick={onInspectIncome} aria-label="View income information"><span className="material-symbols-rounded" aria-hidden="true">info</span><span>Info</span></button></span>
       {incomeSources.length
         ? incomeSources.map(source => <MobileIncomeSource key={source.id} source={source} onManage={onManageIncomeSource} />)
         : <MobileIncomeSummary income={income} onInspectIncome={onInspectIncome} />}
