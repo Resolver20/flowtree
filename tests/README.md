@@ -12,7 +12,7 @@ Browser-verified 2026-10-31 using the real local Workers asset server: the old b
 
 ## Hosting migration
 
-`pagesMigration.test.js` checks the new-host link, HTTPS URL validation, retained Search Console tag, and that migration does not force an active service worker update over unsaved edits. Before setting the repository variable `FLOWTREE_HOST_URL`, verify live Google login on the destination. Then verify the Pages landing page at phone and desktop widths, keyboard activation of Open Flowtree, offline reopening of an old installation, and that an already-open unsaved plan is not reloaded. These live cutover scenarios remain pending until Google credentials are configured; the variable must remain unset meanwhile.
+`pagesMigration.test.js` checks the new-host link, HTTPS URL validation, retained Search Console tag, and that migration does not force an active service worker update over unsaved edits. Before setting the repository variable `FLOWTREE_HOST_URL`, verify live Google login on the destination. Then verify the Pages landing page at phone and desktop widths, keyboard activation of Open Flowtree, offline reopening of an old installation, and that an already-open unsaved plan is not reloaded. The owner confirmed real sign-in on the initial Cloudflare origin. After the free account-subdomain rename, confirm HTTPS and sign-in at `https://flowtree.flowtreeapp.workers.dev/` before enabling the migration. The build regression also verifies the existing privacy and terms pages are preserved.
 
 ## Opt-in server authentication
 

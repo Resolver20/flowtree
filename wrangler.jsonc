@@ -3,7 +3,7 @@
   "name": "flowtree",
   "account_id": "7c226e7fdc20b6b59deaab2d75690571",
   "vars": {
-    "APP_ORIGIN": "https://flowtree.aasrithvakul.workers.dev",
+    "APP_ORIGIN": "https://flowtree.flowtreeapp.workers.dev",
     "GOOGLE_CLIENT_ID": "739360473101-mi3ql0icmce2vr7jgttmdgoivse8s6ao.apps.googleusercontent.com"
   },
   "main": "server/worker.js",

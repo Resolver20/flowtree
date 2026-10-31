@@ -4,7 +4,7 @@
 
 FlowTree turns your income, bills, loans, and goals into a visual money plan. Follow the branches from income to categories to individual expenses, and see what remains after your targets and safety buffer.
 
-**[Open FlowTree](https://resolver20.github.io/flowtree/)** · [User guide](./docs/USER_GUIDE.md) · [PDF guide](./docs/FlowTree-User-Guide.pdf)
+**[Open FlowTree](https://flowtree.flowtreeapp.workers.dev/)** · [User guide](./docs/USER_GUIDE.md) · [PDF guide](./docs/FlowTree-User-Guide.pdf)
 
 ![FlowTree Home: income flows into a monthly plan, then into categories and individual expenses.](./docs/images/home.png)
 
