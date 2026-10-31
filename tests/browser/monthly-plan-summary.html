@@ -1,0 +1,41 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Monthly plan summary regression</title>
+<body><pre id="result">Running…</pre><iframe title="Monthly plan card" style="border:0"></iframe>
+<script type="module">
+const frame = document.querySelector('iframe');
+frame.srcdoc = `<!doctype html><html><meta charset="utf-8"><div id="root"></div><script type="module">
+import React from '/node_modules/.vite/deps/react.js';
+import ReactDOM from '/node_modules/.vite/deps/react-dom_client.js';
+import MobileTree from '/src/features/flowtree/MobileTree.jsx';
+import '/src/index.css'; import '/src/features/flowtree/EnergyExplorer.css';
+const root = ReactDOM.createRoot(document.querySelector('#root'));
+window.renderCase = ({deductions,remaining,sinking,dark}) => root.render(React.createElement('div',{className: dark ? 'theme-dark' : 'theme-light'},React.createElement(MobileTree,{
+monthlyDeductions:deductions,monthlyOutcome:remaining,sinking,income:60000,monthlyIncome:60000,
+incomeSources:[],tree:[],allocations:[],path:[],collapsedPaths:new Set(),onInspectPlan:()=>{},onInspectIncome:()=>{}
+})));
+<\/script></html>`;
+const wait = () => new Promise(resolve => setTimeout(resolve, 70));
+const checks = [];
+const assert = (condition, message) => { if (!condition) throw Error(message); checks.push(message); };
+try {
+  for(let i=0; i<100 && !frame.contentWindow.renderCase; i++) await wait();
+  assert(Boolean(frame.contentWindow.renderCase), 'Fixture mounted');
+  for (const width of [320,390,568,760]) {
+    frame.style.width = `${width}px`; frame.style.height = '740px';
+    for (const dark of [false,true]) for (const remaining of [10154,0,-4000,-12345678]) {
+      frame.contentWindow.renderCase({deductions:12345678,remaining,dark}); await wait();
+      const doc = frame.contentDocument, card = doc.querySelector('.mobile-plan-root');
+      const title = card.querySelector('strong').getBoundingClientRect();
+      const summary = card.querySelector('.mobile-plan-summary').getBoundingClientRect();
+      const deductions = card.querySelector('.is-deductions'), available = card.querySelector('.is-remaining');
+      const format = n => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n);
+      assert(deductions.textContent === `Deductions ${format(12345678)}` && available.textContent === `Remaining ${format(remaining)}`, `${width}/${dark}/${remaining}: exact totals and signed remaining`);
+      assert(summary.top >= title.bottom && summary.right <= card.querySelector('button').getBoundingClientRect().left, `${width}/${dark}/${remaining}: summary below title and clear of Info`);
+      assert(frame.contentWindow.getComputedStyle(deductions).color !== frame.contentWindow.getComputedStyle(available).color, `${width}/${dark}/${remaining}: distinct summary colors`);
+      assert(card.scrollWidth <= card.clientWidth, `${width}/${dark}/${remaining}: card does not overflow`);
+    }
+    frame.contentWindow.renderCase({deductions:1,remaining:1,sinking:true}); await wait();
+    assert(!frame.contentDocument.querySelector('.mobile-plan-summary'), `${width}: Sinking funds has no monthly summary`);
+  }
+  document.body.dataset.result = 'pass'; document.querySelector('#result').textContent = `PASS (${checks.length} checks)\n${checks.join('\n')}`;
+} catch(error) { document.body.dataset.result = 'fail'; document.querySelector('#result').textContent = `FAIL: ${error.message}`; }
+</script></body></html>

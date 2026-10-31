@@ -404,3 +404,8 @@ After an approved deployment, inspect the public homepage HTML and confirm the `
 ### Income and monthly plan info actions
 
 On Home, verify the Income section label has a visible `Info` button and the Monthly plan card has its info button on desktop and phone layouts, including when multiple income sources are present. Activate Income and expect the total amount, one edit button per source, and Add income source; activate Monthly plan and expect its overview dialog. Open an income source editor and expect the same compact card treatment as the desktop view with only Name, Amount per month, and Icon fields; payday and start-date controls are not shown. These actions must not open a child branch or change the plan.
+
+### Mobile Monthly plan summary — 2026-10-31
+
+- Browser regression: open `/tests/browser/monthly-plan-summary.html` on the Vite server. Expect PASS. It checks exact Indian-formatted deductions, positive/zero/negative remaining, large amounts, light/dark colors, title/Info separation and no card overflow at 320, 390, 568 and 760px. Sinking funds must have no monthly summary.
+- Manual scenario: on Home at 320×740, 390×844 and 568×320, expect Monthly plan followed by green Deductions on the left and purple Remaining on the right beneath the title. Remaining must include the safety buffer and retain its minus sign when negative. Open/close branches and activate the root Info button with Enter; totals must stay stable. Switch to Sinking funds and back. At tablet/laptop/wide widths, the desktop root and outlook must remain unchanged.
