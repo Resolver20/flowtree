@@ -1,3 +1,4 @@
+import { yearBeforeTarget } from '../../domain/cardStart'
 import CardStartSetup from './CardStartSetup'
 import DateField from './DateField'
 import GoalSavingsSummary from './GoalSavingsSummary'
@@ -24,13 +25,14 @@ function GoalEditor({ goal, onSave, onCancel }) {
   const [amount, setAmount] = useState(goal?.amount ?? '')
   const [symbol, setSymbol] = useState(goal?.symbol || goal?.icon || 'flag')
   const period = 'year'
-  const [startDate, setStartDate] = useState(goal?.startDate || todayDate())
-  const [startMode, setStartMode] = useState(goal?.startDate ? 'existing' : 'fresh')
+  const [manualStartDate, setStartDate] = useState(goal?.startDate || todayDate())
+  const [startMode, setStartMode] = useState(goal?.startMode === 'target-year' ? 'target-year' : goal?.startDate ? 'existing' : 'fresh')
   const [dueDate, setDueDate] = useState(goal?.dueDate || goalTargetDate(todayDate(), 1))
+  const startDate = startMode === 'target-year' ? yearBeforeTarget(dueDate) : manualStartDate
   const [savedAmount, setSavedAmount] = useState(goal?.savedAmount ?? '')
   const [status, setStatus] = useState(normalizeNodeStatus(goal?.status || 'active'))
   const [error, setError] = useState('')
-  const previewGoal = useMemo(() => ({ amount: Number(amount) || 0, savedAmount: Number(savedAmount) || 0, startDate, period, dueDate, status, children: [] }), [amount, dueDate, period, savedAmount, startDate, status])
+  const previewGoal = useMemo(() => ({ amount: Number(amount) || 0, savedAmount: Number(savedAmount) || 0, startDate, startMode, period, dueDate, status, children: [] }), [amount, dueDate, period, savedAmount, startDate, startMode, status])
 
   function submit(event) {
     event.preventDefault()
@@ -39,7 +41,7 @@ function GoalEditor({ goal, onSave, onCancel }) {
     if (!name.trim() || !nextAmount) { setError('Enter a goal name and a target amount.'); return }
     if (period === 'year' && (!startDate || !dueDate || dueDate < startDate)) { setError('Choose an end date on or after the goal start date.'); return }
     if (nextSavedAmount > nextAmount) { setError('Already accumulated cannot exceed the target amount.'); return }
-    onSave({ id: goal?.id, name: name.trim(), amount: nextAmount, savedAmount: period === 'year' ? nextSavedAmount : 0, startDate, period, dueDate: period === 'year' ? dueDate : '', status, symbol })
+    onSave({ id: goal?.id, name: name.trim(), amount: nextAmount, savedAmount: period === 'year' ? nextSavedAmount : 0, startDate, startMode, period, dueDate: period === 'year' ? dueDate : '', status, symbol })
   }
 
   return <form className="goal-editor" onSubmit={submit}>
@@ -48,7 +50,7 @@ function GoalEditor({ goal, onSave, onCancel }) {
       <label>Goal name<input value={name} onChange={event => setName(event.target.value)} maxLength="100" /></label>
       <label>Target amount (₹)<input value={amount} onChange={event => setAmount(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Goal icon<IconPicker value={symbol} onChange={setSymbol} /></label>
-      <CardStartSetup mode={startMode} onModeChange={mode => { setStartMode(mode); if (mode === 'fresh') { setStartDate(todayDate()); setSavedAmount(0) } setError('') }} startDate={startDate} onStartDateChange={date => { setStartDate(date); setError('') }} />
+      <CardStartSetup allowTargetYear mode={startMode} onModeChange={mode => { setStartMode(mode); if (mode === 'fresh') { setStartDate(todayDate()); setSavedAmount(0) } setError('') }} startDate={startDate} onStartDateChange={date => { setStartDate(date); setError('') }} />
       {period === 'year' && <><DateField label="Target date" value={dueDate} min={startDate || undefined} onChange={date => { setDueDate(date); setError('') }} /><label>Already accumulated (₹)<input value={savedAmount} onChange={event => setSavedAmount(event.target.value)} type="number" min="0" step="0.01" /></label></>}
       <label>Status<select value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(item => <option key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</option>)}</select></label>
     </div>

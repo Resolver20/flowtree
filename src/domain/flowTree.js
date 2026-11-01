@@ -77,7 +77,7 @@ export function expectedAnnualSavings(node, today = new Date()) {
   if (!dueMatch) return savedAmount
   const [, year, month] = dueMatch.map(Number)
 
-  if (node.startDate) return goalSavingsPlan(node, today).saved
+  if (node.startDate || node.startMode === 'target-year') return goalSavingsPlan(node, today).saved
 
   const monthsToDue = (year - today.getFullYear()) * 12 + (month - 1 - today.getMonth())
   const completedMonths = 12 - Math.min(12, Math.max(0, monthsToDue))
@@ -97,7 +97,7 @@ export function monthlyAllocation(node, today = new Date()) {
 export function requiredMonthlyAmount(node, today = new Date()) {
   const amount = Math.max(0, Number(node.amount) || 0)
   if (node.period !== 'year') return amount
-  if (node.startDate) return goalSavingsPlan(node, today).monthlyRequired
+  if (node.startDate || node.startMode === 'target-year') return goalSavingsPlan(node, today).monthlyRequired
   const saved = expectedAnnualSavings(node, today)
   return (amount - saved) / monthsUntilTarget(node.dueDate, today)
 }

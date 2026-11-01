@@ -70,3 +70,10 @@ export const FINANCE_ICON_OPTIONS = iconGroups.flatMap(group => group.options)
 export function findFinanceIcon(label) {
   return FINANCE_ICON_OPTIONS.find(([, name]) => name.toLowerCase() === label.trim().toLowerCase())?.[0]
 }
+
+export function matchingFinanceIcons(query = '') {
+  const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean)
+  const matches = FINANCE_ICON_OPTIONS.filter(([icon, label]) => words.every(word =>
+    `${label} ${icon.replaceAll('_', ' ')}`.toLowerCase().includes(word)))
+  return matches.length ? matches : [['savings', query]]
+}

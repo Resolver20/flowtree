@@ -97,8 +97,8 @@ function App({ offlinePlan, onSaveOfflinePlan } = {}) {
     notify(`${name} added to Debt Commitments. ${destination}`)
   }
 
-  function saveGoal({ id, name, amount, savedAmount, startDate, period, dueDate, status, symbol }) {
-    const changes = { name, amount, period, dueDate, startDate, status, savedAmount, icon: symbol, symbol }
+  function saveGoal({ id, name, amount, savedAmount, startDate, startMode, period, dueDate, status, symbol }) {
+    const changes = { name, amount, period, dueDate, startDate, startMode, status, savedAmount, icon: symbol, symbol }
     if (id) {
       changeNode(id, changes)
       notify(`${name} life goal updated.`)

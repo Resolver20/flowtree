@@ -175,7 +175,6 @@ button.income-source-card { cursor: pointer; }
 .target-meta { overflow: hidden; color: #7b8492; font-size: 9px; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
 .amount-node:has(.node-progress) .amount-copy { gap: 2px; }
 .monthly-plan-share { position: absolute; top: 6px; right: 10px; color: var(--muted, #737b88); font-size: 9px; font-weight: 400; line-height: 1.1; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.amount-copy > strong { padding-right: 34px; }
 .mobile-tree-card { position: relative; }
 .mobile-tree-copy > strong { padding-right: 38px; }
 .node-progress { position: absolute; right: 12px; bottom: 4px; left: 50px; height: 2px; overflow: hidden; border-radius: 2px; background: #e5e8ee; }
@@ -751,8 +750,7 @@ button.income-source-card { cursor: pointer; }
 .inactive-marker { cursor: default; font-size: 10px; font-weight: 400; line-height: 1.2; white-space: nowrap; display: inline-flex; align-items: center; margin-left: auto; flex-shrink: 0; color: var(--muted, #737b88); vertical-align: middle; }
 .goal-list span.inactive-marker { cursor: default; font-size: 10px; font-weight: 400; line-height: 1.2; white-space: nowrap; display: inline-flex; }
 
-.amount-node:has(> .inactive-marker) .amount-copy, .mobile-tree-card:has(> .inactive-marker) .mobile-tree-copy { flex: 1; }
-.has-children:not(.is-expanded) .amount-node > .inactive-marker { margin-right: 8px; }
+.mobile-tree-card:has(> .inactive-marker) .mobile-tree-copy { flex: 1; }
 .goal-list button > span:nth-child(2) { display: grid; min-width: 0; flex: 1; gap: 3px; }
 .goal-portfolio { min-width: 0; overflow-wrap: anywhere; }
 .goal-portfolio .goal-stat-grid > div { min-width: 0; }
@@ -977,24 +975,22 @@ button.income-source-card { cursor: pointer; }
 .date-calendar-input::-webkit-datetime-edit { display: none; }
 .date-calendar-input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; cursor: pointer; }
 
-.mobile-icon-picker { display: grid; min-width: 0; gap: 8px; }
-.mobile-icon-picker .material-symbols-rounded { color: #6577cc; font-size: 22px; }
-.icon-picker-panel { display: grid; gap: 8px; min-width: 0; padding: 10px; border-radius: 12px; background: var(--surface, #fff); }
-.icon-picker-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; max-height: 240px; overflow-y: auto; overscroll-behavior: contain; }
-.mobile-icon-picker .icon-picker-options button { position: relative; display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 52px; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text, #303947); text-align: left; font-size: 12px; line-height: 1.35; }
-.icon-picker-options button > span:nth-child(2) { overflow-wrap: anywhere; }
-.mobile-icon-picker .icon-picker-options .icon-picker-check { position: absolute; top: 2px; right: 2px; font-size: 12px; }
-.icon-picker-empty { grid-column: 1 / -1; padding: 12px 4px; color: var(--muted, #667085); font-size: 12px; }
-
 /* Tree cards show the monthly amount and a quiet progress line; details live in Info. */
 .amount-node .amount-copy { flex: 1; min-width: 0; gap: 5px; }
 .amount-node .amount-number { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.amount-node > .inactive-marker { position: absolute; right: 10px; top: 7px; bottom: auto; margin: 0; font-size: 9px; }
-.amount-node:has(> .inactive-marker) .amount-copy > strong { padding-right: 42px; }
-.has-children:not(.is-expanded) .amount-node > .inactive-marker { margin-right: 0; }
-.icon-search-field { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.mobile-icon-picker .icon-search-field input { flex: 1; min-width: 0; width: 100%; min-height: 44px; font-size: 16px; }
-.icon-search-field > .material-symbols-rounded { flex: 0 0 22px; }
-@media (min-width: 761px) {
-  .icon-picker-options [aria-selected="true"] { outline: 2px solid var(--accent, #6577cc); outline-offset: -2px; }
-}
+.amount-heading { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.amount-heading > strong { flex: 1; min-width: 0; }
+.amount-heading > .monthly-plan-share, .amount-heading > .inactive-marker { position: static; flex: 0 0 auto; margin: 0; font-size: 9px; }
+
+/* Single-column icon suggestions keep each symbol beside its complete label. */
+.icon-picker { display: grid; min-width: 0; gap: 6px; }
+.icon-picker .icon-select { min-width: 0; }
+.icon-picker .icon-select > input { min-height: 44px; font-size: 16px; }
+.icon-picker .icon-select > .material-symbols-rounded { flex: 0 0 24px; font-size: 22px; }
+.icon-picker-panel { display: block; min-width: 0; border: 1px solid var(--line, #d9dde4); border-radius: 8px; background: var(--surface, #fff); overflow: hidden; }
+.icon-picker-list { display: flex; flex-direction: column; max-height: 208px; overflow-y: auto; overscroll-behavior: contain; }
+.icon-picker-list > button { display: flex; align-items: center; flex: 0 0 auto; gap: 10px; width: 100%; min-width: 0; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 0; background: transparent; color: var(--text, #303640); text-align: left; font-size: 12px; line-height: 1.4; }
+.icon-picker-list > button > .material-symbols-rounded { flex: 0 0 22px; color: #6577cc; font-size: 20px; }
+.icon-picker-label { flex: 1; min-width: 0; white-space: normal; word-break: normal; overflow-wrap: normal; }
+.icon-picker-list > button[aria-selected="true"] { background: var(--surface-raised, #eef1f6); }
+.icon-picker-empty { display: block; padding: 10px; color: var(--muted, #737b88); font-size: 12px; line-height: 1.4; }

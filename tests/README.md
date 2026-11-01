@@ -571,3 +571,51 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 - Run `tests/browser/mobile-annual-progress.html` for mobile coverage at 320/390/568/760px in both themes. Check zero progress still has a visible neutral track, category progress matches its descendant targets, and expand/collapse retains every track.
 - `tests/domain/cardProgress.test.js` checks weighted yearly aggregation, no double counting, zero targets, and bounded monthly allocation. Physical installed-PWA refresh remains a device check.
 - Verified: 1,521 browser checks passed; full-app Sinking at 390px visibly shows tracks on both category and yearly child. Automated domain suite: 166 tests passed. Installed-device rendering remains unverified.
+
+### Tree card text spacing — 2026-11-01
+
+- Tree names and the income-share/Paused badge share a header row with only the space each badge needs. The exact monthly amount and `/mo` remain together beneath it; full savings details stay in Info and the tooltip.
+- Run `/tests/browser/tree-card-overflow.html`: checks both themes at 320, 568, 768, 1366 and 1920px, paused goals, large Indian-formatted amounts and a 100-character name. Mobile recharge, Car insurance and Tax Obligations must fit in full; longer names may truncate without overlapping the badge or amount. The fixture exercises the shared desktop card even at narrow widths; actual phone trees use MobileTree.
+- Manual scenario: open Home and Sinking funds, expand/collapse nested branches and inspect a paused goal. Expect a clean name/badge row, a single monthly amount row, and a separate bottom progress track. Repeat keyboard activation and expanded views at phone portrait/landscape, tablet, laptop and wide desktop; verify no new card/connector movement.
+- Verified locally: 490 text-layout checks, 656 full-app responsive checks across nine sizes, and Sinking branch expansion/collapse at 320×740, 390×844, 568×320, 768×1024, 1366×768 and 1920×1080 passed. Visually inspected desktop Sinking cards and used Enter to collapse/reopen Cash Flow. All 167 Node tests, lint and build passed. Physical-device rendering and the complete new-node/connector geometry matrix were not repeated; no deployment was performed.
+
+### Restore the native icon picker — 2026-11-01
+
+- Per user request, restored the previous icon preview plus native input/datalist suggestions. Removed the custom two-column results grid and search icon. This supersedes the custom arrow/Enter/Escape behavior in the earlier Icon suggestions while typing entry.
+- `/tests/browser/mobile-icon-picker.html` checks the restored list, icon selection/preview, invalid-text validation, partial typing preserving the current icon, and field containment in both themes at 320, 390, 568, 760, 768, 1366 and 1920px.
+- Manual scenario: open a card editor, focus Icon, type a known label and choose a native suggestion. Expect one simple browser suggestion list without the wrapped icon grid; the chosen icon updates. Repeat in Income, Goals, Investments and GL editors. Native suggestions and keyboard appearance depend on the device/browser; physical-phone pickers remain unverified.
+
+### Start a year before target
+
+- In yearly card, Life goal and bulk Yearly targets editors, choose **Start a year before target**. Only Target date appears; no editable Start date. Change Target date, save and reopen: mode persists and the derived start date moves to one year earlier (29 February clamps to 28 February).
+- This mode uses exactly 12 monthly contributions ending in the target month. Planned progress counts months before the current month, capped at the target; recorded savings remain respected. Fresh/Already started retain their existing inclusive-month behavior.
+- `tests/browser/target-year.html` exercises the real card editor at 390px: choose mode, hide start, change target, save, reopen. Also manually check Goals and bulk editors at mobile/desktop sizes. Domain tests cover twelve months, past/future progress, leap date and JSON round-trip.
+- Verified: native-picker browser fixture passed 182 checks. Typed Fitness in the dark preview and confirmed the icon changed to fitness_center. Node tests (168), lint and build passed. No deployment performed.
+
+### Icon and text suggestions in one column — 2026-11-01
+
+- The icon picker now shows a single scrollable column, with an icon and readable name on every row. Selecting a result replaces the search text with its label and updates the icon. This supersedes the native-only picker above because native datalist suggestions cannot render the Material Symbols previews.
+- `/tests/browser/mobile-icon-picker.html` checks both themes and seven viewport widths, including a 160px-wide field matching a narrow editor column. It checks single-column geometry, text/icon containment, filtering, no-results, click/Enter selection, replacement text, arrows, Escape and blur dismissal.
+- Manual scenario: focus Icon in any editor, type `fit`, then select Fitness. Expect the dumbbell icon next to Fitness in the list; after selection, the field says Fitness and the preview changes. Search `insu` to check multiple matching rows. Long labels wrap between words inside one full-width row. Check phone portrait/landscape and desktop, including keyboard selection. Physical-phone taps and OS keyboards remain unverified.
+- Verified: 3,444 browser checks passed across seven sizes, two themes and both normal/160px field widths. Visually inspected the narrow dark dropdown with Fitness and insurance matches; clicked Fitness and confirmed both the text and preview changed. All 169 Node tests, lint and final build passed. No deployment performed.
+
+
+### Savings fallback for missing icons — 2026-11-01
+
+- A blank icon displays the Savings icon and label. A search with no matches offers only Savings; choosing it replaces the search text and sets the icon to savings. Typing alone preserves the existing choice. This supersedes the earlier No icons found empty state.
+- Automated: financeIcons domain tests cover filtering and the unmatched-search fallback; `/tests/browser/mobile-icon-picker.html` covers selecting the Savings fallback, replacement text and blank-value preview alongside existing dropdown cases.
+- Manual scenario: search for `no-such-icon`, select Savings and reopen. Expect the Savings label and piggy-bank icon. Open the fixture with `?missing` to verify a blank icon uses Savings. Existing icons should remain unchanged when merely searching or cancelling.
+- Verified: 3,501 browser checks, 170 Node tests, lint and build passed. Manually selected Savings after an unmatched query and verified a blank-value preview shows Savings. Physical-device verification and deployment were not performed.
+
+### Preserve custom text with a fallback icon — 2026-11-01
+
+- Unmatched icon-search text now remains exactly as typed. The fallback row uses that same text beside the Savings symbol; it does not rename the text to Savings. Selecting the row keeps its custom label in the current picker, including after blur. A blank icon shows the fallback symbol with an empty field rather than inserting a label. Existing matched suggestions still work. This supersedes the preceding fallback-label behavior.
+- Regression: financeIcons tests verify custom text and whitespace are preserved; the dropdown browser suite checks custom-label selection and blur plus blank input. In the full local website, open a card editor and type Holiday fund in Icon. Expect Holiday fund in both the field and option, each with the Savings symbol. Select it and move to Status: Holiday fund must remain in the field. The custom search label is view state; the stored icon stays savings.
+- Verified: 3,557 browser checks, 170 Node tests, lint and build passed. Full-site card editor visually showed Holiday fund unchanged beside the Savings symbol in the field and suggestion. Existing user edits were left untouched. Physical-device testing and deployment were not performed.
+
+### Progress lines only for dated yearly payments — 2026-11-01
+
+- Home and Sinking funds show a bottom progress line only when that card itself has Yearly frequency and a valid target date. Monthly payments, category/group cards and yearly payments without dates have no line. A parent's dated children do not give that parent a line. This supersedes Progress tracks on every planning card above. Amount and allocation calculations are unchanged.
+- Automated: cardProgress tests cover monthly, undated, invalid dates, dated yearly and inactive cards; mobile-annual-progress and tree-card-overflow browser fixtures check visibility and existing amount/progress containment.
+- Manual scenario: open Home and Sinking funds with a monthly bill, a yearly bill with a target date and an undated yearly bill. Only the dated yearly bill has a line. Expand/collapse its parent, switch views and repeat at phone portrait/landscape, tablet, laptop and wide desktop. The date rule must match in both layouts and themes.
+- Verified: mobile yearly-progress fixture passed 1,601 checks; desktop card fixture passed 520; integrated seven-screen layout fixture passed 755 checks across nine sizes. The full local Sinking website visibly has lines on dated yearly children and none on categories; keyboard Cash Flow collapse/reopen worked. All 171 Node tests, lint, build and diff checks passed. Physical-device rendering and the exhaustive new-node/connector matrix were not repeated. No deployment performed.

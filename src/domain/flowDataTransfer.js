@@ -136,6 +136,7 @@ function normalizeNode(node, path, ids, counters, depth) {
     name: textAt(source.name, `${path}.name`),
     amount: amountAt(source.amount, `${path}.amount`, 0),
     savedAmount: amountAt(source.savedAmount, `${path}.savedAmount`, 0),
+    ...(source.startMode === 'target-year' ? { startMode: 'target-year' } : {}),
     startDate: dateAt(source.startDate, `${path}.startDate`),
     dueDate: dateAt(source.dueDate, `${path}.dueDate`),
     dayOfMonth: (() => {

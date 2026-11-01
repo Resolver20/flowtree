@@ -1,4 +1,4 @@
-import { cardProgress } from '../../domain/cardProgress'
+import { cardProgress, showsCardProgress } from '../../domain/cardProgress'
 import { goalCardPreview } from './goalCardPreview'
 import { monthlyPlanShare } from '../../domain/monthlyPlanShare'
 import MonthlyPlanShare from './MonthlyPlanShare'
@@ -27,10 +27,14 @@ export default function TreeNodeCard({ entry, tree, monthlyIncome, isExpanded, i
 
   const cardContent = <>
     <span className="amount-icon material-symbols-rounded" style={{ color }} aria-hidden="true">{iconForNode(item)}</span>
-    <span className="amount-copy"><strong>{item.name}</strong><span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span></span>
-    {!inactive && <MonthlyPlanShare label={share.label} />}
-    <InactiveMarker inactive={inactive} />
-    {<span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${progress.ratio * 100}%` }} /></span>}
+    <span className="amount-copy">
+      <span className="amount-heading">
+        <strong>{item.name}</strong>
+        {inactive ? <InactiveMarker inactive={inactive} /> : <MonthlyPlanShare label={share.label} />}
+      </span>
+      <span className="amount-number">{formatMoney(monthlyAmount)}<small> /mo</small></span>
+    </span>
+    {showsCardProgress(item) && <span className="node-progress" style={{ '--progress-color': color }} aria-hidden="true"><span style={{ width: `${progress.ratio * 100}%` }} /></span>}
     {hasChildren && !isExpanded && <span className="branch-cue material-symbols-rounded" aria-hidden="true">chevron_right</span>}
   </>
 

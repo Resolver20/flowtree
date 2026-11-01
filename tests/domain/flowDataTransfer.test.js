@@ -91,3 +91,11 @@ test('loan plans preserve a user monthly contribution', () => {
   }
   assert.equal(parseFlowImport(serializeFlowData(loanPlan)).tree[0].loan.userMonthlyContribution, 4000)
 })
+
+test('target-relative yearly setup survives JSON export and import', () => {
+  const data = structuredClone(plan)
+  Object.assign(data.tree[0].children[0], { startMode: 'target-year', startDate: '2026-05-15', dueDate: '2027-05-15' })
+  const restored = parseFlowImport(serializeFlowData(data))
+  assert.equal(restored.tree[0].children[0].startMode, 'target-year')
+  assert.equal(restored.tree[0].children[0].startDate, '2026-05-15')
+})

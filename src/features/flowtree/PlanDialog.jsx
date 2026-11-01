@@ -1,3 +1,4 @@
+import { yearBeforeTarget } from '../../domain/cardStart'
 import { bindDialogViewport } from './dialogViewport'
 import { cardStartDate } from '../../domain/cardStart'
 import CardStartSetup from './CardStartSetup'
@@ -159,7 +160,8 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     amount: node.amount,
     savedAmount: node.savedAmount ?? 0,
     dueDate: node.dueDate || defaultAnnualTargetDate(),
-    startDate: node.startDate || cardStartDate(),
+    startMode: node.startMode === 'target-year' ? 'target-year' : node.startDate ? 'existing' : 'fresh',
+    startDate: node.startMode === 'target-year' ? yearBeforeTarget(node.dueDate) : node.startDate || cardStartDate(),
     status: normalizeNodeStatus(node.status),
     parentPath,
     node,
@@ -167,7 +169,12 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
   const [error, setError] = useState('')
 
   function changeDraft(id, changes) {
-    setDrafts(current => current.map(draft => draft.id === id ? { ...draft, ...changes } : draft))
+    setDrafts(current => current.map(draft => {
+      if (draft.id !== id) return draft
+      const next = { ...draft, ...changes }
+      if (next.startMode === 'target-year') next.startDate = yearBeforeTarget(next.dueDate)
+      return next
+    }))
     setError('')
   }
 
@@ -176,8 +183,8 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     if (drafts.some(draft => !draft.name.trim())) { setError('Every yearly target needs a name.'); return }
     if (drafts.some(draft => !draft.dueDate || draft.dueDate < cardStartDate() || draft.dueDate < draft.startDate)) { setError('Every target date must be in the future.'); return }
     onSave(drafts.map(draft => {
-      const preview = { ...draft.node, name: draft.name.trim(), amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, status: draft.status }
-      return { id: draft.id, changes: { name: preview.name, amount: preview.amount, dueDate: preview.dueDate, startDate: preview.startDate, status: preview.status, savedAmount: preview.savedAmount } }
+      const preview = { ...draft.node, name: draft.name.trim(), amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, startMode: draft.startMode, status: draft.status }
+      return { id: draft.id, changes: { name: preview.name, amount: preview.amount, dueDate: preview.dueDate, startDate: preview.startDate, startMode: preview.startMode, status: preview.status, savedAmount: preview.savedAmount } }
     }))
     onClose()
   }
@@ -187,11 +194,11 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     {!drafts.length ? <div className="empty-annual-targets"><strong>No yearly targets yet</strong><span>Change a destination’s frequency to Yearly and it will appear here.</span></div> : <form onSubmit={submit}>
       <div className="annual-target-list">
         {drafts.map(draft => {
-          const preview = { ...draft.node, name: draft.name, amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, status: draft.status }
+          const preview = { ...draft.node, name: draft.name, amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, startMode: draft.startMode, status: draft.status }
           const progress = annualTargetProgress(preview)
           return <section className="annual-target-row" key={draft.id}>
             <div className="annual-target-heading"><input aria-label="Target name" value={draft.name} onChange={event => changeDraft(draft.id, { name: event.target.value })} /><small>{draft.parentPath || 'Top-level category'}</small></div>
-            <CardStartSetup startDate={draft.startDate} onStartDateChange={date => changeDraft(draft.id, { startDate: date })} />
+            <CardStartSetup allowTargetYear mode={draft.startMode} onModeChange={mode => changeDraft(draft.id, { startMode: mode, ...(mode === 'fresh' ? { startDate: cardStartDate(), savedAmount: 0 } : {}) })} startDate={draft.startDate} onStartDateChange={date => changeDraft(draft.id, { startDate: date })} />
             <label>Annual target (₹)<input type="number" min="0" step="0.01" value={draft.amount} onChange={event => changeDraft(draft.id, { amount: event.target.value })} /></label>
             <label>Saved so far (₹)<input type="number" min="0" step="0.01" value={draft.savedAmount} onChange={event => changeDraft(draft.id, { savedAmount: event.target.value })} /></label>
             <DateField label="Target date" min={draft.startDate > tomorrowDate() ? draft.startDate : tomorrowDate()} value={draft.dueDate} onChange={date => changeDraft(draft.id, { dueDate: date })} />
@@ -332,14 +339,15 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   const [selectedPeriod, setPeriod] = useState(node?.period || 'month')
   const period = isGoal ? 'year' : selectedPeriod
   const initialDueDate = node?.dueDate || (period === 'year' ? defaultAnnualTargetDate() : '')
-  const [startDate, setStartDate] = useState(node?.startDate || cardStartDate())
-  const [startMode, setStartMode] = useState(node?.startDate ? 'existing' : 'fresh')
+  const [manualStartDate, setStartDate] = useState(node?.startDate || cardStartDate())
+  const [startMode, setStartMode] = useState(node?.startMode === 'target-year' ? 'target-year' : node?.startDate ? 'existing' : 'fresh')
   const [dueDate, setDueDate] = useState(initialDueDate)
+  const startDate = startMode === 'target-year' ? yearBeforeTarget(dueDate) : manualStartDate
   const [dateError, setDateError] = useState('')
   const [status, setStatus] = useState(normalizeNodeStatus(node?.status || 'active'))
   const [symbol, setSymbol] = useState(node ? iconForNode(node) : 'savings')
   const [error, setError] = useState('')
-  const previewNode = { amount, startDate, savedAmount: Math.max(0, Number(savedAmount) || 0), dueDate, period, status, children: node?.children || [] }
+  const previewNode = { amount, startDate, startMode, savedAmount: Math.max(0, Number(savedAmount) || 0), dueDate, period, status, children: node?.children || [] }
   const preview = monthlyTotal(previewNode)
 
   function submit(event) {
@@ -358,6 +366,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
       name,
       amount: Math.max(0, Number(form.get('amount')) || 0),
       savedAmount: period === 'year' ? Math.max(0, Number(savedAmount) || 0) : 0,
+      startMode: period === 'year' ? startMode : undefined,
       startDate: period === 'year' ? startDate : node?.startDate || '',
       dueDate: period === 'year' ? dueDate : '',
       period,
@@ -382,7 +391,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
         {!isGoal && <label>Frequency<select name="period" value={period} onChange={event => { const nextPeriod = event.target.value; setPeriod(nextPeriod); if (nextPeriod === 'year' && !dueDate) { const nextDate = defaultAnnualTargetDate(); setDueDate(nextDate) } }}><option value="month">Monthly</option><option value="year">Yearly</option></select></label>}
       </div>
       <small id="amount-help">{isGoal ? 'Monthly savings are calculated from your target, saved amount, and dates.' : 'Exclude child amounts — they are added automatically. Leave at 0 for a grouping category.'}</small>
-      {period === 'year' && <CardStartSetup mode={startMode} onModeChange={mode => { setStartMode(mode); if (mode === 'fresh') { setStartDate(localDateValue(new Date())); setSavedAmount(0) } setDateError('') }} startDate={startDate} onStartDateChange={date => { setStartDate(date); setDateError('') }} />}
+      {period === 'year' && <CardStartSetup allowTargetYear mode={startMode} onModeChange={mode => { setStartMode(mode); if (mode === 'fresh') { setStartDate(localDateValue(new Date())); setSavedAmount(0) } setDateError('') }} startDate={startDate} onStartDateChange={date => { setStartDate(date); setDateError('') }} />}
       {period === 'year' && <>
         <DateField label="Target date" name="dueDate" min={startDate > localDateValue() ? startDate : localDateValue()} value={dueDate} onChange={date => { setDueDate(date); setDateError('') }}>
           <button type="button" aria-label="Move target date forward one year" onClick={() => { setDueDate(goalTargetDate(dueDate || localDateValue(), 1)); setDateError('') }}>+1 year</button>

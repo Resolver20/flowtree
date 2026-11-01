@@ -28,3 +28,19 @@ test('monthly bills, investments, and lender projections retain their calculatio
     assert.deepEqual(loanProjection({ ...loan, startDate }), loanProjection(loan))
   }
 })
+
+test('target-year schedules backdate one year and use exactly twelve monthly contributions', async () => {
+  const { yearBeforeTarget } = await import('../../src/domain/cardStart.js')
+  assert.equal(yearBeforeTarget('2027-05-15'), '2026-05-15')
+  assert.equal(yearBeforeTarget('2028-02-29'), '2027-02-28')
+  assert.equal(yearBeforeTarget(''), '')
+  assert.equal(yearBeforeTarget('2027-02-30'), '')
+  const node = { amount: 12000, startMode: 'target-year', startDate: '2026-05-15', dueDate: '2027-05-15', period: 'year', savedAmount: 0 }
+  const plan = goalSavingsPlan(node, new Date(2026, 10, 1))
+  assert.equal(plan.totalMonths, 12)
+  assert.equal(plan.saved, 6000)
+  assert.equal(plan.monthlyRequired, 1000)
+  assert.equal(goalSavingsPlan(node, new Date(2026, 3, 1)).saved, 0)
+  assert.equal(goalSavingsPlan(node, new Date(2027, 4, 15)).saved, 12000)
+  assert.equal(goalSavingsPlan({ ...node, dueDate: '2027-11-15' }, new Date(2026, 10, 1)).saved, 0)
+})

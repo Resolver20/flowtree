@@ -13,6 +13,11 @@ for(const [width,height] of [[320,740],[390,844],[430,932],[568,320],[760,800],[
  if(!page)continue;
  if(name!=='Home'&&name!=='Sinking funds')check(page.scrollWidth<=page.clientWidth+1,`${width}/${name}: page overflows`);
  for(const el of page.querySelectorAll('.monthly-plan-summary,.mobile-tree-card,.amount-node,.sinking-status,.sinking-saved,.loan-portfolio,.goal-portfolio,.payment-month-card'))check(el.scrollWidth<=el.clientWidth+1,`${width}/${name}: ${el.className} overflows`);
+ if(name==='Home'||name==='Sinking funds'){
+ for(const row of page.querySelectorAll('[data-tree-path]')){
+ if(!row.dataset.treePath.includes('/'))check(!row.querySelector(':scope > .amount-node .node-progress,:scope > .mobile-tree-node-row .node-progress'),`${width}/${name}: grouping category has no progress line`);
+ }
+ }
  if(width<=760){const nav=doc.querySelector('.mobile-bottom-nav').getBoundingClientRect();check(nav.left>=16&&nav.right<=width-16,`${width}/${name}: dock side clearance`)}
  }
 }

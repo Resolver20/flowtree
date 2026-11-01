@@ -1,3 +1,4 @@
+import { displayDateInput, parseDateInput } from './dateEntry.js'
 import { annualTargetProgress } from './flowTree.js'
 
 // Combine only each node's own yearly target, never a parent's derived total.
@@ -12,4 +13,9 @@ export function cardProgress(node, funding = {}, today = new Date()) {
   const totals = annualTotals(node)
   const ratio = totals.hasAnnual ? (totals.target > 0 ? totals.saved / totals.target : 0) : (funding.target > 0 ? funding.allocated / funding.target : 0)
   return { ratio: Math.max(0, Math.min(1, ratio || 0)), label: totals.hasAnnual ? 'of yearly targets saved' : 'of monthly plan allocated' }
+}
+
+
+export function showsCardProgress(node) {
+  return node?.period === 'year' && Boolean(parseDateInput(displayDateInput(node.dueDate)))
 }
