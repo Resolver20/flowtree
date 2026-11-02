@@ -151,7 +151,7 @@ Authoring rules:
 - Every income source and destination needs a unique, non-empty `id` within its own list.
 - `amount`, `savedAmount`, and `buffer` are JSON numbers greater than or equal to zero. Do not put them in quotation marks.
 - `period` is `"month"` or `"year"`.
-- Optional `expenseType` is `"current"` (regular spending) or `"upcoming"` (future costs such as servicing). Choose it in the card editor independently of frequency. Upcoming expenses appear in the Upcoming view; goals remain in Goals. Older cards infer their type from frequency and their parent until explicitly set.
+- Optional `expenseType` is `"current"` (regular spending) or `"upcoming"` (future costs such as servicing). Choose it in the card editor independently of frequency. Planned expenses appear in the Planned view; goals remain in Goals. Older cards infer their type from frequency and their parent until explicitly set.
 - `status` is `"active"` or `"inactive"`. Inactive items pause allocation for their entire branch. Older `"seeded"` values import as active; `"dormant"` and `"funded"` import as inactive.
 - Destination `startDate` is optional and editable even while inactive; it records a planning date and does not automatically activate an item. `dueDate` is optional and uses `YYYY-MM-DD`; it is normally used with yearly targets. Life goals support editing both dates.
 - Income `startDate` is optional and uses `YYYY-MM-DD`; `dayOfMonth` is optional and is an integer from 1 to 31 (default: 1). These fields describe the expected monthly income cadence for planning only; Flowtree does not schedule transfers.

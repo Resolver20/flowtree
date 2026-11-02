@@ -17,6 +17,7 @@ try {
   d.querySelector('.sidebar-nav [aria-label="Home"]').click();await wait();
   await until(()=>d.querySelector('[aria-label="View monthly plan information"]'));
   d.querySelector('[aria-label="View monthly plan information"]').click();await wait();clickText('Add child');await wait();
+  check([...d.querySelector('[name=expenseType]').options].map(option=>option.textContent).join('|') === 'Current expenses|Planned expenses', `${width}: consistent expense labels`);
   check(d.querySelector('[name=expenseType]').value==='current',`${width}: default current`);
   set('[name=name]','Car servicing test');set('[name=amount]','500');set('[name=expenseType]','upcoming');await wait();
   check(d.querySelector('[name=period]').value==='month',`${width}: frequency independent`);
@@ -24,7 +25,7 @@ try {
   const select=d.querySelector('[name=expenseType]');select.scrollIntoView({block:'center'});const box=select.getBoundingClientRect();
   check(box.left>=0&&box.right<=width&&box.width>100,`${width}: selector fits`);
   d.querySelector('dialog form').requestSubmit();await wait();
-  d.querySelector('.sidebar-nav [aria-label="Upcoming expenses"]').click();await wait();
+  d.querySelector('.sidebar-nav [aria-label="Planned expenses"]').click();await wait();
   check(d.querySelector('.energy-viewport').textContent.includes('Car servicing test'),`${width}: monthly upcoming shown`);
   d.querySelector('[aria-label="View and manage Car servicing test"]').click();await wait();clickText('Edit details');await wait();
   check(d.querySelector('[name=expenseType]').value==='upcoming',`${width}: choice retained`);

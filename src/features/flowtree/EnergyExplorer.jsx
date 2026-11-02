@@ -27,8 +27,8 @@ const MOBILE_BREAKPOINT = 760
 function EmptyTreeState({ sinking, onReturnHome }) {
   return <div className="empty-tree-state">
     <span className="material-symbols-rounded" aria-hidden="true">{sinking ? 'savings' : 'account_tree'}</span>
-    <strong>{sinking ? 'No upcoming expenses to preview' : 'No plan categories to preview'}</strong>
-    <p>{sinking ? 'Edit a card and choose Upcoming expense to see its monthly set-aside here.' : 'Add a category to start building your monthly plan.'}</p>
+    <strong>{sinking ? 'No planned expenses to preview' : 'No plan categories to preview'}</strong>
+    <p>{sinking ? 'Edit a card and choose Planned expenses to see its monthly set-aside here.' : 'Add a category to start building your monthly plan.'}</p>
     <button type="button" onClick={onReturnHome}>Return to Home</button>
   </div>
 }

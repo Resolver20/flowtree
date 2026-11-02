@@ -87,7 +87,7 @@ export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutc
   const [localIncomeExpanded, setLocalIncomeExpanded] = useState(true)
   const incomeExpanded = sharedIncomeExpanded ?? localIncomeExpanded
   const incomeChildrenId = useId()
-  const rootLabel = sinking ? 'Upcoming expenses' : 'Monthly plan'
+  const rootLabel = sinking ? 'Planned expenses' : 'Monthly plan'
   return <div className="mobile-tree" aria-label={`${rootLabel} flow`}>
     {!sinking && <><section className="mobile-tree-income" aria-label="Income">
       <MobileIncomeSummary income={income} onInspectIncome={onInspectIncome} hasChildren={incomeSources.length > 0} expanded={incomeExpanded} onToggle={onToggleIncome || (() => setLocalIncomeExpanded(expanded => !expanded))} childrenId={incomeChildrenId} />

@@ -34,7 +34,7 @@ function FinanceNode({ sinking, monthlyOutcome, monthlyDeductions, upcomingDeduc
     <div className="energy-finance-root">
       <span className="energy-root-icon material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
     </div>
-    <strong>Upcoming expenses</strong>
+    <strong>Planned expenses</strong>
     </> : <MonthlyPlanHub monthlyDeductions={monthlyDeductions} upcomingDeductions={upcomingDeductions} monthlyOutcome={monthlyOutcome} onInspectPlan={onInspectPlan} />}
   </div>
 }

@@ -56,7 +56,7 @@ try {
     toggle.click(); await wait();
     assert(toggle.getAttribute('aria-expanded') === 'true' && !income.querySelector('.mobile-income-children').hidden, `${width}: Income expands its child group`);
     frame.contentWindow.renderCase({deductions:1,remaining:1,sinking:true}); await wait();
-    assert(!frame.contentDocument.querySelector('.mobile-plan-summary'), `${width}: Upcoming expenses has no monthly summary`);
+    assert(!frame.contentDocument.querySelector('.mobile-plan-summary'), `${width}: Planned expenses has no monthly summary`);
   }
   for (const width of [768,1366,1920]) {
     frame.style.width = `${width}px`;
@@ -109,7 +109,7 @@ try {
       assert(doc.body.dataset.planOpened==='yes', `${width}/${dark}/${remaining}: desktop opens the same overview action`);
     }
     frame.contentWindow.renderDesktopCase({deductions:1,remaining:1,sinking:true}); await wait();
-    assert(!frame.contentDocument.querySelector('.monthly-plan-hub'), `${width}: desktop Upcoming expenses keeps its own root`);
+    assert(!frame.contentDocument.querySelector('.monthly-plan-hub'), `${width}: desktop Planned expenses keeps its own root`);
   }
   frame.style.width='1366px';
   frame.contentWindow.renderDesktopCase({deductions:100,remaining:500}); await wait();

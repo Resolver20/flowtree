@@ -5,7 +5,7 @@ const frame = document.querySelector('iframe');
 await new Promise(resolve => frame.addEventListener('load', resolve));
 for (let attempt = 0; attempt < 100 && !frame.contentDocument.querySelector('.sidebar-nav'); attempt++) await new Promise(resolve => setTimeout(resolve, 50));
 const errors = [];
-for (const name of ['Upcoming expenses', 'Loans', 'Life goals', 'Recurring payments', 'Investments', 'General ledger', 'Home']) {
+for (const name of ['Planned expenses', 'Loans', 'Life goals', 'Recurring payments', 'Investments', 'General ledger', 'Home']) {
   frame.contentDocument.querySelector(`.sidebar-nav button[aria-label="${name}"]`).click();
   await new Promise(resolve => setTimeout(resolve, 50));
   if (frame.contentDocument.querySelector('.energy-breadcrumbs')) errors.push(`${name}: unexpected Whole tree breadcrumb`);

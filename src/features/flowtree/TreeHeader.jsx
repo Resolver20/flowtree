@@ -128,9 +128,9 @@ export default function TreeHeader({ isExample = false, hasUnsavedChanges, onDow
           <span className="material-symbols-rounded" aria-hidden="true">home</span>
           <span>Home</span>
         </button>
-        <button type="button" className={view === 'sinking' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowSinkingFunds)} aria-current={view === 'sinking' ? 'page' : undefined} aria-label="Upcoming expenses">
+        <button type="button" className={view === 'sinking' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowSinkingFunds)} aria-current={view === 'sinking' ? 'page' : undefined} aria-label="Planned expenses">
           <span className="material-symbols-rounded" aria-hidden="true">savings</span>
-          <span>Upcoming expenses</span>
+          <span>Planned expenses</span>
         </button>
         <button type="button" className={view === 'loans' ? 'is-active' : ''} onClick={() => closeMenuThen(onShowLoans)} aria-current={view === 'loans' ? 'page' : undefined} aria-label="Loans">
           <span className="material-symbols-rounded" aria-hidden="true">account_balance</span>

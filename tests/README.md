@@ -663,3 +663,5 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 - Verified locally: monthly-plan-summary PASS 673 checks; full-app-layout PASS 728 checks. Inspected the full website's updated summary and left it open. Automated suite: 180 tests; lint/build passed. No production deployment or physical-device test performed.
 
 - Accepted summary wording: **Current expenses · Planned expenses · Money left**. Verify all three in Home and the Monthly plan overview; negative Money left remains visible.
+
+- Expense naming consistency: the card selector reads **Current expenses / Planned expenses**; navigation, empty states, tree root, and help text use Planned expenses (Planned on mobile). Stored `expenseType: "upcoming"` stays compatible. Run `expense-types.html` to verify selector wording and saved-value behavior at six sizes.
