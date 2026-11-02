@@ -17,6 +17,7 @@ try {
       const title = card.querySelector('strong').getBoundingClientRect();
       const summary = card.querySelector('.mobile-plan-summary').getBoundingClientRect();
       const deductions = card.querySelector('.is-deductions'), available = card.querySelector('.is-remaining');
+      assert(!card.querySelector('.monthly-plan-summary em'), 'Summary omits repeated explanatory captions');
       assert(deductions.textContent.startsWith('Current expenses') && card.querySelector('.is-upcoming').textContent.startsWith('Planned expenses') && available.textContent.startsWith('Money left'), 'Plain-language summary labels');
       const hub = card.querySelector('.mobile-plan-hub');
       const hubBox = hub.getBoundingClientRect(), rootBox = card.getBoundingClientRect();

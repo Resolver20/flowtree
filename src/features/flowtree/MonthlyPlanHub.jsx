@@ -11,9 +11,9 @@ export default function MonthlyPlanHub({ monthlyDeductions, upcomingDeductions =
       <strong className="monthly-plan-title">Monthly plan</strong>
     </div>
     <div className="mobile-plan-summary monthly-plan-summary" aria-label="Monthly plan summary">
-      <small className="is-deductions is-current">Current expenses <span>{formatMoney(monthlyDeductions - upcomingDeductions)}</span><em>Spending this month</em></small>
-      <small className="is-deductions is-upcoming">Planned expenses <span>{formatMoney(upcomingDeductions)}</span><em>Set aside for later</em></small>
-      <small className="is-remaining">Money left <span>{formatMoney(monthlyOutcome)}</span><em>After expenses &amp; buffer</em></small>
+      <small className="is-deductions is-current">Current expenses <span>{formatMoney(monthlyDeductions - upcomingDeductions)}</span></small>
+      <small className="is-deductions is-upcoming">Planned expenses <span>{formatMoney(upcomingDeductions)}</span></small>
+      <small className="is-remaining">Money left <span>{formatMoney(monthlyOutcome)}</span></small>
     </div>
   </>
 }
