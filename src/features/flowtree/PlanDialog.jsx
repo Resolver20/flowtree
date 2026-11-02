@@ -1,3 +1,4 @@
+import ExpenseTypeField from './ExpenseTypeField'
 import { expenseTypeFor } from '../../domain/expenseType'
 import { yearBeforeTarget } from '../../domain/cardStart'
 import { bindDialogViewport } from './dialogViewport'
@@ -160,6 +161,7 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     name: node.name,
     amount: node.amount,
     savedAmount: node.savedAmount ?? 0,
+    expenseType: expenseTypeFor(node),
     dueDate: node.dueDate || defaultAnnualTargetDate(),
     startMode: node.startMode === 'target-year' ? 'target-year' : node.startDate ? 'existing' : 'fresh',
     startDate: node.startMode === 'target-year' ? yearBeforeTarget(node.dueDate) : node.startDate || cardStartDate(),
@@ -184,8 +186,8 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     if (drafts.some(draft => !draft.name.trim())) { setError('Every yearly target needs a name.'); return }
     if (drafts.some(draft => !draft.dueDate || draft.dueDate < cardStartDate() || draft.dueDate < draft.startDate)) { setError('Every target date must be in the future.'); return }
     onSave(drafts.map(draft => {
-      const preview = { ...draft.node, name: draft.name.trim(), amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, startMode: draft.startMode, status: draft.status }
-      return { id: draft.id, changes: { name: preview.name, amount: preview.amount, dueDate: preview.dueDate, startDate: preview.startDate, startMode: preview.startMode, status: preview.status, savedAmount: preview.savedAmount } }
+      const preview = { ...draft.node, expenseType: draft.expenseType, name: draft.name.trim(), amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, startMode: draft.startMode, status: draft.status }
+      return { id: draft.id, changes: { expenseType: preview.expenseType, name: preview.name, amount: preview.amount, dueDate: preview.dueDate, startDate: preview.startDate, startMode: preview.startMode, status: preview.status, savedAmount: preview.savedAmount } }
     }))
     onClose()
   }
@@ -195,10 +197,11 @@ function AnnualTargetsDialog({ tree, onClose, onSave, title = 'Yearly targets', 
     {!drafts.length ? <div className="empty-annual-targets"><strong>No yearly targets yet</strong><span>Change a destination’s frequency to Yearly and it will appear here.</span></div> : <form onSubmit={submit}>
       <div className="annual-target-list">
         {drafts.map(draft => {
-          const preview = { ...draft.node, name: draft.name, amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, startMode: draft.startMode, status: draft.status }
+          const preview = { ...draft.node, expenseType: draft.expenseType, name: draft.name, amount: Math.max(0, Number(draft.amount) || 0), savedAmount: Math.max(0, Number(draft.savedAmount) || 0), dueDate: draft.dueDate, startDate: draft.startDate, startMode: draft.startMode, status: draft.status }
           const progress = annualTargetProgress(preview)
           return <section className="annual-target-row" key={draft.id}>
             <div className="annual-target-heading"><input aria-label="Target name" value={draft.name} onChange={event => changeDraft(draft.id, { name: event.target.value })} /><small>{draft.parentPath || 'Top-level category'}</small></div>
+            <ExpenseTypeField value={draft.expenseType} onChange={expenseType => changeDraft(draft.id, { expenseType })} />
             <CardStartSetup allowTargetYear mode={draft.startMode} onModeChange={mode => changeDraft(draft.id, { startMode: mode, ...(mode === 'fresh' ? { startDate: cardStartDate(), savedAmount: 0 } : {}) })} startDate={draft.startDate} onStartDateChange={date => changeDraft(draft.id, { startDate: date })} />
             <label>Annual target (₹)<input type="number" min="0" step="0.01" value={draft.amount} onChange={event => changeDraft(draft.id, { amount: event.target.value })} /></label>
             <label>Saved so far (₹)<input type="number" min="0" step="0.01" value={draft.savedAmount} onChange={event => changeDraft(draft.id, { savedAmount: event.target.value })} /></label>
@@ -287,6 +290,7 @@ function ManageDialog({ onViewOverview, isGoal, node, onClose, onDelete, onReque
 }
 
 function LoanNodeDialog({ node, onClose, onSave }) {
+  const [expenseType, setExpenseType] = useState(expenseTypeFor(node))
   const [name, setName] = useState(node.name)
   const [principal, setPrincipal] = useState(node.loan.principal)
   const [remainingPrincipal, setRemainingPrincipal] = useState(node.loan.remainingPrincipal)
@@ -304,13 +308,14 @@ function LoanNodeDialog({ node, onClose, onSave }) {
     if (!name.trim() || !loan.principal || !Number.isFinite(loan.remainingPrincipal) || !Number(tenureYears)) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
     if (loan.remainingPrincipal > loan.principal) { setError('Remaining principal cannot exceed the original principal.'); return }
     if (loan.remainingPrincipal > 0 && loan.userMonthlyContribution !== undefined && loan.userMonthlyContribution > loanProjection(loan).scheduledPayment) { setError('Your monthly contribution cannot exceed the scheduled monthly payment.'); return }
-    onSave({ nodeId: node.id, name: name.trim(), loan, status, startDate: node.startDate || '' })
+    onSave({ nodeId: node.id, name: name.trim(), loan, status, expenseType, startDate: node.startDate || '' })
     onClose()
   }
 
   return <DialogShell title={`Edit ${node.name}`} onClose={onClose}>
     <p>Update the core loan settings here. The monthly amount in Home updates from this payoff estimate.</p>
     <form onSubmit={submit}>
+      <ExpenseTypeField value={expenseType} onChange={setExpenseType} />
       <label>Loan name<input value={name} onChange={event => { setName(event.target.value); setError('') }} maxLength="100" required /></label>
       <div className="form-grid">
         <label>Original principal (₹)<input value={principal} onChange={event => { setPrincipal(event.target.value); setError('') }} type="number" min="0" step="0.01" /></label>
@@ -342,8 +347,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   const [selectedExpenseType, setExpenseType] = useState(node?.expenseType || '')
   const ancestorIds = node ? pathToNode(tree, node.id).slice(0, -1) : pathToNode(tree, parent?.id)
   const inheritedType = ancestorIds.reduce((type, id) => expenseTypeFor(findNode(tree, id), type), 'current')
-  const expenseType = selectedExpenseType || expenseTypeFor({ period }, inheritedType)
-  const isExpense = !isGoal && !node?.loan && !node?.investment && !['goals', 'growth', 'provisions', 'obligations'].includes(pathToNode(tree, node?.id || parent?.id)[0])
+  const expenseType = selectedExpenseType || expenseTypeFor({ ...node, period }, inheritedType)
   const initialDueDate = node?.dueDate || (period === 'year' ? defaultAnnualTargetDate() : '')
   const [manualStartDate, setStartDate] = useState(node?.startDate || cardStartDate())
   const [startMode, setStartMode] = useState(node?.startMode === 'target-year' ? 'target-year' : node?.startDate ? 'existing' : 'fresh')
@@ -374,8 +378,8 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
       savedAmount: period === 'year' ? Math.max(0, Number(savedAmount) || 0) : 0,
       startMode: period === 'year' ? startMode : undefined,
       startDate: period === 'year' ? startDate : node?.startDate || '',
-      dueDate: period === 'year' || (isExpense && expenseType === 'upcoming') ? dueDate : '',
-      ...(isExpense ? { expenseType } : {}),
+      dueDate: period === 'year' || (expenseType === 'upcoming') ? dueDate : '',
+      expenseType,
       period,
       status: String(form.get('status')),
       symbol,
@@ -393,8 +397,8 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
     <form onSubmit={submit}>
       <label>Name<input name="name" maxLength={100} defaultValue={node?.name || ''} placeholder="e.g. Subscriptions" onChange={() => setError('')} required aria-invalid={Boolean(error)} aria-describedby={error ? 'name-error' : undefined} /></label>
       {error && <span id="name-error" role="alert" className="field-error">{error}</span>}
-      {isExpense && <label>Expense type<select name="expenseType" value={expenseType} onChange={event => setExpenseType(event.target.value)} aria-describedby="expense-type-help"><option value="current">Current expenses</option><option value="upcoming">Planned expenses</option></select><small id="expense-type-help">Current: regular spending such as fuel. Planned: set aside money for servicing, insurance, or another future cost. Frequency stays separate.</small></label>}
-      {isExpense && expenseType === 'upcoming' && period === 'month' && <DateField required={false} label="Target date (optional)" value={dueDate} onChange={setDueDate} />}
+      <ExpenseTypeField value={expenseType} onChange={setExpenseType} />
+      {!isGoal && expenseType === 'upcoming' && period === 'month' && <DateField required={false} label="Target date (optional)" value={dueDate} onChange={setDueDate} />}
       <div className="form-grid">
         <label>{isGoal ? 'Target amount (₹)' : 'Own amount (₹)'}<input name="amount" type="number" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-describedby="amount-help" /></label>
         {!isGoal && <label>Frequency<select name="period" value={period} onChange={event => { const nextPeriod = event.target.value; setPeriod(nextPeriod); if (nextPeriod === 'year' && !dueDate) { const nextDate = defaultAnnualTargetDate(); setDueDate(nextDate) } }}><option value="month">Monthly</option><option value="year">Yearly</option></select></label>}

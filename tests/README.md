@@ -665,3 +665,10 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 - Accepted summary wording: **Current expenses · Planned expenses · Money left**. Verify all three in Home and the Monthly plan overview; negative Money left remains visible.
 
 - Expense naming consistency: the card selector reads **Current expenses / Planned expenses**; navigation, empty states, tree root, and help text use Planned expenses (Planned on mobile). Stored `expenseType: "upcoming"` stays compatible. Run `expense-types.html` to verify selector wording and saved-value behavior at six sizes.
+
+### Expense type on every planning-card editor — 2026-11-02
+
+- Open Edit details on a category, emergency-fund child, goal, loan, and investment in Home. Every editor must offer Current expenses / Planned expenses. Check the dedicated Goals, Loans, Investments editors and the yearly-target bulk editor too.
+- Change the choice, save, and reopen: it must persist and move the contribution between the monthly-summary subtotals without changing the amount. Income and ledger transaction forms are not planning-card editors.
+- `all-expense-editors.html` exercises 14 editor routes at phone portrait, phone landscape, tablet, laptop, and wide-desktop sizes, checking the selector, visible labels, width, successful saves, and the saved type. `editor-sizes.html` retains scrolling, keyboard viewport, large-value and long-label scenarios.
+- Verified final fresh run: all-expense-editors PASS 366 checks, including zero page errors/unhandled rejections captured in both the host and iframe; editor-sizes PASS 66 scenarios; 182 domain/server tests and the Worker runtime test passed. Earlier selector-test navigation failure was corrected (investment overview already exposes Edit). Browser tooling still logged an observer message outside the page error listeners; repository source contains no MutationObserver. Full website preview shows the emergency-fund selector.

@@ -1,9 +1,11 @@
+import ExpenseTypeField from './ExpenseTypeField'
 import { useState } from 'react'
 import { NODE_STATUSES, normalizeNodeStatus, monthlyAllocation } from '../../domain/flowTree'
 import { formatMoney } from '../../lib/money'
 import IconPicker from './IconPicker'
 
 function InvestmentEditor({ investment, onSave, onCancel }) {
+  const [expenseType, setExpenseType] = useState(investment?.expenseType || 'upcoming')
   const [name, setName] = useState(investment?.name || 'New investment')
   const [type, setType] = useState(investment?.investment?.type || 'Mutual fund')
   const [amount, setAmount] = useState(investment?.amount ?? '')
@@ -24,12 +26,13 @@ function InvestmentEditor({ investment, onSave, onCancel }) {
       setError('Enter an investment type.')
       return
     }
-    onSave({ id: investment?.id, name: name.trim(), type: type.trim(), amount: nextAmount, currentValue: nextCurrentValue, status, startDate: investment?.startDate || '', symbol })
+    onSave({ id: investment?.id, expenseType, name: name.trim(), type: type.trim(), amount: nextAmount, currentValue: nextCurrentValue, status, startDate: investment?.startDate || '', symbol })
   }
 
   return <form className="goal-editor investment-editor" onSubmit={submit}>
     <div className="goal-editor-heading"><div><strong>{investment ? `Edit ${investment.name}` : 'Add an investment'}</strong><span>Monthly contributions flow into Home. Current value is a record you enter; FlowTree does not retrieve market prices.</span></div><button type="button" onClick={onCancel}>Cancel</button></div>
     <div className="goal-form-grid">
+      <ExpenseTypeField value={expenseType} onChange={setExpenseType} />
       <label>Investment name<input value={name} onChange={event => setName(event.target.value)} maxLength="100" /></label>
       <label>Investment type<input value={type} onChange={event => setType(event.target.value)} maxLength="64" placeholder="Mutual fund, PF, equity…" /></label>
       <label>Monthly contribution (₹)<input value={amount} onChange={event => setAmount(event.target.value)} type="number" min="0" step="0.01" /></label>

@@ -1,3 +1,4 @@
+import ExpenseTypeField from './ExpenseTypeField'
 import { useMemo, useState } from 'react'
 import { NODE_STATUSES, normalizeNodeStatus, monthlyAllocation } from '../../domain/flowTree'
 import { loanProjection } from '../../domain/loan'
@@ -53,6 +54,7 @@ function LoanDraftSketch({ principal, remainingPrincipal, annualRate, tenureYear
 }
 
 function LoanEditor({ loan, onSave, onCancel }) {
+  const [expenseType, setExpenseType] = useState(loan?.expenseType || 'current')
   const [name, setName] = useState(loan?.name || 'New loan')
   const [principal, setPrincipal] = useState(loan?.loan?.principal ?? '')
   const [remainingPrincipal, setRemainingPrincipal] = useState(loan?.loan?.remainingPrincipal ?? loan?.loan?.principal ?? '')
@@ -69,12 +71,13 @@ function LoanEditor({ loan, onSave, onCancel }) {
     if (!name.trim() || !data.principal || !Number.isFinite(data.remainingPrincipal) || !data.tenureMonths) { setError('Enter a loan name, principal, remaining principal, and tenure.'); return }
     if (data.remainingPrincipal > data.principal) { setError('Remaining principal cannot exceed the original principal.'); return }
     if (data.remainingPrincipal > 0 && data.userMonthlyContribution !== undefined && data.userMonthlyContribution > loanProjection(data).scheduledPayment) { setError('Your monthly contribution cannot exceed the scheduled monthly payment.'); return }
-    onSave({ id: loan?.id, name: name.trim(), status, startDate: loan?.startDate || '', loan: data })
+    onSave({ id: loan?.id, expenseType, name: name.trim(), status, startDate: loan?.startDate || '', loan: data })
   }
 
   return <form className="loan-editor" onSubmit={submit}>
     <div className="loan-editor-heading"><div><strong>{loan ? `Edit ${loan.name}` : 'Add a loan'}</strong><span>These are planning estimates. Confirm your lender statement for the actual balance and rate.</span></div><button type="button" onClick={onCancel}>Cancel</button></div>
     <div className="loan-form-grid">
+      <ExpenseTypeField value={expenseType} onChange={setExpenseType} />
       <label>Loan name<input value={name} onChange={event => setName(event.target.value)} maxLength="100" /></label>
       <label>Original principal (₹)<input value={principal} onChange={event => setPrincipal(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Principal remaining (₹)<input value={remainingPrincipal} onChange={event => setRemainingPrincipal(event.target.value)} type="number" step="0.01" /></label>

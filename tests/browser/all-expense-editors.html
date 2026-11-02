@@ -1,0 +1,26 @@
+<!doctype html><html><meta charset="utf-8"><script>
+window.testErrors=[];
+addEventListener('error',event=>window.testErrors.push({message:event.message,source:event.filename,stack:event.error?.stack}));
+addEventListener('unhandledrejection',event=>window.testErrors.push({message:String(event.reason),stack:event.reason?.stack}));
+</script><pre id="result">Running…</pre><iframe title="Expense editors" src="/tests/browser/all-expense-editors.fixture.html" style="border:0"></iframe><script type="module">
+const frame=document.querySelector('iframe'),wait=()=>new Promise(resolve=>setTimeout(resolve,70));let checks=0;
+const check=(ok,message)=>{if(!ok)throw Error(message);checks++};
+try{
+ for(let i=0;i<100&&!frame.contentWindow.renderCase;i++)await wait();
+ for(const [width,height]of [[320,740],[568,320],[768,1024],[1366,768],[1920,1080]]){
+ frame.style.width=`${width}px`;frame.style.height=`${height}px`;
+ for(const kind of ['needs','obligations','provisions','goals','growth','example-rent','example-loan','example-emergency','example-holiday','example-investment','goal-view','loan-view','investment-view','annual']){
+ const d=frame.contentDocument,w=frame.contentWindow;w.renderCase(kind);await wait();
+ if(kind.endsWith('-view')){if(kind!=='investment-view')d.querySelector('.goal-list button,.loan-list button')?.click();await wait();const edit=[...d.querySelectorAll('button')].find(b=>b.textContent.trim().startsWith('Edit'));check(!!edit,`${kind}: edit action`);edit.click();await wait();}
+ const select=d.querySelector('[name=expenseType]');check(!!select,`${width}/${kind}: selector present`);
+ check([...select.options].map(o=>o.textContent).join('|')==='Current expenses|Planned expenses',`${kind}: labels`);
+ select.scrollIntoView({block:'center'});const box=select.getBoundingClientRect();check(box.left>=0&&box.right<=width&&box.width>=100,`${width}/${kind}: fits`);
+ const next=select.value==='current'?'upcoming':'current';Object.getOwnPropertyDescriptor(w.HTMLSelectElement.prototype,'value').set.call(select,next);select.dispatchEvent(new w.Event('change',{bubbles:true}));await wait();
+ select.closest('form').requestSubmit();await wait();const saved=JSON.parse(d.body.dataset.saved||'null');
+ check(!!saved,`${width}/${kind}: saves`);check((Array.isArray(saved)?saved[0].changes.expenseType:saved.expenseType)===next,`${width}/${kind}: preserves chosen type`);
+ }
+ }
+ check(window.testErrors.length===0 && frame.contentWindow.testErrors.length===0, JSON.stringify([...window.testErrors,...frame.contentWindow.testErrors]));
+ document.querySelector('#result').textContent=`PASS ${checks} checks; no page errors`;
+}catch(e){document.querySelector('#result').textContent=`FAIL ${e.message}`;throw e}
+</script></html>

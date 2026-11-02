@@ -1,0 +1,24 @@
+<!doctype html><html><meta charset="utf-8"><script>
+window.testErrors=[];
+addEventListener('error',event=>window.testErrors.push({message:event.message,source:event.filename,stack:event.error?.stack}));
+addEventListener('unhandledrejection',event=>window.testErrors.push({message:String(event.reason),stack:event.reason?.stack}));
+</script><div id="root"></div><script type="module">
+import React from 'react';import {createRoot} from 'react-dom/client';
+import PlanDialog from '/src/features/flowtree/PlanDialog.jsx';
+import GoalsView from '/src/features/flowtree/GoalsView.jsx';
+import LoansView from '/src/features/flowtree/LoansView.jsx';
+import InvestmentsView from '/src/features/flowtree/InvestmentsView.jsx';
+import {createExamplePlan} from '/src/domain/examplePlan.js';
+import '/src/index.css';import '/src/features/flowtree/EnergyExplorer.css';
+const root=createRoot(document.querySelector('#root')),plan=createExamplePlan(),noop=()=>{};
+window.renderCase=(kind)=>{
+ document.body.dataset.saved='';
+ const save=data=>{document.body.dataset.saved=JSON.stringify(data)};
+ let component;
+ if(kind==='goal-view')component=React.createElement(GoalsView,{goals:plan.tree.find(n=>n.id==='goals').children,onSaveGoal:save});
+ else if(kind==='loan-view')component=React.createElement(LoansView,{loans:plan.tree.find(n=>n.id==='obligations').children,onSaveLoan:save});
+ else if(kind==='investment-view')component=React.createElement(InvestmentsView,{investments:plan.tree.find(n=>n.id==='growth').children,onSaveInvestment:save});
+ else component=React.createElement(PlanDialog,{...plan,dialog:kind==='annual'?{type:'annualTargets'}:{type:'node',nodeId:kind},onClose:noop,onSaveNode:save,onSaveAnnualTargets:save});
+ root.render(React.createElement('main',{key:kind,className:'energy-mode theme-light'},component));
+};
+</script></html>

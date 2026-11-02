@@ -1,3 +1,4 @@
+import ExpenseTypeField from './ExpenseTypeField'
 import { yearBeforeTarget } from '../../domain/cardStart'
 import CardStartSetup from './CardStartSetup'
 import DateField from './DateField'
@@ -21,6 +22,7 @@ function todayDate() {
 }
 
 function GoalEditor({ goal, onSave, onCancel }) {
+  const [expenseType, setExpenseType] = useState(goal?.expenseType || 'upcoming')
   const [name, setName] = useState(goal?.name || 'New life goal')
   const [amount, setAmount] = useState(goal?.amount ?? '')
   const [symbol, setSymbol] = useState(goal?.symbol || goal?.icon || 'flag')
@@ -41,12 +43,13 @@ function GoalEditor({ goal, onSave, onCancel }) {
     if (!name.trim() || !nextAmount) { setError('Enter a goal name and a target amount.'); return }
     if (period === 'year' && (!startDate || !dueDate || dueDate < startDate)) { setError('Choose an end date on or after the goal start date.'); return }
     if (nextSavedAmount > nextAmount) { setError('Already accumulated cannot exceed the target amount.'); return }
-    onSave({ id: goal?.id, name: name.trim(), amount: nextAmount, savedAmount: period === 'year' ? nextSavedAmount : 0, startDate, startMode, period, dueDate: period === 'year' ? dueDate : '', status, symbol })
+    onSave({ id: goal?.id, expenseType, name: name.trim(), amount: nextAmount, savedAmount: period === 'year' ? nextSavedAmount : 0, startDate, startMode, period, dueDate: period === 'year' ? dueDate : '', status, symbol })
   }
 
   return <form className="goal-editor" onSubmit={submit}>
     <div className="goal-editor-heading"><div><strong>{goal ? `Edit ${goal.name}` : 'Add a life goal'}</strong><span>Set your target and end date, then choose whether to start fresh or calculate progress from an earlier start date.</span></div><button type="button" onClick={onCancel}>Cancel</button></div>
     <div className="goal-form-grid">
+      <ExpenseTypeField value={expenseType} onChange={setExpenseType} />
       <label>Goal name<input value={name} onChange={event => setName(event.target.value)} maxLength="100" /></label>
       <label>Target amount (₹)<input value={amount} onChange={event => setAmount(event.target.value)} type="number" min="0" step="0.01" /></label>
       <label>Goal icon<IconPicker value={symbol} onChange={setSymbol} /></label>
