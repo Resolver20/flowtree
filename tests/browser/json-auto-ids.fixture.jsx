@@ -18,7 +18,7 @@ export function Fixture() {
   const [plan, setPlan] = useState(initial)
   const [open, setOpen] = useState(true)
   const [revision, setRevision] = useState(0)
-  return <>
+  return <div className="energy-mode theme-dark">
     <App key={revision} offlinePlan={plan} onSaveOfflinePlan={() => {}} />
     <button type="button" style={{ position: 'fixed', top: 8, left: '45%', zIndex: 30 }} onClick={() => setOpen(true)}>Edit test plan JSON</button>
     <output id="applied" hidden>{JSON.stringify(plan)}</output>
@@ -26,6 +26,6 @@ export function Fixture() {
       setPlan(next)
       setRevision(value => value + 1)
     }} />}
-  </>
+  </div>
 }
 createRoot(document.getElementById('root')).render(<Fixture />)

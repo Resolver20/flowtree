@@ -14,6 +14,7 @@ try {
     await loaded;
     const d = frame.contentDocument;
     await until(() => d.querySelector('textarea'));
+    check(frame.contentWindow.getComputedStyle(d.querySelector('dialog')).backgroundColor !== 'rgba(0, 0, 0, 0)', `${width}: editor inherits app theme surface`);
     check(d.querySelector('dialog').textContent.includes('creates them automatically'), `${width}: ID guidance shown`);
     const plan = JSON.parse(d.querySelector('#applied').textContent);
     plan.incomeSources.push({ name: 'Side income', amount: 1000 });
