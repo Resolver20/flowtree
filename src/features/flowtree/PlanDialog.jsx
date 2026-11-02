@@ -242,7 +242,7 @@ function JsonEditorDialog({ data, onClose, onSave }) {
   }
 
   return <DialogShell title="Edit plan JSON" onClose={onClose} wide>
-    <p>Change your plan directly, then save. This is the same simple JSON stored in your FlowTree Google Drive file. Validation runs before anything is replaced.</p>
+    <p>Change your plan directly, then save. You can leave out IDs on new items; FlowTree creates them automatically. Existing IDs stay unchanged. Validation runs before anything is replaced.</p>
     <form onSubmit={submit}>
       <label>Plan JSON<textarea className="json-editor" value={json} onChange={event => { setJson(event.target.value); setError('') }} spellCheck="false" aria-invalid={Boolean(error)} aria-describedby={error ? 'json-error' : undefined} /></label>
       {error && <span id="json-error" role="alert" className="field-error">{error}</span>}

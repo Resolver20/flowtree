@@ -66,7 +66,7 @@ The app requests the narrow `drive.file` permission. It does not read Gmail, Cal
 
 ## Direct JSON editing
 
-After connecting Google Drive, use the profile menu and choose **Edit plan JSON** to view and edit the same plain JSON saved in Google Drive. FlowTree validates the document before replacing the active plan. Keep IDs unique and use JSON numbers for monetary fields.
+After connecting Google Drive, use the profile menu and choose **Edit plan JSON** to view and edit the same plain JSON saved in Google Drive. FlowTree validates the document before replacing the active plan. You can omit IDs on new items; FlowTree fills them automatically. Keep existing IDs when editing saved items, and use JSON numbers for monetary fields.
 
 ## A practical routine
 

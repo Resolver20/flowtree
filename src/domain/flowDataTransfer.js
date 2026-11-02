@@ -1,4 +1,4 @@
-import { NODE_STATUSES, normalizeNodeStatus } from './flowTree.js'
+import { FLOW_GROUPS, NODE_STATUSES, normalizeNodeStatus } from './flowTree.js'
 import { normalizeCanvasPins } from './canvasPins.js'
 
 export const FLOWTREE_EXPORT_FORMAT = 'flowtree-plan'
@@ -37,6 +37,39 @@ function optionalText(value, path, fallback = '', maxLength = 100) {
   if (typeof value !== 'string') fail(`${path} must be a string.`)
   if (value.length > maxLength) fail(`${path} must be ${maxLength} characters or fewer.`)
   return value
+}
+
+function missingId(value) {
+  return value === undefined || value === null || (typeof value === 'string' && !value.trim())
+}
+
+// Reserve supplied IDs before assigning any missing ones, including IDs on
+// later siblings/descendants. Deterministic IDs keep repeated validation stable.
+function createIdAllocator(items, path, prefix, nested = false) {
+  const reserved = new Set()
+  let count = 0
+  function reserve(rows, location, depth) {
+    const values = arrayAt(rows, location)
+    if (nested && values.length && depth > MAX_DEPTH) fail(`The tree cannot be deeper than ${MAX_DEPTH} levels.`)
+    values.forEach((row, index) => {
+      if (nested && ++count > MAX_NODES) fail(`The tree cannot contain more than ${MAX_NODES} items.`)
+      const itemPath = `${location}[${index}]`
+      const source = objectAt(row, itemPath)
+      if (!missingId(source.id)) reserved.add(textAt(source.id, `${itemPath}.id`))
+      if (nested) reserve(source.children ?? [], `${itemPath}.children`, depth + 1)
+    })
+  }
+  reserve(items, path, 1)
+  let sequence = 0
+  return (value, location, preferred) => {
+    if (!missingId(value)) return textAt(value, location)
+    let id = preferred
+    if (!id || reserved.has(id)) {
+      do { id = `${prefix}-${++sequence}` } while (reserved.has(id))
+    }
+    reserved.add(id)
+    return id
+  }
 }
 
 function amountAt(value, path, fallback) {
@@ -90,15 +123,18 @@ function investmentAt(value, path) {
 function generalLedgersAt(value) {
   if (value === undefined || value === null) return []
   const ids = new Set()
-  return arrayAt(value, 'data.generalLedgers').map((ledger, ledgerIndex) => {
+  const ledgers = arrayAt(value, 'data.generalLedgers')
+  const allocateId = createIdAllocator(ledgers, 'data.generalLedgers', 'ledger')
+  return ledgers.map((ledger, ledgerIndex) => {
     if (ledgerIndex >= MAX_GENERAL_LEDGERS) fail(`data.generalLedgers cannot contain more than ${MAX_GENERAL_LEDGERS} ledgers.`)
     const source = objectAt(ledger, `data.generalLedgers[${ledgerIndex}]`)
-    const id = textAt(source.id, `data.generalLedgers[${ledgerIndex}].id`)
+    const id = allocateId(source.id, `data.generalLedgers[${ledgerIndex}].id`)
     if (ids.has(id)) fail(`Duplicate general ledger id: ${id}.`)
     ids.add(id)
     const entries = arrayAt(source.entries ?? [], `data.generalLedgers[${ledgerIndex}].entries`)
     if (entries.length > MAX_LEDGER_ENTRIES) fail(`data.generalLedgers[${ledgerIndex}].entries cannot contain more than ${MAX_LEDGER_ENTRIES} entries.`)
     const entryIds = new Set()
+    const allocateEntryId = createIdAllocator(entries, `data.generalLedgers[${ledgerIndex}].entries`, 'entry')
     return {
       id,
       name: textAt(source.name, `data.generalLedgers[${ledgerIndex}].name`),
@@ -107,7 +143,7 @@ function generalLedgersAt(value) {
       budget: amountAt(source.budget, `data.generalLedgers[${ledgerIndex}].budget`, 0),
       entries: entries.map((entry, entryIndex) => {
         const item = objectAt(entry, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}]`)
-        const entryId = textAt(item.id, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].id`)
+        const entryId = allocateEntryId(item.id, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].id`)
         if (entryIds.has(entryId)) fail(`Duplicate ledger entry id: ${entryId}.`)
         entryIds.add(entryId)
         return { id: entryId, date: dateAt(item.date, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].date`), description: textAt(item.description, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].description`), amount: amountAt(item.amount, `data.generalLedgers[${ledgerIndex}].entries[${entryIndex}].amount`) }
@@ -120,7 +156,10 @@ function normalizeNode(node, path, ids, counters, depth) {
   if (depth > MAX_DEPTH) fail(`The tree cannot be deeper than ${MAX_DEPTH} levels.`)
   if (++counters.nodes > MAX_NODES) fail(`The tree cannot contain more than ${MAX_NODES} items.`)
   const source = objectAt(node, path)
-  const id = textAt(source.id, `${path}.id`)
+  const categoryId = depth === 1 && typeof source.name === 'string'
+    ? FLOW_GROUPS.find(group => group.name.toLowerCase() === source.name.trim().toLowerCase())?.id
+    : undefined
+  const id = counters.allocateId(source.id, `${path}.id`, categoryId)
   if (ids.has(id)) fail(`Duplicate destination id: ${id}.`)
   ids.add(id)
 
@@ -167,6 +206,7 @@ function monthlyHistoryAt(value) {
     const ids = new Set()
     const payments = arrayAt(snapshot.payments, 'monthly payments')
     if (payments.length > MAX_NODES) fail('Too many monthly payments.')
+    const allocateId = createIdAllocator(payments, `monthlyHistory.${month}.payments`, 'payment')
     result[month] = {
       month,
       income: amountAt(snapshot.income, 'monthly income'),
@@ -174,7 +214,7 @@ function monthlyHistoryAt(value) {
       planned: amountAt(snapshot.planned, 'monthly planned'),
       payments: payments.map(rawPayment => {
         const payment = objectAt(rawPayment, 'monthly payment')
-        const id = textAt(payment.id, 'payment id')
+        const id = allocateId(payment.id, 'payment id')
         if (ids.has(id)) fail('Duplicate monthly payment id.')
         ids.add(id)
         const scheduledDate = dateAt(payment.scheduledDate, 'scheduled date')
@@ -200,9 +240,11 @@ function normalizePlan(value) {
   if (typeof profile.visible !== 'boolean') fail('data.profile.visible must be true or false.')
 
   const incomeIds = new Set()
-  const incomeSources = arrayAt(source.incomeSources, 'data.incomeSources').map((income, index) => {
+  const incomes = arrayAt(source.incomeSources, 'data.incomeSources')
+  const allocateIncomeId = createIdAllocator(incomes, 'data.incomeSources', 'income')
+  const incomeSources = incomes.map((income, index) => {
     const entry = objectAt(income, `data.incomeSources[${index}]`)
-    const id = textAt(entry.id, `data.incomeSources[${index}].id`)
+    const id = allocateIncomeId(entry.id, `data.incomeSources[${index}].id`)
     if (incomeIds.has(id)) fail(`Duplicate income source id: ${id}.`)
     incomeIds.add(id)
     return {
@@ -220,8 +262,9 @@ function normalizePlan(value) {
   })
 
   const nodeIds = new Set()
-  const counters = { nodes: 0 }
-  const tree = arrayAt(source.tree, 'data.tree').map((node, index) => normalizeNode(node, `data.tree[${index}]`, nodeIds, counters, 1))
+  const nodes = arrayAt(source.tree, 'data.tree')
+  const counters = { nodes: 0, allocateId: createIdAllocator(nodes, 'data.tree', 'destination', true) }
+  const tree = nodes.map((node, index) => normalizeNode(node, `data.tree[${index}]`, nodeIds, counters, 1))
 
   const canvasPins = normalizeCanvasPins(source.canvasPins)
   return {

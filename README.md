@@ -129,17 +129,16 @@ The Drive file is intentionally a plain plan object—there is no wrapper, metad
 {
   "profile": { "name": "You" },
   "incomeSources": [
-    { "id": "salary", "name": "Salary", "amount": 60000 }
+    { "name": "Salary", "amount": 60000 }
   ],
   "buffer": 5000,
   "tree": [
     {
-      "id": "cash-flow",
       "name": "Cash Flow",
       "amount": 0,
       "children": [
-        { "id": "rent", "name": "Rent", "amount": 18000, "children": [] },
-        { "id": "insurance", "name": "Insurance", "amount": 12000, "period": "year", "dueDate": "2027-09-20", "children": [] }
+        { "name": "Rent", "amount": 18000, "children": [] },
+        { "name": "Insurance", "amount": 12000, "period": "year", "dueDate": "2027-09-20", "children": [] }
       ]
     }
   ]
@@ -148,7 +147,7 @@ The Drive file is intentionally a plain plan object—there is no wrapper, metad
 
 Authoring rules:
 
-- Every income source and destination needs a unique, non-empty `id` within its own list.
+- IDs are optional for new JSON items. Flowtree fills missing, null or blank IDs automatically for destinations, income sources, ledgers and their entries, and monthly-history payments. Existing IDs are preserved; supplied duplicates and invalid ID types are rejected. Standard top-level category names receive their built-in IDs when omitted, so Loans, Life goals and Investments keep working. Saved/exported JSON includes the generated IDs; keep these when editing existing items.
 - `amount`, `savedAmount`, and `buffer` are JSON numbers greater than or equal to zero. Do not put them in quotation marks.
 - `period` is `"month"` or `"year"`.
 - `status` is `"active"` or `"inactive"`. Inactive items pause allocation for their entire branch. Older `"seeded"` values import as active; `"dormant"` and `"funded"` import as inactive.

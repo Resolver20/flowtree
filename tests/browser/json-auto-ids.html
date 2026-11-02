@@ -1,0 +1,52 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Automatic JSON IDs regression</title><pre id="result">Running…</pre><script type="module">
+const frame = document.createElement('iframe');
+frame.style.height = '844px';
+document.body.append(frame);
+let checks = 0;
+const wait = () => new Promise(resolve => setTimeout(resolve, 40));
+function check(ok, message) { if (!ok) throw Error(message); checks++; }
+async function until(predicate) { for (let i = 0; i < 100; i++) { if (predicate()) return; await wait(); } throw Error('UI timed out'); }
+try {
+  for (const width of [320,390,568,768,1366,1920]) {
+    frame.style.width = `${width}px`;
+    const loaded = new Promise(resolve => frame.onload = resolve);
+    frame.src = `./json-auto-ids.fixture.html?width=${width}`;
+    await loaded;
+    const d = frame.contentDocument;
+    await until(() => d.querySelector('textarea'));
+    check(d.querySelector('dialog').textContent.includes('creates them automatically'), `${width}: ID guidance shown`);
+    const plan = JSON.parse(d.querySelector('#applied').textContent);
+    plan.incomeSources.push({ name: 'Side income', amount: 1000 });
+    plan.tree[0].children.push({ name: 'Manually added bill', amount: 500, children: [{ name: 'Nested bill', amount: 20 }] });
+    async function typeJSON(value) {
+      const input = d.querySelector('textarea');
+      Object.getOwnPropertyDescriptor(frame.contentWindow.HTMLTextAreaElement.prototype, 'value').set.call(input, JSON.stringify(value, null, 2));
+      input.dispatchEvent(new frame.contentWindow.Event('input', { bubbles: true }));
+      await wait();
+    }
+    await typeJSON(plan);
+    d.querySelector('dialog form').requestSubmit();
+    await until(() => !d.querySelector('dialog[open]'));
+    const saved = JSON.parse(d.querySelector('#applied').textContent);
+    check(saved.incomeSources[0].id === 'salary', `${width}: existing income ID unchanged`);
+    check(saved.incomeSources[1].id, `${width}: new income ID generated`);
+    check(saved.tree[0].children[0].id === 'kept-bill', `${width}: existing destination ID unchanged`);
+    check(saved.tree[0].children[1].id && saved.tree[0].children[1].children[0].id, `${width}: nested IDs generated`);
+    d.querySelector('.sidebar-nav [aria-label="Home"]').click();
+    await wait();
+    await until(() => d.querySelector(`[data-tree-path="needs/${saved.tree[0].children[1].id}"]`));
+    check([...d.querySelectorAll('strong')].some(el => el.textContent === 'Manually added bill'), `${width}: new node renders in full App`);
+    [...d.querySelectorAll('button')].find(button => button.textContent === 'Edit test plan JSON').click();
+    await until(() => d.querySelector('textarea'));
+    check(JSON.parse(d.querySelector('textarea').value).tree[0].children[1].id === saved.tree[0].children[1].id, `${width}: reopened JSON retains generated IDs`);
+    const invalid = structuredClone(saved);
+    invalid.tree[0].children.push({ id: 'kept-bill', name: 'Duplicate' });
+    await typeJSON(invalid);
+    d.querySelector('dialog form').requestSubmit();
+    await until(() => d.querySelector('[role=alert]'));
+    check(d.querySelector('[role=alert]').textContent.includes('Duplicate destination id'), `${width}: duplicate still rejected`);
+    check(d.querySelector('#applied').textContent === JSON.stringify(saved), `${width}: failed validation preserves active plan`);
+  }
+  document.querySelector('#result').textContent = `PASS ${checks} checks`;
+} catch (error) { document.querySelector('#result').textContent = `FAIL ${error.message}`; throw error; }
+</script></html>
