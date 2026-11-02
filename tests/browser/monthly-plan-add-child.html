@@ -1,0 +1,51 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Monthly plan Add child regression</title>
+<pre id="result">Running…</pre><iframe title="Full Flowtree app" src="/offline.local.html" style="border:0"></iframe>
+<script type="module">
+const frame = document.querySelector('iframe');
+const wait = () => new Promise(resolve => setTimeout(resolve, 50));
+let checks = 0;
+function check(ok, message) { if (!ok) throw Error(message); checks++; }
+async function until(predicate) { for (let i = 0; i < 100; i++) { if (predicate()) return; await wait(); } throw Error('Timed out waiting for UI'); }
+const roots = d => [...d.querySelectorAll('[data-tree-path]')].filter(el => !el.dataset.treePath.includes('/'));
+try {
+  await new Promise(resolve => frame.onload = resolve);
+  for (const [width, height] of [[320,740],[390,844],[568,320],[768,1024],[1366,768],[1920,1080]]) {
+    frame.style.width = `${width}px`; frame.style.height = `${height}px`;
+    if (width !== 320) { frame.src = `/offline.local.html?monthly-plan-add=${width}`; await new Promise(resolve => frame.onload = resolve); }
+    const d = frame.contentDocument;
+    await until(() => d.querySelector('[aria-label="View monthly plan information"]'));
+    const before = roots(d).length;
+    d.querySelector('[aria-label="View monthly plan information"]').click();
+    await until(() => d.querySelector('dialog[open]'));
+    let modal = d.querySelector('dialog[open]');
+    check(modal.querySelector('h2').textContent === 'Monthly plan', `${width}: plan info opens`);
+    const add = [...modal.querySelectorAll('button')].find(b => b.textContent === 'Add child');
+    check(!!add, `${width}: Add child available`);
+    const box = add.getBoundingClientRect();
+    check(box.left >= 0 && box.right <= width && box.bottom <= height, `${width}: Add child fits viewport`);
+    check(box.width >= 24 && box.height >= 24, `${width}: usable target`);
+    add.click();
+    await until(() => d.querySelector('dialog[open] h2')?.textContent === 'Add category');
+    modal = d.querySelector('dialog[open]');
+    check(modal.textContent.includes('under Monthly plan'), `${width}: root placement explained`);
+    check(!modal.querySelector('[name=parentId]')?.value, `${width}: no existing node is assigned as parent`);
+    const name = modal.querySelector('[name=name]');
+    check(!!name, `${width}: category name field`);
+    Object.getOwnPropertyDescriptor(frame.contentWindow.HTMLInputElement.prototype, 'value').set.call(name, `New category ${width}`);
+    name.dispatchEvent(new frame.contentWindow.Event('input', { bubbles:true }));
+    modal.querySelector('form').requestSubmit();
+    await until(() => !d.querySelector('dialog[open]'));
+    const created = roots(d).find(el => el.querySelector('strong')?.textContent === `New category ${width}`);
+    check(!!created, `${width}: new child is a top-level category`);
+    check(roots(d).length === before + 1, `${width}: existing categories retained`);
+    d.querySelector('[aria-label="View monthly plan information"]').click();
+    await until(() => d.querySelector('dialog[open]'));
+    [...d.querySelectorAll('dialog[open] button')].find(b => b.textContent === 'Add child').click();
+    await until(() => d.querySelector('dialog[open] h2')?.textContent === 'Add category');
+    [...d.querySelectorAll('dialog[open] button')].find(b => b.textContent === 'Cancel').click();
+    await until(() => !d.querySelector('dialog[open]'));
+    check(roots(d).length === before + 1, `${width}: cancelling adds nothing`);
+  }
+  document.querySelector('#result').textContent = `PASS ${checks} checks`;
+} catch (error) { document.querySelector('#result').textContent = `FAIL ${error.message}`; throw error; }
+</script></html>

@@ -75,11 +75,11 @@ function ProfileManageDialog({ profile, onClose, onDelete, onRequestEdit, onRequ
   </DialogShell>
 }
 
-function InfoDialog({ title, icon, children, onClose }) {
+function InfoDialog({ title, icon, children, onClose, onAddChild }) {
   return <DialogShell title={title} onClose={onClose}>
     <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">{icon}</span><div><span>FlowTree preview</span><strong>{title}</strong></div></div>
     <p>{children}</p>
-    <div className="dialog-actions"><button type="button" className="modal-submit" onClick={onClose}>Done</button></div>
+    <div className="dialog-actions"><button type="button" className={onAddChild ? undefined : 'modal-submit'} onClick={onClose}>Done</button>{onAddChild && <button type="button" className="modal-submit" onClick={onAddChild}>Add child</button>}</div>
   </DialogShell>
 }
 
@@ -382,7 +382,7 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   </DialogShell>
 
   return <DialogShell title={isEditing ? 'Edit destination' : parent ? 'Add destination' : 'Add category'} onClose={onClose}>
-    <p>{isEditing ? 'Changes update this node and its parent totals.' : `This node will sit under ${parent?.name || 'Monthly income'}.`}</p>
+    <p>{isEditing ? 'Changes update this node and its parent totals.' : `This node will sit under ${parent?.name || 'Monthly plan'}.`}</p>
     <form onSubmit={submit}>
       <label>Name<input name="name" maxLength={100} defaultValue={node?.name || ''} placeholder="e.g. Subscriptions" onChange={() => setError('')} required aria-invalid={Boolean(error)} aria-describedby={error ? 'name-error' : undefined} /></label>
       {error && <span id="name-error" role="alert" className="field-error">{error}</span>}
@@ -419,7 +419,7 @@ export default function PlanDialog({ isExample = false, monthlyHistory, onViewOv
   if (dialog.type === 'manageProfile') return <ProfileManageDialog profile={profile} onClose={onClose} onDelete={onDeleteProfile} onRequestEdit={onRequestEditProfile} onRequestAddIncome={onRequestAddIncomeSource} onRequestSinkingFunds={() => onRequestSinkingFunds()} />
   if (dialog.type === 'profile') return <ProfileDialog profile={profile} onClose={onClose} onSave={onSaveProfile} />
   if (dialog.type === 'incomeOverview') return <IncomeOverviewDialog incomeSources={incomeSources} onClose={onClose} onAdd={onRequestAddIncomeSource} />
-  if (dialog.type === 'monthlyPlanOverview') return <InfoDialog title="Monthly plan" icon="account_balance_wallet" onClose={onClose}>This is the amount left after planned monthly targets and your safety buffer. It is a plan preview, not your bank balance.</InfoDialog>
+  if (dialog.type === 'monthlyPlanOverview') return <InfoDialog title="Monthly plan" icon="account_balance_wallet" onClose={onClose} onAddChild={() => onRequestAdd(null)}>This is the amount left after planned monthly targets and your safety buffer. It is a plan preview, not your bank balance.</InfoDialog>
   if (dialog.type === 'manageIncomeSource') return <IncomeSourceManageDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onDelete={onDeleteIncomeSource} onRequestEdit={onRequestEditIncomeSource} />
   if (dialog.type === 'incomeSource') return <IncomeSourceDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onSave={onSaveIncomeSource} />
   if (dialog.type === 'annualTargets') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} />
