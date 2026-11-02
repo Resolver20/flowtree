@@ -688,3 +688,5 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 - `info-expense-style.html` checks the tree info badge stays 16×16px with an 11px glyph and original position, especially at 761–900px where a legacy override doubled it. Its invisible hit area remains at least 24px; focus and correct-card activation are checked.
 - Current expenses uses muted teal; Planned expenses uses amber. Verify selected expense segments and monthly summary in both themes, including keyboard focus, long labels, and large amounts. The fixture checks distinct tints and minimum 4.5:1 text contrast across ten widths and both themes.
 - Verified: info-expense-style PASS 240 checks across ten widths and both themes; full-app-layout PASS 710 checks with current offline sample; 182 automated tests, lint and server build passed. Full website editor inspected with the muted Planned tint.
+
+- Final accepted expense palette: soft blue for Current expenses and muted purple for Planned expenses, in both the editor and summaries. Retain `info-expense-style.html` contrast, selection, sizing, and clipping checks in both themes.
