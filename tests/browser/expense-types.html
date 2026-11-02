@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Expense type regression</title>
+<pre id="result">Running…</pre><iframe title="Full Flowtree app" src="/offline.local.html" style="border:0"></iframe>
+<script type="module">
+const frame = document.querySelector('iframe'), wait = () => new Promise(resolve => setTimeout(resolve, 70));
+let checks = 0;
+function check(ok, message) { if (!ok) throw Error(message); checks++; }
+async function until(predicate) { for (let i=0;i<100;i++) { if(predicate()) return; await wait(); } throw Error('Timed out'); }
+try {
+ await new Promise(resolve => frame.onload=resolve);
+ for(const [width,height] of [[320,740],[390,844],[568,320],[768,1024],[1366,768],[1920,1080]]) {
+  frame.style.width=`${width}px`; frame.style.height=`${height}px`;
+  if(width!==320) { frame.src=`/offline.local.html?expense-test=${width}`; await new Promise(resolve=>frame.onload=resolve); }
+  const d=frame.contentDocument, w=frame.contentWindow;
+  const clickText=text=>[...d.querySelectorAll('dialog[open] button')].find(b=>b.textContent===text).click();
+  const set=(selector,value)=>{const el=d.querySelector(selector);Object.getOwnPropertyDescriptor(el.tagName==='SELECT'?w.HTMLSelectElement.prototype:w.HTMLInputElement.prototype,'value').set.call(el,value);el.dispatchEvent(new w.Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};
+  await until(()=>d.querySelector('.sidebar-nav'));
+  d.querySelector('.sidebar-nav [aria-label="Home"]').click();await wait();
+  await until(()=>d.querySelector('[aria-label="View monthly plan information"]'));
+  d.querySelector('[aria-label="View monthly plan information"]').click();await wait();clickText('Add child');await wait();
+  check(d.querySelector('[name=expenseType]').value==='current',`${width}: default current`);
+  set('[name=name]','Car servicing test');set('[name=amount]','500');set('[name=expenseType]','upcoming');await wait();
+  check(d.querySelector('[name=period]').value==='month',`${width}: frequency independent`);
+  check(d.querySelector('dialog').textContent.includes('Target date (optional)'),`${width}: optional date`);
+  const select=d.querySelector('[name=expenseType]');select.scrollIntoView({block:'center'});const box=select.getBoundingClientRect();
+  check(box.left>=0&&box.right<=width&&box.width>100,`${width}: selector fits`);
+  d.querySelector('dialog form').requestSubmit();await wait();
+  d.querySelector('.sidebar-nav [aria-label="Upcoming expenses"]').click();await wait();
+  check(d.querySelector('.energy-viewport').textContent.includes('Car servicing test'),`${width}: monthly upcoming shown`);
+  d.querySelector('[aria-label="View and manage Car servicing test"]').click();await wait();clickText('Edit details');await wait();
+  check(d.querySelector('[name=expenseType]').value==='upcoming',`${width}: choice retained`);
+  check(d.querySelector('[name=amount]').value==='500',`${width}: amount retained`);
+  set('[name=expenseType]','current');await wait();d.querySelector('dialog form').requestSubmit();await wait();
+  check(!d.querySelector('.energy-viewport').textContent.includes('Car servicing test'),`${width}: current excluded`);
+  d.querySelector('.sidebar-nav [aria-label="Home"]').click();await wait();
+  check(d.querySelector('.energy-viewport').textContent.includes('Car servicing test'),`${width}: current remains in plan`);
+ }
+ document.querySelector('#result').textContent=`PASS ${checks} checks`;
+} catch(error) {document.querySelector('#result').textContent=`FAIL ${error.message}`;throw error;}
+</script></html>

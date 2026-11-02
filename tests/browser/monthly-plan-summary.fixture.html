@@ -8,7 +8,7 @@ import PlanDialog from '/src/features/flowtree/PlanDialog.jsx';
 import '/src/index.css'; import '/src/features/flowtree/EnergyExplorer.css';
 const root = createRoot(document.querySelector('#root'));
 window.renderCase = ({deductions,remaining,sinking,dark,incomeSources=[]}) => root.render(React.createElement('div',{className: dark ? 'theme-dark' : 'theme-light'},React.createElement(MobileTree,{
-monthlyDeductions:deductions,monthlyOutcome:remaining,sinking,income:60000,monthlyIncome:60000,
+monthlyDeductions:deductions,upcomingDeductions:2000,monthlyOutcome:remaining,sinking,income:60000,monthlyIncome:60000,
 incomeSources,tree:[],allocations:[],path:[],collapsedPaths:new Set(),onInspectPlan:()=>{document.body.dataset.planOpened='yes'},onInspectIncome:()=>{},onManageIncomeSource:id=>{document.body.dataset.managedSourceId=id}
 })));
 window.renderDesktopCase = ({deductions,remaining,sinking=false,dark=false,mobile=false}) => {
@@ -16,7 +16,7 @@ window.renderDesktopCase = ({deductions,remaining,sinking=false,dark=false,mobil
   const sources = Array.from({length:5},(_,index)=>({id:`income-${index}`,name:`Income ${index+1}`,amount:12000}));
   const layout = {...createTreeLayout({tree,path:[],allocations:[],expandAll:true,showPerson:!sinking,incomeSourceCount:sinking?0:sources.length}),monthlyOutcome:remaining,income:60000,allocations:[],expandAll:true};
   root.render(React.createElement('div',{className:dark?'theme-dark':'theme-light'},React.createElement(TreeCanvas,{
-    layout,sinking,monthlyIncome:60000,monthlyDeductions:deductions,mobile,path:[],collapsedPaths:new Set(),
+    layout,sinking,monthlyIncome:60000,monthlyDeductions:deductions,upcomingDeductions:2000,mobile,path:[],collapsedPaths:new Set(),
     incomeSources:sinking?[]:sources,tree,onInspectIncome:()=>{document.body.dataset.incomeOpened='yes'},onInspectPlan:()=>{document.body.dataset.planOpened='yes'}
   })));
 };

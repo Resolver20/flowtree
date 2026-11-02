@@ -1,3 +1,4 @@
+import { expenseTypeFor } from '../../domain/expenseType'
 import { yearBeforeTarget } from '../../domain/cardStart'
 import { bindDialogViewport } from './dialogViewport'
 import { cardStartDate } from '../../domain/cardStart'
@@ -71,7 +72,7 @@ function ProfileManageDialog({ profile, onClose, onDelete, onRequestEdit, onRequ
   return <DialogShell title={profile.name} onClose={onClose}>
     <div className="card-overview"><span className="overview-icon material-symbols-rounded" aria-hidden="true">person</span><div><span>Profile marker</span><strong>{profile.name}</strong></div></div>
     <div className="dialog-actions manage-actions">
-      <button type="button" className="modal-submit" onClick={onRequestEdit}>Edit name</button><button type="button" onClick={onRequestAddIncome}>Add income source</button><button type="button" onClick={onRequestSinkingFunds}>Sinking funds</button><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Remove…</button></div>
+      <button type="button" className="modal-submit" onClick={onRequestEdit}>Edit name</button><button type="button" onClick={onRequestAddIncome}>Add income source</button><button type="button" onClick={onRequestSinkingFunds}>Yearly targets</button><button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Remove…</button></div>
   </DialogShell>
 }
 
@@ -273,7 +274,7 @@ function ManageDialog({ onViewOverview, isGoal, node, onClose, onDelete, onReque
     </div>}
     <dl className="card-facts">
       <div><dt>Monthly branch total</dt><dd>{formatMoney(monthlyTotal(node))}</dd></div>
-      {node.period === 'year' && <div><dt>Target date</dt><dd>{formatDate(node.dueDate)}</dd></div>}
+      {(node.period === 'year' || (node.expenseType === 'upcoming' && node.dueDate)) && <div><dt>Target date</dt><dd>{formatDate(node.dueDate)}</dd></div>}
       <div><dt>Direct children</dt><dd>{children.length}</dd></div>
     </dl>
     <div className="dialog-actions manage-actions">
@@ -338,6 +339,11 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
   const [savedAmount, setSavedAmount] = useState(node?.savedAmount ?? '')
   const [selectedPeriod, setPeriod] = useState(node?.period || 'month')
   const period = isGoal ? 'year' : selectedPeriod
+  const [selectedExpenseType, setExpenseType] = useState(node?.expenseType || '')
+  const ancestorIds = node ? pathToNode(tree, node.id).slice(0, -1) : pathToNode(tree, parent?.id)
+  const inheritedType = ancestorIds.reduce((type, id) => expenseTypeFor(findNode(tree, id), type), 'current')
+  const expenseType = selectedExpenseType || expenseTypeFor({ period }, inheritedType)
+  const isExpense = !isGoal && !node?.loan && !node?.investment && !['goals', 'growth', 'provisions', 'obligations'].includes(pathToNode(tree, node?.id || parent?.id)[0])
   const initialDueDate = node?.dueDate || (period === 'year' ? defaultAnnualTargetDate() : '')
   const [manualStartDate, setStartDate] = useState(node?.startDate || cardStartDate())
   const [startMode, setStartMode] = useState(node?.startMode === 'target-year' ? 'target-year' : node?.startDate ? 'existing' : 'fresh')
@@ -368,7 +374,8 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
       savedAmount: period === 'year' ? Math.max(0, Number(savedAmount) || 0) : 0,
       startMode: period === 'year' ? startMode : undefined,
       startDate: period === 'year' ? startDate : node?.startDate || '',
-      dueDate: period === 'year' ? dueDate : '',
+      dueDate: period === 'year' || (isExpense && expenseType === 'upcoming') ? dueDate : '',
+      ...(isExpense ? { expenseType } : {}),
       period,
       status: String(form.get('status')),
       symbol,
@@ -386,6 +393,8 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
     <form onSubmit={submit}>
       <label>Name<input name="name" maxLength={100} defaultValue={node?.name || ''} placeholder="e.g. Subscriptions" onChange={() => setError('')} required aria-invalid={Boolean(error)} aria-describedby={error ? 'name-error' : undefined} /></label>
       {error && <span id="name-error" role="alert" className="field-error">{error}</span>}
+      {isExpense && <label>Expense type<select name="expenseType" value={expenseType} onChange={event => setExpenseType(event.target.value)} aria-describedby="expense-type-help"><option value="current">Current expense</option><option value="upcoming">Upcoming expense</option></select><small id="expense-type-help">Current: regular spending such as fuel. Upcoming: set aside money for servicing, insurance, or another future cost. Frequency stays separate.</small></label>}
+      {isExpense && expenseType === 'upcoming' && period === 'month' && <DateField required={false} label="Target date (optional)" value={dueDate} onChange={setDueDate} />}
       <div className="form-grid">
         <label>{isGoal ? 'Target amount (₹)' : 'Own amount (₹)'}<input name="amount" type="number" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-describedby="amount-help" /></label>
         {!isGoal && <label>Frequency<select name="period" value={period} onChange={event => { const nextPeriod = event.target.value; setPeriod(nextPeriod); if (nextPeriod === 'year' && !dueDate) { const nextDate = defaultAnnualTargetDate(); setDueDate(nextDate) } }}><option value="month">Monthly</option><option value="year">Yearly</option></select></label>}
@@ -419,11 +428,11 @@ export default function PlanDialog({ isExample = false, monthlyHistory, onViewOv
   if (dialog.type === 'manageProfile') return <ProfileManageDialog profile={profile} onClose={onClose} onDelete={onDeleteProfile} onRequestEdit={onRequestEditProfile} onRequestAddIncome={onRequestAddIncomeSource} onRequestSinkingFunds={() => onRequestSinkingFunds()} />
   if (dialog.type === 'profile') return <ProfileDialog profile={profile} onClose={onClose} onSave={onSaveProfile} />
   if (dialog.type === 'incomeOverview') return <IncomeOverviewDialog incomeSources={incomeSources} onClose={onClose} onAdd={onRequestAddIncomeSource} />
-  if (dialog.type === 'monthlyPlanOverview') return <InfoDialog title="Monthly plan" icon="account_balance_wallet" onClose={onClose} onAddChild={() => onRequestAdd(null)}>This is the amount left after planned monthly targets and your safety buffer. It is a plan preview, not your bank balance.</InfoDialog>
+  if (dialog.type === 'monthlyPlanOverview') return <InfoDialog title="Monthly plan" icon="account_balance_wallet" onClose={onClose} onAddChild={() => onRequestAdd(null)}>Current expenses cover spending this month. Planned expenses are this month’s set-asides for future expenses, savings, and goals. Money left is income minus current and planned expenses and your safety buffer. These are planned amounts, not your bank balance.</InfoDialog>
   if (dialog.type === 'manageIncomeSource') return <IncomeSourceManageDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onDelete={onDeleteIncomeSource} onRequestEdit={onRequestEditIncomeSource} />
   if (dialog.type === 'incomeSource') return <IncomeSourceDialog source={incomeSources.find(source => source.id === dialog.sourceId)} onClose={onClose} onSave={onSaveIncomeSource} />
   if (dialog.type === 'annualTargets') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} />
-  if (dialog.type === 'sinkingFunds') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} title="Sinking funds" description="These are your yearly targets. Flowtree sets aside their monthly equivalents so they are ready when each payment is due." />
+  if (dialog.type === 'sinkingFunds') return <AnnualTargetsDialog tree={tree} onClose={onClose} onSave={onSaveAnnualTargets} title="Yearly targets" description="These are your yearly targets. Flowtree sets aside their monthly equivalents so they are ready when each payment is due." />
   if (dialog.type === 'importJson') return <ImportPlanDialog dialog={dialog} onClose={onClose} onImport={onImportData} />
   if (dialog.type === 'buffer') return <BufferDialog buffer={buffer} onClose={onClose} onSave={onSaveBuffer} />
   if (dialog.type === 'manage') { const node = findNode(tree, dialog.nodeId); return <ManageDialog isGoal={isGoalDestination(tree, node?.id)} onViewOverview={['obligations', 'goals'].includes(pathToNode(tree, node?.id)[0]) ? onViewOverview : null} node={node} canDelete={!isBuiltInFlowGroup(node?.id)} onClose={onClose} onDelete={onDeleteNode} onRequestEdit={onRequestEdit} onRequestAdd={onRequestAdd} /> }

@@ -1,7 +1,8 @@
+import { expenseTypeFor } from './expenseType.js'
 import { totalChildren, totalExpectedAnnualSavings } from './flowTree.js'
 
 export function sinkingFundsOverview(nodes, today = new Date()) {
-  const hasTarget = items => items.some(item => item.period === 'year' || hasTarget(item.children || []))
+  const hasTarget = items => items.some(item => expenseTypeFor(item) === 'upcoming' || hasTarget(item.children || []))
   return {
     monthly: totalChildren(nodes, today),
     plannedSaved: totalExpectedAnnualSavings(nodes, today),
@@ -9,13 +10,14 @@ export function sinkingFundsOverview(nodes, today = new Date()) {
   }
 }
 
-// Filter the already-ordered Home tree without changing record values or the
-// relative order of siblings. Once a dated target is included, keep its entire
-// branch so adding a child never makes that child disappear in Sinking funds.
+// Keep ancestors for hierarchy, but exclude their own current expense amounts.
+// Untyped descendants retain the legacy inherited behavior; explicit choices win.
 export function selectSinkingFunds(nodes, withinTarget = false) {
   return nodes.flatMap(node => {
-    const keepBranch = withinTarget || node.period === 'year'
-    const children = selectSinkingFunds(node.children || [], keepBranch)
-    return keepBranch || children.length ? [{ ...node, children }] : []
+    if (['goals', 'growth', 'provisions', 'obligations'].includes(node.id) || node.loan || node.investment) return []
+    const upcoming = expenseTypeFor(node, withinTarget ? 'upcoming' : 'current') === 'upcoming'
+    const children = selectSinkingFunds(node.children || [], upcoming)
+    if (!upcoming && !children.length) return []
+    return [{ ...node, ...(upcoming ? {} : { amount: 0, savedAmount: 0 }), children }]
   })
 }

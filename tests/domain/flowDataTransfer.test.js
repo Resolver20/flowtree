@@ -20,7 +20,12 @@ test('Flowtree JSON export round-trips the supported plan fields', () => {
   assert.equal(payload.version, 1)
   assert.equal(payload.exportedAt, exportedAt.toISOString())
   assert.deepEqual(parseFlowImport(serializeFlowData(plan, exportedAt)), plan)
-  assert.deepEqual(JSON.parse(serializeFlowData(plan, exportedAt)), plan)
+  const { readMe, ...serializedPlan } = JSON.parse(serializeFlowData(plan, exportedAt))
+  assert.deepEqual(serializedPlan, plan)
+  assert.ok(readMe.some(line => line.includes('holiday-fund-1')))
+  assert.deepEqual(payload.readMe, readMe)
+  assert.deepEqual(parseFlowImport(JSON.stringify(payload)), plan)
+  assert.deepEqual(parseFlowImport(JSON.stringify({ ...plan, readMe: 'User-edited guidance' })), plan)
   assert.deepEqual(summarizeFlowData(plan), { destinations: 2, yearlyTargets: 1, incomeSources: 1 })
 })
 
@@ -114,4 +119,16 @@ test('JSON items require explicit non-empty IDs after reverting automatic genera
     assert.throws(() => parseFlowImport(JSON.stringify(data)), /\.id must be a non-empty string/)
   }
   assert.deepEqual(parseFlowImport(serializeFlowData(plan)), plan)
+})
+
+
+test('expense types survive JSON round trips and unknown choices are rejected', () => {
+  for (const expenseType of ['current', 'upcoming']) {
+    const data = structuredClone(plan)
+    data.tree[0].children[0].expenseType = expenseType
+    assert.deepEqual(parseFlowImport(serializeFlowData(data)), data)
+  }
+  const data = structuredClone(plan)
+  data.tree[0].expenseType = 'sometimes'
+  assert.throws(() => parseFlowImport(JSON.stringify(data)), /expenseType/)
 })

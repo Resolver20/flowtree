@@ -639,3 +639,27 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 - Reverted automatic missing-ID generation at the user's request. JSON items again require explicit, unique non-empty IDs; missing/null/blank IDs fail validation before replacement. Existing ID preservation and duplicate rejection remain unchanged. Monthly plan Add child and the icon picker are retained.
 - `flowDataTransfer.test.js` checks required IDs on income sources, category/child destinations, ledgers and ledger entries, plus the existing valid-plan round trip. Manual: remove a new item's ID in Account → Edit plan JSON, validate, and expect a required-ID error without replacing the active plan; supply a unique ID to proceed.
 - Verified: 172 Node tests, lint, server build and diff checks passed. In the real JSON dialog regression harness, submitting an ID-less plan showed `data.incomeSources[0].id must be a non-empty string.` and the replacement counter remained zero. The full local website preview was restored after removing the automatic-ID demo pages.
+# JSON ID instructions — 2026-11-02
+
+- Open Account → Edit plan JSON (or the isolated `dismiss-notices.fixture.html?kind=dialog&status=editJson&dark` preview). Confirm the JSON begins with `readMe` explaining unique card IDs, copied children, and keeping existing IDs stable.
+- Validate a plan with this field present, edited, and removed: all should import the same plan. Missing or duplicate card IDs must still fail. These import cases are covered by the domain tests.
+- Verified the instructions appear in the local browser JSON editor. No live plan was replaced during this check.
+
+### Current and Upcoming expenses — 2026-11-02
+
+- In Home, add or edit an expense card. Choose Current expense or Upcoming expense independently of Monthly / Yearly frequency. Existing untyped yearly cards default to Upcoming; untyped descendants inherit an upcoming parent for compatibility.
+- Add monthly car servicing with an amount and no target date. Save, open Upcoming expenses, and reopen the card: type and amount must remain. Switch to Current: it disappears from Upcoming but remains in Home. Goals, investments, loans, and emergency savings remain in their dedicated categories.
+- A monthly upcoming expense can have an optional date; yearly target scheduling still requires its date. Progress lines remain limited to dated yearly cards.
+- Run `/tests/browser/expense-types.html` for create/edit/filter checks at 320×740, 390×844, 568×320, 768×1024, 1366×768, and 1920×1080. It uses the local offline app without saving test changes.
+- Related regressions: `full-app-layout.html`, `sinking-expansion.html`, `sinking-funds-summary.html`, and `editor-sizes.html`. Check native selector keyboard focus and activation in the full website. Automated domain cases cover explicit overrides, nested filtering without parent amount leakage, unchanged source records, JSON round trips, and recurring-payment exclusion.
+- Verified locally: expense-types PASS 54 checks across six sizes; full-app-layout PASS 728 checks across nine sizes; sinking-expansion independent branch opening/closing at all six sizes; sinking-funds-summary PASS 193 checks; editor-sizes PASS 66 scenarios. Full-app preview shows the native selector. No physical iPhone test or production deployment was performed.
+
+### Split monthly deductions — 2026-11-02
+
+- Home's Monthly plan summary shows Current deductions and Upcoming deductions side by side, with Available below. Current means this month's spending; Upcoming means this month's set-asides for future expenses, savings, and goals. Available subtracts both and the safety buffer, including negative results.
+- Edit a monthly servicing card from Upcoming to Current. Its amount moves between the two subtotals; total deductions and Available remain unchanged. Pause a parent and both it and its descendants must leave the totals.
+- Run `monthly-plan-summary.html`: phone/tablet/desktop, both themes, large Indian-formatted values, zero/negative Available, shared overview activation, income collapse, and connector clearance. Run `full-app-layout.html` for the full website across nine viewport sizes.
+- Domain coverage: `monthlyDeductions.test.js` tests direct-plus-descendant amounts, legacy yearly inference, explicit type overrides, future savings, inactive branches, unchanged source data, and total reconciliation.
+- Verified locally: monthly-plan-summary PASS 673 checks; full-app-layout PASS 728 checks. Inspected the full website's updated summary and left it open. Automated suite: 180 tests; lint/build passed. No production deployment or physical-device test performed.
+
+- Accepted summary wording: **Current expenses · Planned expenses · Money left**. Verify all three in Home and the Monthly plan overview; negative Money left remains visible.

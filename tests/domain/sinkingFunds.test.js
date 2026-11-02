@@ -43,7 +43,7 @@ test('beginner sinking overview leads with monthly saving and keeps fresh progre
   const today = new Date(2026, 9, 31)
   const plan = createExamplePlan(today)
   const sinking = selectSinkingFunds(plan.tree)
-  assert.deepEqual(sinkingFundsOverview(sinking, today), { monthly: 2500, plannedSaved: 0, hasTargets: true })
+  assert.deepEqual(sinkingFundsOverview(sinking, today), { monthly: 1500, plannedSaved: 0, hasTargets: true })
   assert.deepEqual(sinkingFundsOverview([], today), { monthly: 0, plannedSaved: 0, hasTargets: false })
 })
 
@@ -72,4 +72,29 @@ test('planned savings excludes paused branches and legacy inactive statuses, and
     assert.equal(sinkingFundsOverview([active, { ...paused, status: 'active' }], today).plannedSaved, 7500)
     assert.deepEqual(nodes, original)
   }
+})
+
+
+test('explicit expense choices override frequency and exclude unrelated parent amounts', () => {
+  const original = [{ id: 'cash', amount: 900, period: 'month', expenseType: 'current', children: [
+    { id: 'service', amount: 500, period: 'month', expenseType: 'upcoming', children: [] },
+    { id: 'annual-current', amount: 12000, period: 'year', expenseType: 'current', children: [] },
+  ] }]
+  const snapshot = structuredClone(original)
+  const result = selectSinkingFunds(original)
+  assert.equal(result[0].amount, 0)
+  assert.deepEqual(result[0].children.map(node => node.id), ['service'])
+  assert.equal(sinkingFundsOverview(result).monthly, 500)
+  assert.equal(sinkingFundsOverview(result).hasTargets, true)
+  assert.deepEqual(original, snapshot)
+})
+
+test('explicit current children stay out of upcoming branches and goals remain separate', () => {
+  const result = selectSinkingFunds([
+    { id: 'service', expenseType: 'upcoming', children: [{ id: 'fuel', expenseType: 'current', children: [] }] },
+    { id: 'goals', children: [{ id: 'car', period: 'year', children: [] }] },
+    { id: 'growth', children: [{ id: 'invest', period: 'year', children: [] }] },
+  ])
+  assert.deepEqual(result.map(node => node.id), ['service'])
+  assert.deepEqual(result[0].children, [])
 })

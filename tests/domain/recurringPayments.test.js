@@ -15,3 +15,9 @@ test('calendar groups direct monthly payments without counting child totals twic
   assert.equal(summary.paymentsByDay[5][0].category, 'Home')
   assert.deepEqual(tree, original)
 })
+
+test('upcoming monthly set-asides are not recurring spending', () => {
+  const tree = [{ id: 'servicing', name: 'Servicing', amount: 500, period: 'month', expenseType: 'upcoming', children: [] }]
+  assert.equal(recurringPaymentSummary(tree).monthlyTotal, 0)
+  assert.equal(recurringPaymentSummary([{ ...tree[0], expenseType: 'current' }]).monthlyTotal, 500)
+})

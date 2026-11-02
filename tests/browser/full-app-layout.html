@@ -5,15 +5,15 @@ await new Promise(resolve=>frame.onload=resolve);
 for(let i=0;i<100&&!frame.contentDocument.querySelector('.sidebar-nav');i++)await wait();
 for(const [width,height] of [[320,740],[390,844],[430,932],[568,320],[760,800],[768,1024],[1024,768],[1366,768],[1920,1080]]){
  frame.style.width=`${width}px`;frame.style.height=`${height}px`;
- for(const name of ['Home','Sinking funds','Loans','Life goals','Recurring payments','Investments','General ledger']){
+ for(const name of ['Home','Upcoming expenses','Loans','Life goals','Recurring payments','Investments','General ledger']){
  const doc=frame.contentDocument;doc.querySelector(`.sidebar-nav [aria-label="${name}"]`).click();await wait();
  const page=doc.querySelector('.loans-view,.goals-view,.ledger-view,.recurring-view,.energy-viewport');
  check(!doc.querySelector('[aria-label="Undo last plan change"],[aria-label="Redo plan change"],.sidebar-history,.mobile-history-action'),`${width}/${name}: Undo and Redo are absent`);
  check(!!page,`${width}/${name}: screen mounts`);
  if(!page)continue;
- if(name!=='Home'&&name!=='Sinking funds')check(page.scrollWidth<=page.clientWidth+1,`${width}/${name}: page overflows`);
+ if(name!=='Home'&&name!=='Upcoming expenses')check(page.scrollWidth<=page.clientWidth+1,`${width}/${name}: page overflows`);
  for(const el of page.querySelectorAll('.monthly-plan-summary,.mobile-tree-card,.amount-node,.sinking-status,.sinking-saved,.loan-portfolio,.goal-portfolio,.payment-month-card'))check(el.scrollWidth<=el.clientWidth+1,`${width}/${name}: ${el.className} overflows`);
- if(name==='Home'||name==='Sinking funds'){
+ if(name==='Home'||name==='Upcoming expenses'){
  for(const row of page.querySelectorAll('[data-tree-path]')){
  if(!row.dataset.treePath.includes('/'))check(!row.querySelector(':scope > .amount-node .node-progress,:scope > .mobile-tree-node-row .node-progress'),`${width}/${name}: grouping category has no progress line`);
  }

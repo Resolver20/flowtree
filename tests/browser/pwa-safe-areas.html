@@ -6,7 +6,7 @@ for(let i=0;i<100&&!frame.contentDocument.querySelector('.sidebar-nav');i++)awai
 for(const [width,height,top,side,bottom] of [[320,740,0,0,0],[390,844,59,0,34],[430,932,62,0,34],[568,320,0,44,21],[740,360,0,44,21]]){
  frame.style.width=`${width}px`;frame.style.height=`${height}px`;const doc=frame.contentDocument;
  for(const [key,value] of Object.entries({top,left:side,right:side,bottom}))doc.documentElement.style.setProperty(`--mobile-safe-${key}`,`${value}px`);
- for(const name of ['Home','Sinking funds','Loans','Life goals','Recurring payments','Investments','General ledger']){
+ for(const name of ['Home','Upcoming expenses','Loans','Life goals','Recurring payments','Investments','General ledger']){
  doc.querySelector(`.sidebar-nav [aria-label="${name}"]`).click();await wait();
  const toolbar=doc.querySelector('.plan-save-controls').getBoundingClientRect();
  check([...doc.querySelectorAll('.plan-save-controls button')].every(button=>button.getBoundingClientRect().top>=top),`${width}/${name}: toolbar clears status area`);

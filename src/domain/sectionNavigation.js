@@ -1,6 +1,6 @@
 export const MOBILE_SECTIONS = [
   { id: 'home', label: 'Home', icon: 'home' },
-  { id: 'sinking', label: 'Sinking', icon: 'savings' },
+  { id: 'sinking', label: 'Upcoming', icon: 'savings' },
   { id: 'loans', label: 'Loans', icon: 'account_balance' },
   { id: 'goals', label: 'Goals', icon: 'flag' },
   { id: 'recurring', label: 'Recurring', icon: 'event_repeat' },

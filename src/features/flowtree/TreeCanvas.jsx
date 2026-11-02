@@ -28,18 +28,18 @@ function IncomeSourceNode({ source, point, worldWidth, worldHeight, onManage }) 
   </div>
 }
 
-function FinanceNode({ sinking, monthlyOutcome, monthlyDeductions, point, worldWidth, worldHeight, onInspectPlan }) {
+function FinanceNode({ sinking, monthlyOutcome, monthlyDeductions, upcomingDeductions, point, worldWidth, worldHeight, onInspectPlan }) {
   return <div className={`energy-source is-finance${sinking ? '' : ' is-monthly-plan'}`} style={{ left: `${point.x / worldWidth * 100}%`, top: `${point.y / worldHeight * 100}%` }}>
     {sinking ? <>
     <div className="energy-finance-root">
       <span className="energy-root-icon material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
     </div>
-    <strong>Sinking funds</strong>
-    </> : <MonthlyPlanHub monthlyDeductions={monthlyDeductions} monthlyOutcome={monthlyOutcome} onInspectPlan={onInspectPlan} />}
+    <strong>Upcoming expenses</strong>
+    </> : <MonthlyPlanHub monthlyDeductions={monthlyDeductions} upcomingDeductions={upcomingDeductions} monthlyOutcome={monthlyOutcome} onInspectPlan={onInspectPlan} />}
   </div>
 }
 
-export default function TreeCanvas({ sinking = false, layout, monthlyIncome, monthlyDeductions, mobile, path, collapsedPaths, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect, onInspectPlan, onInspectIncome }) {
+export default function TreeCanvas({ sinking = false, layout, monthlyIncome, monthlyDeductions, upcomingDeductions, mobile, path, collapsedPaths, driveSaved, incomeSources, tree, onManageIncomeSource, onNavigate, onInspect, onInspectPlan, onInspectIncome }) {
   const [incomeExpanded, setIncomeExpanded] = useState(true)
   const incomeChildrenId = useId()
   const toggleIncome = () => setIncomeExpanded(expanded => !expanded)
@@ -50,7 +50,7 @@ export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mon
       sinking={sinking}
       monthlyIncome={monthlyIncome}
       monthlyOutcome={layout.monthlyOutcome}
-      monthlyDeductions={monthlyDeductions}
+      monthlyDeductions={monthlyDeductions} upcomingDeductions={upcomingDeductions}
       allocations={layout.allocations}
       expandAll={layout.expandAll}
       collapsedPaths={collapsedPaths}
@@ -95,7 +95,7 @@ export default function TreeCanvas({ sinking = false, layout, monthlyIncome, mon
       {!sinking && incomeSources.length > 0 && <div id={incomeChildrenId} role="group" aria-label="Income sources" hidden={!incomeExpanded}>
         {incomeSources.map((source, index) => <IncomeSourceNode key={source.id} source={source} point={layout.incomeSourcePoints[index]} worldWidth={layout.worldWidth} worldHeight={layout.height} onManage={onManageIncomeSource} />)}
       </div>}
-        <FinanceNode sinking={sinking} monthlyOutcome={layout.monthlyOutcome} monthlyDeductions={monthlyDeductions} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} onInspectPlan={onInspectPlan} />
+        <FinanceNode sinking={sinking} monthlyOutcome={layout.monthlyOutcome} monthlyDeductions={monthlyDeductions} upcomingDeductions={upcomingDeductions} point={layout.sourcePoint} worldWidth={layout.worldWidth} worldHeight={layout.height} onInspectPlan={onInspectPlan} />
       {layout.positionedColumns.flatMap((column, columnIndex) => column.items.map(entry => <TreeNodeCard
         key={entry.path.join('/')}
         entry={entry}

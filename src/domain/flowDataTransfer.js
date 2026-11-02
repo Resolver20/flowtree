@@ -126,6 +126,7 @@ function normalizeNode(node, path, ids, counters, depth) {
 
   const period = source.period ?? 'month'
   if (!['month', 'year'].includes(period)) fail(`${path}.period must be "month" or "year".`)
+  if (source.expenseType !== undefined && !['current', 'upcoming'].includes(source.expenseType)) fail(`${path}.expenseType must be "current" or "upcoming".`)
   const status = normalizeNodeStatus(source.status)
   if (!NODE_STATUSES.includes(status)) fail(`${path}.status must be one of: ${NODE_STATUSES.join(', ')}.`)
 
@@ -145,6 +146,7 @@ function normalizeNode(node, path, ids, counters, depth) {
       return value
     })(),
     period,
+    ...(source.expenseType === undefined ? {} : { expenseType: source.expenseType }),
     status,
     icon: optionalText(source.icon, `${path}.icon`, '', 64),
     symbol: optionalText(source.symbol, `${path}.symbol`, '', 64),
@@ -237,6 +239,7 @@ function normalizePlan(value) {
 
 export function createFlowExport(data, exportedAt = new Date()) {
   return {
+    readMe: cardIdInstructions(),
     format: FLOWTREE_EXPORT_FORMAT,
     version: FLOWTREE_EXPORT_VERSION,
     exportedAt: exportedAt.toISOString(),
@@ -245,7 +248,17 @@ export function createFlowExport(data, exportedAt = new Date()) {
 }
 
 export function serializeFlowData(data) {
-  return `${JSON.stringify(normalizePlan(data), null, 2)}\n`
+  return `${JSON.stringify({ readMe: cardIdInstructions(), ...normalizePlan(data) }, null, 2)}\n`
+}
+
+function cardIdInstructions() {
+  return [
+    'For each new card, add an "id" with a unique, non-empty text value, for example "holiday-fund-1".',
+    'Every card in tree, including nested children, must have a different ID. When copying a card, change its ID and the IDs of any copied children.',
+    'Keep existing IDs unchanged when editing names, amounts, or moving cards. IDs identify cards; they do not need to match the card name.',
+    'Income sources also need unique IDs within incomeSources. IDs are required; Flowtree does not generate missing IDs when importing JSON.',
+    'This readMe is guidance only. You may keep or remove it; it is ignored when importing your plan.',
+  ]
 }
 
 export function parseFlowImport(text) {

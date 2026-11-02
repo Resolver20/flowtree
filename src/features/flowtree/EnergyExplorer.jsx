@@ -1,3 +1,4 @@
+import { monthlyDeductionBreakdown } from '../../domain/monthlyDeductions'
 import useSectionTransition from './useSectionTransition'
 import { selectSinkingFunds } from '../../domain/sinkingFunds'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -26,8 +27,8 @@ const MOBILE_BREAKPOINT = 760
 function EmptyTreeState({ sinking, onReturnHome }) {
   return <div className="empty-tree-state">
     <span className="material-symbols-rounded" aria-hidden="true">{sinking ? 'savings' : 'account_tree'}</span>
-    <strong>{sinking ? 'No sinking funds to preview' : 'No plan categories to preview'}</strong>
-    <p>{sinking ? 'Add a yearly target with a future date, then return here to see its monthly set-aside.' : 'Add a category to start building your monthly plan.'}</p>
+    <strong>{sinking ? 'No upcoming expenses to preview' : 'No plan categories to preview'}</strong>
+    <p>{sinking ? 'Edit a card and choose Upcoming expense to see its monthly set-aside here.' : 'Add a category to start building your monthly plan.'}</p>
     <button type="button" onClick={onReturnHome}>Return to Home</button>
   </div>
 }
@@ -47,18 +48,18 @@ function useMobileLayout() {
   return matches
 }
 
-function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
+function MobileHomeOutlook({ profile, driveUser, income, buffer, planned, upcomingDeductions }) {
   const monthLabel = new Intl.DateTimeFormat('en-IN', { month: 'long', year: 'numeric' }).format(new Date())
   const available = income - buffer - planned
   const hasIncome = income > 0
   const health = !hasIncome
     ? 'Set your monthly income to start planning this month.'
     : available < 0
-      ? `Available after deductions and safety buffer: ${formatMoney(available)}.`
+      ? `Money left after expenses and safety buffer: ${formatMoney(available)}.`
       : planned === 0
         ? 'No monthly targets are planned yet.'
         : `${Math.round(planned / income * 100)}% of this month’s income is planned after your safety buffer.`
-  const availableLabel = 'Available'
+  const availableLabel = 'Money left'
   const availableIcon = 'account_balance_wallet'
 
   return <header className="mobile-home-outlook">
@@ -72,7 +73,8 @@ function MobileHomeOutlook({ profile, driveUser, income, buffer, planned }) {
     </div>
     <div className="mobile-home-totals" aria-label="Monthly plan summary">
       <span><small><span className="material-symbols-rounded" aria-hidden="true">payments</span>Income</small><strong>{formatMoney(income)}</strong></span>
-      <span className="is-deductions"><small><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>Deductions</small><strong>{formatMoney(planned)}</strong></span>
+      <span className="is-deductions"><small><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>Current expenses</small><strong>{formatMoney(planned - upcomingDeductions)}</strong></span>
+      <span className="is-deductions is-upcoming"><small><span className="material-symbols-rounded" aria-hidden="true">savings</span>Planned expenses</small><strong>{formatMoney(upcomingDeductions)}</strong></span>
       <span className="is-remaining"><small><span className="material-symbols-rounded" aria-hidden="true">{availableIcon}</span>{availableLabel}</small><strong>{formatMoney(available)}</strong></span>
     </div>
     <p className="mobile-home-outlook-health"><span className="material-symbols-rounded" aria-hidden="true">insights</span><span>{health}</span></p>
@@ -117,7 +119,8 @@ export default function EnergyExplorer({ isExample = false, theme, onToggleTheme
   const showIncomeSummary = view === 'home'
 
   const income = demo ? Math.round(totalChildren(visibleTree) * .75 + buffer) : salary
-  const planned = totalChildren(orderedTree)
+  const deductions = monthlyDeductionBreakdown(orderedTree)
+  const planned = deductions.total
   const monthlyOutcome = income - buffer - planned
   const showMobileHomeOutlook = view === 'home' && !path.length && !expandAll
   const flow = useMemo(() => allocateEnergy(visibleTree, Math.max(0, income - buffer)), [visibleTree, income, buffer])
@@ -274,14 +277,14 @@ export default function EnergyExplorer({ isExample = false, theme, onToggleTheme
     />
     <DriveSyncStatus key={driveStatus} status={driveStatus} onDismiss={() => setShowDriveSaved(false)} />
     {view === 'loans' ? <LoansView loans={loans} focusedLoanId={focusedNodeId} onSaveLoan={onSaveLoan} onDeleteLoan={onDeleteLoan} /> : view === 'goals' ? <GoalsView goals={goals} focusedGoalId={focusedNodeId} onSaveGoal={onSaveGoal} /> : view === 'recurring' ? <RecurringPaymentsView plan={{ tree, incomeSources, buffer, monthlyHistory }} /> : view === 'investments' ? <InvestmentsView investments={investments} onSaveInvestment={onSaveInvestment} /> : view === 'ledger' ? <GeneralLedgerView ledgers={generalLedgers} onSaveLedger={onSaveGeneralLedger} onDeleteLedger={onDeleteGeneralLedger} onSaveExpense={onSaveLedgerExpense} onDeleteEntry={onDeleteLedgerEntry} /> : <><div ref={viewportRef} className={`energy-viewport${view === 'sinking' ? ' is-sinking' : ''}${canvasControls.locked ? ' is-pinned' : ''}${hasMeasuredViewport ? ' is-measured' : ''}${showMobileHomeOutlook ? ' has-mobile-home-outlook' : ''}`} tabIndex={0} role="region" aria-label="Interactive energy tree. Amounts are monthly targets.">
-      {showMobileHomeOutlook && <MobileHomeOutlook profile={profile} driveUser={driveUser} income={income} buffer={buffer} planned={planned} />}
+      {showMobileHomeOutlook && <MobileHomeOutlook profile={profile} driveUser={driveUser} income={income} buffer={buffer} planned={planned} upcomingDeductions={deductions.upcoming} />}
       {view === 'sinking' && <SinkingFundsSummary tree={sinkingTree} isExample={isExample} />}
       <div className="tree-zoom-layer" style={{ zoom: canvasControls.zoom }}>{visibleTree.length
         ? <TreeCanvas
             key={view}
             layout={layout}
             monthlyIncome={income}
-            monthlyDeductions={planned}
+            monthlyDeductions={planned} upcomingDeductions={deductions.upcoming}
             mobile={isMobileLayout}
             collapsedPaths={collapsedPaths}
             path={path}

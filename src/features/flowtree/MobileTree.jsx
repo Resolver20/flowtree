@@ -83,11 +83,11 @@ function MobileNode({ entry, tree, monthlyIncome, selectedPath, expandAll, colla
   </div>
 }
 
-export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, monthlyDeductions, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onInspectIncome, onNavigate, onInspect, onInspectPlan, incomeExpanded: sharedIncomeExpanded, onToggleIncome }) {
+export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutcome, monthlyDeductions, upcomingDeductions, allocations, expandAll, collapsedPaths, income, incomeSources, path, tree, onManageIncomeSource, onInspectIncome, onNavigate, onInspect, onInspectPlan, incomeExpanded: sharedIncomeExpanded, onToggleIncome }) {
   const [localIncomeExpanded, setLocalIncomeExpanded] = useState(true)
   const incomeExpanded = sharedIncomeExpanded ?? localIncomeExpanded
   const incomeChildrenId = useId()
-  const rootLabel = sinking ? 'Sinking funds' : 'Monthly plan'
+  const rootLabel = sinking ? 'Upcoming expenses' : 'Monthly plan'
   return <div className="mobile-tree" aria-label={`${rootLabel} flow`}>
     {!sinking && <><section className="mobile-tree-income" aria-label="Income">
       <MobileIncomeSummary income={income} onInspectIncome={onInspectIncome} hasChildren={incomeSources.length > 0} expanded={incomeExpanded} onToggle={onToggleIncome || (() => setLocalIncomeExpanded(expanded => !expanded))} childrenId={incomeChildrenId} />
@@ -97,7 +97,7 @@ export default function MobileTree({ sinking = false, monthlyIncome, monthlyOutc
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" /></>}
     <section className={`mobile-plan-root${!sinking ? ' is-monthly-plan' : ''}`} aria-label={rootLabel}>
-      {sinking ? <><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span><div className="mobile-plan-copy"><strong>{rootLabel}</strong></div></> : <MonthlyPlanHub monthlyDeductions={monthlyDeductions} monthlyOutcome={monthlyOutcome} onInspectPlan={onInspectPlan} />}
+      {sinking ? <><span className="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span><div className="mobile-plan-copy"><strong>{rootLabel}</strong></div></> : <MonthlyPlanHub monthlyDeductions={monthlyDeductions} upcomingDeductions={upcomingDeductions} monthlyOutcome={monthlyOutcome} onInspectPlan={onInspectPlan} />}
     </section>
     <div className="mobile-tree-connector" aria-hidden="true" />
     <section className="mobile-tree-categories" aria-label="Plan categories">
