@@ -100,84 +100,18 @@ test('target-relative yearly setup survives JSON export and import', () => {
   assert.equal(restored.tree[0].children[0].startDate, '2026-05-15')
 })
 
-const withoutIds = value => {
-  if (Array.isArray(value)) return value.map(withoutIds)
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'id').map(([key, item]) => [key, withoutIds(item)]))
-  return value
-}
-
-test('manual JSON generates stable missing IDs at every supported level without mutating input', () => {
-  const input = withoutIds(plan)
-  input.tree[0].children.push({ name: 'Nested group', children: [{ name: 'Nested bill', amount: 20 }] })
-  input.monthlyHistory = { '2026-11': { income: 60000, buffer: 0, planned: 100, payments: [
-    { name: 'Bill', category: 'Cash Flow', monthlyAmount: 100, dayOfMonth: 1, scheduledDate: '2026-11-01', paidDate: '' },
-  ] } }
-  const original = structuredClone(input)
-  const imported = parseFlowImport(JSON.stringify(input))
-  assert.deepEqual(input, original)
-  assert.deepEqual(parseFlowImport(JSON.stringify(input)), imported)
-  assert.equal(imported.tree[0].id, 'needs')
-  assert.ok(imported.incomeSources[0].id)
-  assert.ok(imported.generalLedgers[0].id)
-  assert.ok(imported.generalLedgers[0].entries[0].id)
-  assert.ok(imported.monthlyHistory['2026-11'].payments[0].id)
-  const nodeIds = []
-  const visit = nodes => nodes.forEach(node => { nodeIds.push(node.id); visit(node.children) })
-  visit(imported.tree)
-  assert.equal(nodeIds.length, new Set(nodeIds).size)
-  assert.ok(nodeIds.every(id => typeof id === 'string' && id))
-  assert.deepEqual(parseFlowImport(serializeFlowData(imported)), imported)
-  assert.deepEqual(parseFlowImport(JSON.stringify(createFlowExport(input))).tree, imported.tree)
-})
-
-test('generated IDs skip supplied IDs even on later siblings and descendants', () => {
-  const input = structuredClone(plan)
-  input.incomeSources = [{ name: 'New income', amount: 10 }, { id: 'income-1', name: 'Existing income', amount: 20 }]
-  input.tree = [{ name: 'Custom category', children: [{ name: 'Bill' }, { id: 'destination-1', name: 'Existing child' }] }]
-  input.generalLedgers = [{ name: 'New ledger', entries: [{ description: 'New expense', amount: 1 }, { id: 'entry-1', description: 'Existing expense', amount: 2 }] }, { id: 'ledger-1', name: 'Existing ledger' }]
-  const result = parseFlowImport(JSON.stringify(input))
-  assert.notEqual(result.incomeSources[0].id, 'income-1')
-  assert.equal(result.incomeSources[1].id, 'income-1')
-  assert.notEqual(result.tree[0].id, 'destination-1')
-  assert.notEqual(result.tree[0].children[0].id, 'destination-1')
-  assert.equal(result.tree[0].children[1].id, 'destination-1')
-  assert.notEqual(result.generalLedgers[0].id, 'ledger-1')
-  assert.notEqual(result.generalLedgers[0].entries[0].id, 'entry-1')
-  assert.equal(result.generalLedgers[0].entries[1].id, 'entry-1')
-  assert.equal(result.generalLedgers[1].id, 'ledger-1')
-})
-
-test('blank IDs are filled while invalid supplied types and duplicates stay rejected', () => {
-  const input = { profile: { name: 'Me' }, incomeSources: [], buffer: 0, tree: [
-    { name: 'One', id: '' }, { name: 'Two', id: null }, { name: 'Three', id: '   ' }, { name: 'Four' },
-  ] }
-  const result = parseFlowImport(JSON.stringify(input))
-  assert.equal(new Set(result.tree.map(node => node.id)).size, 4)
-  for (const id of [123, false, [], {}, 'a'.repeat(101)]) {
-    assert.throws(() => parseFlowImport(JSON.stringify({ ...input, tree: [{ name: 'Bad ID', id }] })), /\.id must/)
+test('JSON items require explicit non-empty IDs after reverting automatic generation', () => {
+  const locations = [
+    data => data.incomeSources[0],
+    data => data.tree[0],
+    data => data.tree[0].children[0],
+    data => data.generalLedgers[0],
+    data => data.generalLedgers[0].entries[0],
+  ]
+  for (const locate of locations) for (const value of [undefined, null, '', '   ']) {
+    const data = structuredClone(plan)
+    locate(data).id = value
+    assert.throws(() => parseFlowImport(JSON.stringify(data)), /\.id must be a non-empty string/)
   }
-  for (const collection of ['incomeSources', 'generalLedgers']) {
-    const duplicate = { ...plan, [collection]: [{ ...plan[collection][0], id: 'same' }, { ...plan[collection][0], id: 'same' }] }
-    assert.throws(() => parseFlowImport(JSON.stringify(duplicate)), /Duplicate/)
-  }
-  assert.throws(() => parseFlowImport(JSON.stringify({ ...input, tree: [{ id: 'same', name: 'Parent', children: [{ id: 'same', name: 'Child' }] }] })), /Duplicate destination/)
-})
-
-test('omitted built-in category IDs retain category behavior without changing supplied IDs', async () => {
-  const { FLOW_GROUPS, isGoalDestination } = await import('../../src/domain/flowTree.js')
-  const input = { profile: { name: 'Me' }, incomeSources: [], buffer: 0, tree: FLOW_GROUPS.map(group => ({ name: group.name, children: [{ name: `${group.name} child` }] })) }
-  const result = parseFlowImport(JSON.stringify(input))
-  assert.deepEqual(result.tree.map(node => node.id), FLOW_GROUPS.map(group => group.id))
-  const goal = result.tree.find(node => node.id === 'goals').children[0]
-  assert.equal(isGoalDestination(result.tree, goal.id), true)
-  const explicit = parseFlowImport(JSON.stringify({ ...input, tree: [{ id: 'my-custom-id', name: 'Life goals' }] }))
-  assert.equal(explicit.tree[0].id, 'my-custom-id')
-})
-
-test('automatic ID generation retains tree size and depth limits', () => {
-  const base = { profile: { name: 'Me' }, incomeSources: [], buffer: 0 }
-  const nested = depth => depth === 1 ? { name: 'Leaf' } : { name: 'Parent', children: [nested(depth - 1)] }
-  assert.doesNotThrow(() => parseFlowImport(JSON.stringify({ ...base, tree: [nested(20)] })))
-  assert.throws(() => parseFlowImport(JSON.stringify({ ...base, tree: [nested(21)] })), /deeper than 20/)
-  assert.throws(() => parseFlowImport(JSON.stringify({ ...base, tree: Array.from({ length: 2001 }, () => ({ name: 'Item' })) })), /more than 2000/)
+  assert.deepEqual(parseFlowImport(serializeFlowData(plan)), plan)
 })
