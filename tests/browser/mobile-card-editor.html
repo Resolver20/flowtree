@@ -44,6 +44,7 @@ setTimeout(async () => {
     }
     if (keyboard && mobile && !manage) {
       const input = dialog.querySelector('input[name="savedAmount"]') || dialog.querySelector('input[name="name"]')
+      const options=input.closest('details');if(options)options.open=true;
       input.focus()
       viewport.height = Math.min(320, innerHeight)
       viewport.offsetTop = 40

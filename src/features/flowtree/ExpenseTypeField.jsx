@@ -1,3 +1,4 @@
-export default function ExpenseTypeField({ value, onChange }) {
+export default function ExpenseTypeField({ value, onChange, segmented = false }) {
+  if (segmented) return <fieldset className="expense-type-segments"><legend>Expense type</legend><div>{[['current', 'Current expenses'], ['upcoming', 'Planned expenses']].map(([type, label]) => <label key={type}><input type="radio" name="expenseType" value={type} checked={value === type} onChange={() => onChange(type)} /><span>{label}</span></label>)}</div></fieldset>
   return <label>Expense type<select name="expenseType" value={value} onChange={event => onChange(event.target.value)}><option value="current">Current expenses</option><option value="upcoming">Planned expenses</option></select><small>Current: spending this month. Planned: money set aside for later. This choice controls the monthly summary.</small></label>
 }

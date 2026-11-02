@@ -675,3 +675,10 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 
 - Compact monthly summary: one panel with three aligned rows, labels left and amounts right; a thin divider separates Money left. No repeated explanatory captions. Verify both themes, large/signed amounts, phone/desktop, and connector clearance with `monthly-plan-summary.html`.
 - Verified compact summary: monthly-plan-summary PASS 737 checks; full-app-layout PASS 728 checks; 182 automated tests, lint and server build passed. Inspected the full website after zooming out to expose the summary.
+
+### Simplified Edit details form — 2026-11-02
+
+- Open a regular destination/goal/category through Home → Edit details. Name, two expense-type choices, amount/frequency, and target date are visible first. Savings & start date (yearly only) and Icon & status start collapsed; the monthly preview appears once.
+- Use Tab/arrow keys for expense type and Enter/Space on each disclosure. Open optional sections, change saved amount and status, collapse them, then save: values must persist. Invalid fields inside a closed section must open it and block save. Cancel must discard changes. Goal scheduling, category own amounts, and inactive allocation retain existing behavior.
+- `simple-card-editor.html` checks collapsed state, opening, hidden-field validation, preserved saved amount/status, and clipping at six sizes. Keep `expense-types.html`, `all-expense-editors.html`, `target-year.html`, and `editor-sizes.html` coverage. Specialized loan and dedicated investment/goal pages retain their existing layouts; this approved design applies to the general card Edit details form.
+- Verified: simple-card-editor PASS 54 checks; expense-types PASS 60; all-expense-editors PASS 366 with no captured page errors; target-year PASS 7; editor-sizes PASS 66 scenarios; 182 automated tests, lint and server build passed. Full-app keyboard Enter expands/collapses savings; arrow keys change the expense choice. Preview left open without saving edits to the sample plan.

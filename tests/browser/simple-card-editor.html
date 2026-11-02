@@ -1,0 +1,23 @@
+<!doctype html><html><meta charset="utf-8"><pre id="result">Running…</pre><iframe title="Simple editor" src="/tests/browser/all-expense-editors.fixture.html" style="border:0"></iframe><script type="module">
+const f=document.querySelector('iframe'),wait=()=>new Promise(r=>setTimeout(r,80));let n=0;const check=(ok,msg)=>{if(!ok)throw Error(msg);n++};
+try{for(let i=0;i<100&&!f.contentWindow.renderCase;i++)await wait();
+for(const [width,height]of [[320,740],[390,844],[568,320],[768,1024],[1366,768],[1920,1080]]){
+f.style.width=`${width}px`;f.style.height=`${height}px`;const w=f.contentWindow,d=f.contentDocument;
+w.renderCase('example-holiday');await wait();const form=d.querySelector('form'),sections=[...d.querySelectorAll('details')];
+check(sections.length===2&&sections.every(s=>!s.open),`${width}: optional fields start collapsed`);
+check(sections.map(s=>s.querySelector('summary').textContent).join('|')==='Savings & start date|Icon & status',`${width}: disclosure labels`);
+check(d.querySelectorAll('.simple-monthly-preview').length===1,`${width}: one monthly preview`);
+check(d.querySelector('[name=dueDate]').closest('details')===null,`${width}: target stays essential`);
+sections[0].querySelector('summary').click();await wait();check(sections[0].open,`${width}: savings opens`);
+const saved=d.querySelector('[name=savedAmount]');const set=(el,value)=>{Object.getOwnPropertyDescriptor(w.HTMLInputElement.prototype,'value').set.call(el,value);el.dispatchEvent(new w.Event('input',{bubbles:true}))};
+set(saved,'-1');await wait();sections[0].querySelector('summary').click();form.requestSubmit();await wait();
+check(sections[0].open&&!d.body.dataset.saved,`${width}: invalid hidden amount opens section and blocks save`);
+set(saved,'3000');await wait();sections[0].querySelector('summary').click();
+sections[1].querySelector('summary').click();await wait();const status=d.querySelector('[name=status]');status.value='inactive';status.dispatchEvent(new w.Event('change',{bubbles:true}));await wait();sections[1].querySelector('summary').click();
+form.requestSubmit();await wait();const result=JSON.parse(d.body.dataset.saved||'null');check(result?.savedAmount===3000&&result.status==='inactive',`${width}: collapsed values saved`);
+check(result.amount===12000&&result.expenseType==='upcoming',`${width}: essentials preserved`);
+check(d.querySelector('dialog').scrollWidth<=d.querySelector('dialog').clientWidth+1,`${width}: no horizontal clipping`);
+}
+document.querySelector('#result').textContent=`PASS ${n} checks`;
+}catch(e){document.querySelector('#result').textContent=`FAIL ${e.message}`;throw e}
+</script></html>

@@ -8,14 +8,13 @@ import DateField from './DateField'
 import GoalSavingsSummary from './GoalSavingsSummary'
 import DriveRevisionDialog from './DriveRevisionDialog'
 import { useEffect, useRef, useState } from 'react'
-import { pathToNode, annualTargetProgress, countBranch, findNode, isBuiltInFlowGroup, isGoalDestination, monthlyAllocation, requiredMonthlyAmount, monthlyTotal, NODE_STATUSES, normalizeNodeStatus, totalChildren } from '../../domain/flowTree'
+import { pathToNode, annualTargetProgress, countBranch, findNode, isBuiltInFlowGroup, isGoalDestination, monthlyAllocation, requiredMonthlyAmount, monthlyTotal, NODE_STATUSES, normalizeNodeStatus } from '../../domain/flowTree'
 import { formatDate, formatMoney } from '../../lib/money'
 import { colorForNode, iconForNode } from './nodePresentation'
 import IconPicker from './IconPicker'
 import DriveSyncDialog from './DriveSyncDialog'
 import { parseFlowImport, serializeFlowData } from '../../domain/flowDataTransfer'
 import { loanProjection } from '../../domain/loan'
-import { goalTargetDate } from '../../domain/goalDates'
 
 const formatStatus = status => status[0].toUpperCase() + status.slice(1)
 
@@ -392,33 +391,29 @@ function NodeDialog({ dialog, tree, onClose, onSave, onDelete }) {
     <div className="dialog-actions"><button autoFocus type="button" onClick={() => setConfirmDelete(false)}>Keep item</button><button type="button" className="danger-button" onClick={() => onDelete(node.id)}>Delete {countBranch(node) > 1 ? 'branch' : 'item'}</button></div>
   </DialogShell>
 
-  return <DialogShell title={isEditing ? 'Edit destination' : parent ? 'Add destination' : 'Add category'} onClose={onClose}>
-    <p>{isEditing ? 'Changes update this node and its parent totals.' : `This node will sit under ${parent?.name || 'Monthly plan'}.`}</p>
-    <form onSubmit={submit}>
-      <label>Name<input name="name" maxLength={100} defaultValue={node?.name || ''} placeholder="e.g. Subscriptions" onChange={() => setError('')} required aria-invalid={Boolean(error)} aria-describedby={error ? 'name-error' : undefined} /></label>
+  return <DialogShell title={isEditing ? 'Edit details' : parent ? 'Add destination' : 'Add category'} onClose={onClose}>
+    <p>{isEditing ? node.name : `Under ${parent?.name || 'Monthly plan'}`}</p>
+    <form className="simple-card-editor" onSubmit={submit} onInvalidCapture={event => { const section = event.target.closest('details'); if (section) section.open = true }}>
+      <label>Name<input name="name" maxLength={100} defaultValue={node?.name || ''} placeholder="e.g. Car servicing" onChange={() => setError('')} required aria-invalid={Boolean(error)} aria-describedby={error ? 'name-error' : undefined} /></label>
       {error && <span id="name-error" role="alert" className="field-error">{error}</span>}
-      <ExpenseTypeField value={expenseType} onChange={setExpenseType} />
-      {!isGoal && expenseType === 'upcoming' && period === 'month' && <DateField required={false} label="Target date (optional)" value={dueDate} onChange={setDueDate} />}
-      <div className="form-grid">
-        <label>{isGoal ? 'Target amount (₹)' : 'Own amount (₹)'}<input name="amount" type="number" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-describedby="amount-help" /></label>
-        {!isGoal && <label>Frequency<select name="period" value={period} onChange={event => { const nextPeriod = event.target.value; setPeriod(nextPeriod); if (nextPeriod === 'year' && !dueDate) { const nextDate = defaultAnnualTargetDate(); setDueDate(nextDate) } }}><option value="month">Monthly</option><option value="year">Yearly</option></select></label>}
+      <ExpenseTypeField segmented value={expenseType} onChange={setExpenseType} />
+      <div className="form-grid essentials-amount">
+        <label>{isGoal ? 'Target amount (₹)' : 'Amount (₹)'}<input name="amount" type="number" min="0" step="0.01" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-describedby={node?.children?.length ? 'amount-help' : undefined} /></label>
+        {!isGoal && <label>Frequency<select name="period" value={period} onChange={event => { const nextPeriod = event.target.value; setPeriod(nextPeriod); if (nextPeriod === 'year' && !dueDate) setDueDate(defaultAnnualTargetDate()) }}><option value="month">Monthly</option><option value="year">Yearly</option></select></label>}
       </div>
-      <small id="amount-help">{isGoal ? 'Monthly savings are calculated from your target, saved amount, and dates.' : 'Exclude child amounts — they are added automatically. Leave at 0 for a grouping category.'}</small>
-      {period === 'year' && <CardStartSetup allowTargetYear mode={startMode} onModeChange={mode => { setStartMode(mode); if (mode === 'fresh') { setStartDate(localDateValue(new Date())); setSavedAmount(0) } setDateError('') }} startDate={startDate} onStartDateChange={date => { setStartDate(date); setDateError('') }} />}
-      {period === 'year' && <>
-        <DateField label="Target date" name="dueDate" min={startDate > localDateValue() ? startDate : localDateValue()} value={dueDate} onChange={date => { setDueDate(date); setDateError('') }}>
-          <button type="button" aria-label="Move target date forward one year" onClick={() => { setDueDate(goalTargetDate(dueDate || localDateValue(), 1)); setDateError('') }}>+1 year</button>
-        </DateField>
-        {dateError && <span id="date-error" role="alert" className="field-error">{dateError}</span>}
+      {Boolean(node?.children?.length) && <small id="amount-help">Enter this card’s own amount; child amounts are added automatically.</small>}
+      {(period === 'year' || expenseType === 'upcoming') && <DateField required={period === 'year'} label={period === 'year' ? 'Target date' : 'Target date (optional)'} name="dueDate" min={period === 'year' ? (startDate > localDateValue() ? startDate : localDateValue()) : undefined} value={dueDate} onChange={date => { setDueDate(date); setDateError('') }} />}
+      {dateError && <span id="date-error" role="alert" className="field-error">{dateError} Check Savings &amp; start date if needed.</span>}
+      <div className="amount-preview simple-monthly-preview" aria-live="polite"><span>{node?.children?.length ? 'Monthly branch total' : expenseType === 'upcoming' ? 'Monthly set-aside' : 'Monthly amount'}</span><strong>{formatMoney(preview)}</strong></div>
+      {period === 'year' && <details className="editor-options"><summary>Savings &amp; start date</summary><div className="editor-options-content">
+        <CardStartSetup allowTargetYear mode={startMode} onModeChange={mode => { setStartMode(mode); if (mode === 'fresh') { setStartDate(localDateValue(new Date())); setSavedAmount(0) } setDateError('') }} startDate={startDate} onStartDateChange={date => { setStartDate(date); setDateError('') }} />
         <label>Saved so far (₹)<input name="savedAmount" type="number" min="0" step="0.01" value={savedAmount} onChange={event => setSavedAmount(event.target.value)} /></label>
         <GoalSavingsSummary goal={previewNode} />
-      </>}
-      <div className="form-grid">
-        <label>Icon<IconPicker value={symbol} onChange={setSymbol} /></label>
-        <label>Status<select name="status" value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(status => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></label>
-      </div>
-      <small>Inactive items pause the entire branch’s allocation. Dates stay editable; activate the item when you want to include it in the plan.</small>
-      <div className="amount-preview" aria-live="polite"><span>Monthly branch total<small>Includes {formatMoney(totalChildren(node?.children || []))} in child targets</small></span><strong>{formatMoney(preview)}</strong></div>
+      </div></details>}
+      <details className="editor-options"><summary>Icon &amp; status</summary><div className="editor-options-content">
+        <div className="form-grid"><label>Icon<IconPicker value={symbol} onChange={setSymbol} /></label><label>Status<select name="status" value={status} onChange={event => setStatus(event.target.value)}>{NODE_STATUSES.map(status => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></label></div>
+        <small>Inactive items pause this branch’s monthly allocation.</small>
+      </div></details>
       <div className="dialog-actions">{isEditing && canDelete && <button type="button" className="delete-link" onClick={() => setConfirmDelete(true)}>Delete</button>}<button type="button" onClick={onClose}>Cancel</button><button className="modal-submit">{isEditing ? 'Save changes' : 'Add to tree'}</button></div>
     </form>
   </DialogShell>
