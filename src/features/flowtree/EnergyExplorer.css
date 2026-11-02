@@ -420,7 +420,7 @@ button.income-source-card { cursor: pointer; }
 @media (max-width: 900px) {
   .energy-viewport { overflow: auto; display: block; padding: 12px 0; overscroll-behavior: contain; }
   .energy-world-frame { display: block; justify-self: start; margin: 0; }
-  .card-info { width: 32px; height: 32px; top: 23px; left: 23px; color: #526078; opacity: .82; }
+  .card-info { color: #526078; opacity: .82; }
 }
 @media (max-width: 600px) {
   .energy-home { min-height: 100dvh; }
@@ -1052,3 +1052,18 @@ button.income-source-card { cursor: pointer; }
   .modal .simple-card-editor .dialog-actions:has(.delete-link) { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.3fr); }
   .modal .simple-card-editor .dialog-actions .delete-link { grid-column: auto; min-width: 0; padding: 8px; }
 }
+
+/* Preserve the compact info badge at tablet widths without shrinking its hit area. */
+.card-info::before { content: ''; position: absolute; inset: -5px; border-radius: 50%; }
+
+/* Calm, distinct expense colors; purple remains reserved for Money left. */
+.energy-mode { --expense-current: #23695b; --expense-current-bg: #eaf5f0; --expense-current-line: #9dc9b9; --expense-planned: #86551c; --expense-planned-bg: #fbf2e4; --expense-planned-line: #d8bb8b; }
+.energy-mode.theme-dark { --expense-current: #a6d8c8; --expense-current-bg: #233e36; --expense-current-line: #527f70; --expense-planned: #e8c38d; --expense-planned-bg: #403528; --expense-planned-line: #8e7048; }
+.expense-type-segments span { border: 1px solid transparent; }
+.expense-type-segments input[value="current"]:checked + span { color: var(--expense-current, #23695b); background: var(--expense-current-bg, #eaf5f0); border-color: var(--expense-current-line, #9dc9b9); }
+.expense-type-segments input[value="upcoming"]:checked + span { color: var(--expense-planned, #86551c); background: var(--expense-planned-bg, #fbf2e4); border-color: var(--expense-planned-line, #d8bb8b); }
+.energy-mode .monthly-plan-summary .is-current { color: var(--expense-current); }
+.energy-mode .monthly-plan-summary .is-upcoming { color: var(--expense-planned); }
+.energy-mode .mobile-home-totals .is-deductions:not(.is-upcoming) strong { color: var(--expense-current); }
+.energy-mode .mobile-home-totals .is-upcoming { background: var(--expense-planned-bg); border-color: var(--expense-planned-line); }
+.energy-mode .mobile-home-totals .is-upcoming strong { color: var(--expense-planned); }

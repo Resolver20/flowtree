@@ -1,0 +1,10 @@
+<!doctype html><html><meta charset="utf-8"><div id="root"></div><script type="module">
+import React,{useState} from 'react';import {createRoot} from 'react-dom/client';
+import TreeNodeCard from '/src/features/flowtree/TreeNodeCard.jsx';import ExpenseTypeField from '/src/features/flowtree/ExpenseTypeField.jsx';import MonthlyPlanHub from '/src/features/flowtree/MonthlyPlanHub.jsx';
+import '/src/index.css';import '/src/features/flowtree/EnergyExplorer.css';
+const root=createRoot(document.querySelector('#root')),item={id:'service',name:'Car servicing',amount:500,period:'month',children:[]};
+function Preview({dark}){const[type,setType]=useState('current');return React.createElement('main',{className:`energy-mode ${dark?'theme-dark':'theme-light'}`},
+React.createElement('div',{style:{position:'relative',width:320,height:100}},React.createElement(TreeNodeCard,{entry:{item,funding:{target:500,allocated:500,ratio:1},path:['service'],point:{x:160,y:50}},tree:[item],monthlyIncome:50000,worldWidth:320,worldHeight:100,onInspect:()=>document.body.dataset.inspected='service'})),
+React.createElement('div',{style:{width:'min(90%, 360px)',margin:'16px'}},React.createElement(ExpenseTypeField,{value:type,onChange:setType,segmented:true}),React.createElement('div',{className:'is-monthly-plan'},React.createElement(MonthlyPlanHub,{monthlyDeductions:1500,upcomingDeductions:500,monthlyOutcome:-100,onInspectPlan:()=>{}}))));}
+window.renderCase=dark=>{document.body.dataset.inspected='';root.render(React.createElement(Preview,{dark,key:String(dark)}))};
+</script></html>

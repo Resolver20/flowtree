@@ -1,0 +1,23 @@
+<!doctype html><html><meta charset="utf-8"><pre id="result">Running…</pre><iframe title="Info and expense styles" src="/tests/browser/info-expense-style.fixture.html" style="border:0"></iframe><script type="module">
+const f=document.querySelector('iframe'),wait=()=>new Promise(r=>setTimeout(r,70));let n=0;
+const check=(ok,msg)=>{if(!ok)throw Error(msg);n++};
+const lum=rgb=>{const values=rgb.match(/[\d.]+/g).slice(0,3).map(x=>{const s=Number(x)/255;return s<=.04045?s/12.92:((s+.055)/1.055)**2.4});return values[0]*.2126+values[1]*.7152+values[2]*.0722};
+try{for(let i=0;i<100&&!f.contentWindow.renderCase;i++)await wait();
+for(const width of [320,568,760,761,768,856,900,901,1366,1920])for(const dark of [false,true]){
+f.style.width=`${width}px`;f.style.height='740px';const w=f.contentWindow,d=f.contentDocument;w.renderCase(dark);await wait();
+const info=d.querySelector('.card-info'),style=w.getComputedStyle(info),box=info.getBoundingClientRect();
+check(box.width===16&&box.height===16,`${width}/${dark}: info remains 16px`);
+check(style.top==='31px'&&style.left==='31px',`${width}: original badge placement`);
+check(w.getComputedStyle(info.querySelector('span')).fontSize==='11px',`${width}: icon size`);
+check(parseFloat(w.getComputedStyle(info,'::before').left)<=-4,`${width}: forgiving click area`);
+info.focus();check(d.activeElement===info,`${width}: keyboard focus`);info.click();check(d.body.dataset.inspected==='service',`${width}: info opens correct card`);
+let currentColor;
+for(const type of ['current','upcoming']){d.querySelector(`input[value=${type}]`).click();await wait();const selected=d.querySelector(`input[value=${type}]+span`),s=w.getComputedStyle(selected);const a=lum(s.color),b=lum(s.backgroundColor);
+check((Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5,`${width}/${dark}/${type}: readable selected text`);
+if(type==='current')currentColor=s.backgroundColor;else check(s.backgroundColor!==currentColor,`${width}/${dark}: expense choices use different tints`);
+check(selected.scrollWidth<=selected.clientWidth,`${width}/${type}: no clipped labels`);}
+check(w.getComputedStyle(d.querySelector('.is-current')).color!==w.getComputedStyle(d.querySelector('.is-upcoming')).color,`${width}/${dark}: summary distinguishes expense types`);
+}
+document.querySelector('#result').textContent=`PASS ${n} checks`;
+}catch(e){document.querySelector('#result').textContent=`FAIL ${e.message}`;throw e}
+</script></html>
