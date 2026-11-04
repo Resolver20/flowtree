@@ -14,7 +14,6 @@ export function sinkingFundsOverview(nodes, today = new Date()) {
 // Untyped descendants retain the legacy inherited behavior; explicit choices win.
 export function selectSinkingFunds(nodes, withinTarget = false) {
   return nodes.flatMap(node => {
-    if (['goals', 'growth', 'provisions', 'obligations'].includes(node.id) || node.loan || node.investment) return []
     const upcoming = expenseTypeFor(node, withinTarget ? 'upcoming' : 'current') === 'upcoming'
     const children = selectSinkingFunds(node.children || [], upcoming)
     if (!upcoming && !children.length) return []

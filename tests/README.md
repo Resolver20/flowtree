@@ -690,3 +690,10 @@ On Home, verify the Income section label has a visible `Info` button and the Mon
 - Verified: info-expense-style PASS 240 checks across ten widths and both themes; full-app-layout PASS 710 checks with current offline sample; 182 automated tests, lint and server build passed. Full website editor inspected with the muted Planned tint.
 
 - Final accepted expense palette: soft blue for Current expenses and muted purple for Planned expenses, in both the editor and summaries. Retain `info-expense-style.html` contrast, selection, sizing, and clipping checks in both themes.
+
+### Planned expense totals reconcile — 2026-11-04
+
+- In a sample plan, put two planned ₹1,000/month servicing cards inside a category whose ID is `growth` and name is Maintenance. Add ₹2,518/month of other planned cards. Home and Planned expenses must both show ₹4,518; Maintenance and both cards remain visible when branches are expanded.
+- `planned-reconciliation.html` checks those amounts and branch interaction at phone portrait, phone landscape, tablet, laptop, and wide desktop. It mounts a separate disposable sample plan and does not access or save the user's Arc/Drive plan.
+- `sinkingFunds.test.js` covers explicit current/planned overrides, renamed categories, loan and investment branches, savings/goals, inactive ancestors, preserved hierarchy, no input mutation, and exact agreement with Home's planned subtotal. Savings and goals also remain accessible through their dedicated views.
+- Verified locally: planned-reconciliation PASS 30 checks across five sizes; sinking-funds-summary PASS 193; full-app-layout PASS 773; sibling expansion at six sizes; keyboard expansion on the Maintenance branch; 183 Node tests, Worker runtime, lint and build passed. Arc's real plan was not saved or replaced; the preview uses synthetic data.

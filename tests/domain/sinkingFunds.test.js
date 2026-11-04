@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { selectSinkingFunds, sinkingFundsOverview } from '../../src/domain/sinkingFunds.js'
+import { monthlyDeductionBreakdown } from '../../src/domain/monthlyDeductions.js'
 import { createExamplePlan } from '../../src/domain/examplePlan.js'
 import { sortTreeByMonthlyTotal, monthlyTotal } from '../../src/domain/flowTree.js'
 
@@ -43,7 +44,7 @@ test('beginner sinking overview leads with monthly saving and keeps fresh progre
   const today = new Date(2026, 9, 31)
   const plan = createExamplePlan(today)
   const sinking = selectSinkingFunds(plan.tree)
-  assert.deepEqual(sinkingFundsOverview(sinking, today), { monthly: 1500, plannedSaved: 0, hasTargets: true })
+  assert.deepEqual(sinkingFundsOverview(sinking, today), { monthly: 8500, plannedSaved: 0, hasTargets: true })
   assert.deepEqual(sinkingFundsOverview([], today), { monthly: 0, plannedSaved: 0, hasTargets: false })
 })
 
@@ -89,12 +90,36 @@ test('explicit expense choices override frequency and exclude unrelated parent a
   assert.deepEqual(original, snapshot)
 })
 
-test('explicit current children stay out of upcoming branches and goals remain separate', () => {
+test('explicit current children stay out while planned goals and growth remain visible', () => {
   const result = selectSinkingFunds([
     { id: 'service', expenseType: 'upcoming', children: [{ id: 'fuel', expenseType: 'current', children: [] }] },
     { id: 'goals', children: [{ id: 'car', period: 'year', children: [] }] },
     { id: 'growth', children: [{ id: 'invest', period: 'year', children: [] }] },
   ])
-  assert.deepEqual(result.map(node => node.id), ['service'])
+  assert.deepEqual(result.map(node => node.id), ['service', 'goals', 'growth'])
   assert.deepEqual(result[0].children, [])
+})
+
+
+test('planned totals reconcile across all categories, including renamed built-in categories', () => {
+  const today = new Date(2026, 10, 4)
+  const tree = [
+    { id: 'growth', name: 'Maintenance', amount: 0, expenseType: 'current', children: [
+      { id: 'car', name: 'Car Servicing', amount: 12000, period: 'year', startDate: '2026-11-02', dueDate: '2027-10-02', expenseType: 'upcoming', children: [] },
+      { id: 'bike', name: 'Bike Servicing', amount: 12000, period: 'year', startDate: '2026-11-02', dueDate: '2027-10-02', expenseType: 'upcoming', children: [] },
+    ] },
+    { id: 'needs', amount: 100, expenseType: 'current', children: [{ id: 'current', amount: 400, expenseType: 'current' }, { id: 'monthly-plan', amount: 500, expenseType: 'upcoming' }] },
+    { id: 'obligations', amount: 0, children: [{ id: 'planned-loan', amount: 200, expenseType: 'upcoming', loan: {} }] },
+    { id: 'goals', children: [{ id: 'goal', amount: 300, expenseType: 'upcoming' }] },
+    { id: 'provisions', amount: 400, expenseType: 'upcoming' },
+    { id: 'paused', status: 'inactive', expenseType: 'upcoming', amount: 999, children: [{ id: 'paused-child', amount: 999, expenseType: 'upcoming' }] },
+  ]
+  const original = structuredClone(tree)
+  const selected = selectSinkingFunds(tree)
+  assert.equal(sinkingFundsOverview(selected, today).monthly, 3400)
+  assert.equal(sinkingFundsOverview(selected, today).monthly, monthlyDeductionBreakdown(tree, today).upcoming)
+  assert.deepEqual(selected.find(node => node.id === 'growth').children.map(node => node.id), ['car', 'bike'])
+  assert.equal(selected.find(node => node.id === 'needs').amount, 0)
+  assert.deepEqual(selected.find(node => node.id === 'needs').children.map(node => node.id), ['monthly-plan'])
+  assert.deepEqual(tree, original)
 })

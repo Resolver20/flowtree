@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flowtree — planned totals preview</title><div id="root"></div><script type="module">
+import React from 'react';import {createRoot} from 'react-dom/client';import App from '/src/App.jsx';import {createExamplePlan} from '/src/domain/examplePlan.js';import '/src/index.css';
+const plan=createExamplePlan();plan.profile.name='Sample plan';plan.buffer=0;plan.incomeSources[0].amount=66000;
+for(const node of plan.tree){node.amount=0;node.expenseType='current';node.children=[];}
+const cash=plan.tree.find(node=>node.id==='needs');cash.children=[{id:'other-planned',name:'Other planned costs',amount:2518,period:'month',expenseType:'upcoming',status:'active',children:[]}];
+const growth=plan.tree.find(node=>node.id==='growth');growth.name='Maintenance';growth.children=[
+{id:'car-service',name:'Car Servicing',amount:1000,period:'month',expenseType:'upcoming',status:'active',children:[]},
+{id:'bike-service',name:'Bike Servicing',amount:1000,period:'month',expenseType:'upcoming',status:'active',children:[]}];
+createRoot(document.querySelector('#root')).render(React.createElement(App,{offlinePlan:plan,onSaveOfflinePlan:()=>{}}));
+</script></html>

@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Planned totals reconciliation</title><pre id="result">Running…</pre><iframe title="Sample Flowtree" src="/tests/browser/planned-reconciliation.fixture.html" style="border:0"></iframe><script type="module">
+const frame=document.querySelector('iframe'),wait=()=>new Promise(r=>setTimeout(r,80));let checks=0;
+function check(ok,msg){if(!ok)throw Error(msg);checks++}
+async function until(test){for(let i=0;i<100;i++){if(test())return;await wait()}throw Error('Timed out waiting for page')}
+try{
+await until(()=>frame.contentDocument.querySelector('.sidebar-nav'));
+for(const [width,height] of [[320,740],[568,320],[768,1024],[1366,768],[1920,1080]]){
+ frame.style.width=`${width}px`;frame.style.height=`${height}px`;const d=frame.contentDocument;
+ d.querySelector('.sidebar-nav [aria-label="Home"]').click();await wait();
+ check(d.querySelector('.monthly-plan-summary .is-upcoming')?.textContent.includes('₹4,518'),`${width}: Home planned total`);
+ d.querySelector('.sidebar-nav [aria-label="Planned expenses"]').click();await wait();
+ check(d.querySelector('.sinking-status')?.textContent.includes('₹4,518'),`${width}: Planned total agrees`);
+ const page=d.querySelector('.energy-viewport');check(page.textContent.includes('Maintenance'),`${width}: Maintenance visible`);
+ check(page.textContent.includes('Car Servicing')&&page.textContent.includes('Bike Servicing'),`${width}: servicing cards visible`);
+ const path=d.querySelector('[data-tree-path="growth"]');const toggle=path?.querySelector(':scope > button.amount-node,:scope > .mobile-tree-node-row > button.mobile-tree-card');
+ check(!!toggle,`${width}: Maintenance can expand`);toggle.click();await wait();toggle.click();await wait();
+ check(d.querySelector('.energy-viewport').textContent.includes('Car Servicing'),`${width}: reopening restores children`);
+}
+document.querySelector('#result').textContent=`PASS ${checks} checks`;
+}catch(e){document.querySelector('#result').textContent=`FAIL ${e.message}`;throw e}
+</script></html>
